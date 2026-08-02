@@ -1,0 +1,3299 @@
+{
+  "dataset_name": "contextory-korean-pr-review",
+  "dataset_version": "0.4.0",
+  "description": "Contextory RAG/LLM 코드 변경 분석 평가용 기준 데이터셋",
+  "language": "ko-KR",
+  "status": "candidate_gold",
+  "total_samples": 32,
+  "created_at": "2026-08-02T19:22:17Z",
+  "updated_at": "2026-08-02T19:22:17Z",
+  "style_guide": "한국어 '~합니다' 설명체로 통일. 코드/식별자/경로/명령어/오류 메시지는 원문 유지.",
+  "dataset_design": {
+    "input_diff": "데이터셋의 diff_context. 리뷰어가 인라인 댓글을 단 코드 주변 약 50줄입니다.",
+    "answer_basis": "같은 행의 reviewer_comment(사람 리뷰어가 실제로 남긴 지적)입니다.",
+    "review_comment_excluded_from_input": "리뷰 댓글은 정답이므로 모델 입력에 넣지 않습니다. reference 아래에만 둡니다.",
+    "control_samples": "reviewer_comment 가 \"No issues found.\" 인 행입니다. 리뷰를 통과한 코드이며 issues 는 빈 배열입니다.",
+    "issue_location_semantics": {
+      "post_change": "이 변경이 새로 추가하거나 수정한 코드('+' 라인)에 대한 지적입니다. 리뷰 댓글은 대부분 여기에 해당합니다.",
+      "pre_change": "이 변경이 제거한 코드('-' 라인)에 있던 문제입니다."
+    }
+  },
+  "license_note": "원본 데이터셋 ronantakizawa/github-codereview 의 라이선스는 'other (데이터셋 카드 표기) — 사용 조건 확인 필요' 이며 사용 조건 확인이 필요합니다. 데이터셋 카드는 수집 대상 저장소가 모두 MIT/Apache-2.0/BSD 등 허용적 라이선스라고 밝히고 있으나, 저장소별로 개별 확인하지는 않았습니다.",
+  "samples": [
+    {
+      "id": "security-001",
+      "classification": {
+        "category": "security",
+        "subtype": "supply_chain_unverified_execution",
+        "difficulty": "medium",
+        "programming_language": "Shell",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "security"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "5312",
+        "repository": "DrewThomasson/ebook2audiobook",
+        "pr_number": 1289,
+        "commit_sha": "",
+        "source_url": "https://github.com/DrewThomasson/ebook2audiobook/pull/1289",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.487117+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "ebook2audiobook.sh",
+        "pr_title_original": "v25.12.13",
+        "pr_title_ko": "v25.12.13",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -407,7 +407,23 @@ function install_programs {\n \t\t\tPACK_MGR=\"apt-get install\"\n \t\t\tPACK_MGR_OPTIONS=\"-y\"\n \t\telif command -v apk &> /dev/null; then\n+\t\t\tif ! command -v un-get &>/dev/null; then\n+\t\t\t\techo \"Installing un-get plugin...\"\n+\t\t\t\tcurl -L -o /tmp/un-get.plg https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg\n+\t\t\t\tinstallplg /tmp/un-get.plg",
+        "diff_truncated": false,
+        "review_comment_original": "The `install_programs` branch for `apk` unconditionally downloads the `un-get` plugin from `https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg` and immediately runs it via `installplg` without any integrity verification or pinning to an immutable commit. This creates a supply chain risk: if that GitHub repository or branch is compromised, attackers can deliver arbitrary code that will be executed with your script’s privileges on the host. To mitigate this, pin the download to a specific commit or release artifact, verify it via checksum/signature before execution, or vendor the plugin into a trusted distribution channel instead of fetching `master` at runtime.",
+        "review_comment_ko": "`apk` 용 `install_programs` 분기가 `https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg` 에서 `un-get` 플러그인을 조건 없이 내려받아 `installplg` 로 즉시 실행합니다. 무결성 검증도, 변경되지 않는 커밋으로의 고정도 없습니다.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "`install_programs` 함수의 `apk` 분기에 `un-get` 플러그인을 내려받아 설치하는 절차를 추가합니다.",
+        "change_purpose_ko": "Alpine 계열 환경에서 패키지 관리자를 준비하기 위해 필요한 플러그인을 자동으로 설치하려는 것으로 보입니다.",
+        "change_reason_ko": "PR 제목이 버전 표기뿐이어서 변경 배경을 단정할 수 없습니다.",
+        "before_ko": "`apk` 가 있으면 패키지 관리자 변수만 설정했습니다.",
+        "after_ko": "`un-get` 명령이 없으면 `curl -L` 로 원격 `.plg` 파일을 `/tmp` 에 내려받고 `installplg` 로 바로 실행합니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "security",
+            "subtype": "supply_chain_unverified_execution",
+            "severity": "high",
+            "file_path": "ebook2audiobook.sh",
+            "line_reference": "`install_programs` 의 `apk` 분기에서 `un-get` 플러그인을 내려받아 실행하는 부분",
+            "evidence": "+\t\t\t\tcurl -L -o /tmp/un-get.plg https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg\n+\t\t\t\tinstallplg /tmp/un-get.plg",
+            "problem_ko": "원격 저장소의 `master` 브랜치에서 실행 파일을 내려받아 곧바로 실행합니다. 커밋 고정도, 체크섬이나 서명 검증도 없습니다.",
+            "impact_ko": "해당 저장소가 침해되거나 소유자가 파일을 바꾸면, 이 설치 스크립트를 실행한 모든 시스템에서 공격자의 코드가 실행됩니다. 전형적인 공급망 원격 코드 실행 경로입니다.",
+            "recommendation_ko": "다운로드 URL 을 변경 불가능한 커밋 해시로 고정하고, 알려진 체크섬이나 서명을 검증한 뒤에만 `installplg` 를 실행합니다.",
+            "confidence": 0.9
+          }
+        ],
+        "affected_roles": [
+          "backend",
+          "qa",
+          "project_manager"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "설치 스크립트가 외부 저장소의 최신 파일을 그대로 실행하게 됩니다. 그 저장소가 변조되면 설치를 실행한 시스템에서 임의 코드가 실행됩니다.",
+            "evidence": "+\t\t\t\tcurl -L -o /tmp/un-get.plg https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg\n+\t\t\t\tinstallplg /tmp/un-get.plg"
+          },
+          {
+            "role": "qa",
+            "impact_ko": "네트워크가 없거나 원격 파일이 바뀐 상황에서 설치가 어떻게 동작하는지 확인해야 합니다.",
+            "evidence": "+\t\t\t\tcurl -L -o /tmp/un-get.plg https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg\n+\t\t\t\tinstallplg /tmp/un-get.plg"
+          },
+          {
+            "role": "project_manager",
+            "impact_ko": "제3자 저장소에 대한 의존이 새로 생기므로 공급망 정책 검토가 필요합니다.",
+            "evidence": "+\t\t\t\tcurl -L -o /tmp/un-get.plg https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg\n+\t\t\t\tinstallplg /tmp/un-get.plg"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "다운로드 대상을 변경되지 않는 커밋 해시로 고정하고, 체크섬이나 서명을 검증한 뒤에만 실행합니다.",
+            "evidence": "+\t\t\t\tcurl -L -o /tmp/un-get.plg https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg\n+\t\t\t\tinstallplg /tmp/un-get.plg"
+          },
+          {
+            "role": "backend",
+            "task_ko": "검증 실패 시 설치를 중단하도록 오류 처리를 추가합니다.",
+            "evidence": "+\t\t\t\tcurl -L -o /tmp/un-get.plg https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg\n+\t\t\t\tinstallplg /tmp/un-get.plg"
+          }
+        ],
+        "needs_confirmation": [
+          "`installplg` 가 어떤 권한으로 실행되는지는 이 diff 에 나타나지 않아 영향 범위를 확정할 수 없습니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": true,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "security-002",
+      "classification": {
+        "category": "security",
+        "subtype": "supply_chain_unverified_execution",
+        "difficulty": "medium",
+        "programming_language": "Shell",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "security"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "5320",
+        "repository": "DrewThomasson/ebook2audiobook",
+        "pr_number": 1291,
+        "commit_sha": "",
+        "source_url": "https://github.com/DrewThomasson/ebook2audiobook/pull/1291",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.488363+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "ebook2audiobook.sh",
+        "pr_title_original": "v25.12.13",
+        "pr_title_ko": "v25.12.13",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -406,9 +406,9 @@ function install_programs {\n \t\t\t$SUDO apt-get update\n \t\t\tPACK_MGR=\"apt-get install\"\n \t\t\tPACK_MGR_OPTIONS=\"-y\"\n-\t\telif command -v apk &> /dev/null; then\n+\t\telif [[ -f /etc/unraid-version ]] || command -v installplg &>/dev/null; then\n \t\t\tif ! command -v un-get &>/dev/null; then\n-\t\t\t\techo \"Installing un-get plugin...\"\n+\t\t\t\techo \"  → Installing un-get plugin...\"\n \t\t\t\tcurl -L -o /tmp/un-get.plg https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg\n \t\t\t\tinstallplg /tmp/un-get.plg",
+        "diff_truncated": false,
+        "review_comment_original": "The `curl` + `installplg` flow downloads and executes the `un-get` plugin directly from `https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg` without any pinning or integrity verification, creating a supply-chain RCE risk if that upstream repository or transport is compromised. An attacker who controls or intercepts that URL can supply a malicious `.plg` that will be installed with your script’s privileges on every run. To mitigate this, pin to a specific, trusted release (e.g., versioned URL or commit), and verify a checksum or signature before calling `installplg`.",
+        "review_comment_ko": "`curl` 과 `installplg` 흐름이 `https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg` 에서 `un-get` 플러그인을 고정이나 무결성 검증 없이 내려받아 실행합니다. 해당 파일이 변조되면 공급망 원격 코드 실행 위험이 생깁니다.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "플러그인 설치 분기의 조건을 `apk` 존재 여부에서 Unraid 환경 판정(`/etc/unraid-version` 또는 `installplg` 존재)으로 바꾸고 안내 문구를 다듬습니다.",
+        "change_purpose_ko": "플러그인 설치 경로가 Alpine 이 아니라 Unraid 환경에서 동작하도록 분기 조건을 바로잡으려는 것으로 보입니다.",
+        "change_reason_ko": "PR 제목이 버전 표기뿐이어서 변경 배경을 단정할 수 없습니다.",
+        "before_ko": "`elif command -v apk &> /dev/null; then` 으로 Alpine 패키지 관리자 존재 여부를 보고 분기했습니다.",
+        "after_ko": "`elif [[ -f /etc/unraid-version ]] || command -v installplg &>/dev/null; then` 으로 Unraid 환경을 판정합니다. 내부의 다운로드·실행 흐름은 그대로 유지됩니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "security",
+            "subtype": "supply_chain_unverified_execution",
+            "severity": "high",
+            "file_path": "ebook2audiobook.sh",
+            "line_reference": "Unraid 분기 안의 `curl` 다운로드와 `installplg` 실행",
+            "evidence": "+\t\telif [[ -f /etc/unraid-version ]] || command -v installplg &>/dev/null; then",
+            "problem_ko": "분기 조건만 바꾸고 그 안의 다운로드·실행 흐름은 손대지 않았습니다. 여전히 원격 `master` 브랜치의 파일을 검증 없이 내려받아 실행합니다.",
+            "impact_ko": "조건 수정으로 이 경로를 타는 환경이 오히려 명확해졌지만, 원격 파일이 변조되면 임의 코드가 실행되는 위험은 그대로입니다.",
+            "recommendation_ko": "다운로드 대상을 커밋 해시로 고정하고 체크섬 검증을 통과한 경우에만 `installplg` 를 실행하도록 함께 수정합니다.",
+            "confidence": 0.9
+          }
+        ],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "분기 조건은 정확해졌지만 검증 없는 원격 실행 흐름은 그대로 남아 있습니다.",
+            "evidence": "+\t\telif [[ -f /etc/unraid-version ]] || command -v installplg &>/dev/null; then"
+          },
+          {
+            "role": "qa",
+            "impact_ko": "Alpine 환경과 Unraid 환경에서 각각 어느 분기를 타는지 확인해야 합니다.",
+            "evidence": "+\t\telif [[ -f /etc/unraid-version ]] || command -v installplg &>/dev/null; then"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "분기 조건 수정과 별개로, 원격 플러그인 다운로드에 커밋 고정과 무결성 검증을 추가합니다.",
+            "evidence": "+\t\telif [[ -f /etc/unraid-version ]] || command -v installplg &>/dev/null; then"
+          }
+        ],
+        "needs_confirmation": [
+          "분기 조건 변경으로 기존 Alpine 사용자가 어느 경로를 타게 되는지는 스크립트 전체를 봐야 확인할 수 있습니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": true,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "security-003",
+      "classification": {
+        "category": "security",
+        "subtype": "caller_controlled_fee",
+        "difficulty": "hard",
+        "programming_language": "Solidity",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "security"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "4426",
+        "repository": "CryptoBlades/cryptoblades",
+        "pr_number": 582,
+        "commit_sha": "",
+        "source_url": "https://github.com/CryptoBlades/cryptoblades/pull/582",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.400627+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "contracts/cryptoblades.sol",
+        "pr_title_original": "feature choose weapon element on forge",
+        "pr_title_ko": "무기 제작 시 속성을 선택하는 기능",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -711,24 +711,24 @@ contract CryptoBlades is Initializable, AccessControlUpgradeable {\n         }\n     }*/\n \n-    function mintWeaponN(uint32 num)\n+    function mintWeaponN(uint32 num, uint16 chosenElement, uint16 chosenElementFee)\n         public\n         onlyNonContract\n         oncePerBlock(msg.sender)\n     {\n         require(num > 0 && num <= 10);\n-        _payContract(msg.sender, mintWeaponFee * num);\n+        _payContract(msg.sender, mintWeaponFee * num * chosenElementFee);\n \n         for (uint i = 0; i < num; i++) {\n-            weapons.mint(msg.sender, uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), msg.sender, i))));\n+            weapons.mint(msg.sender, uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), msg.sender, i))), chosenElement);\n         }\n     }\n \n-    function mintWeapon() public onlyNonContract oncePerBlock(msg.sender) {\n-        _payContract(msg.sender, mintWeaponFee);\n+    function mintWeapon(uint16 chosenElement, uint16 chosenElementFee) public onlyNonContract oncePerBlock(msg.sender) {",
+        "diff_truncated": false,
+        "review_comment_original": "Same chosenElementFee vulnerability here.",
+        "review_comment_ko": "여기에도 같은 `chosenElementFee` 취약점이 있습니다.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "`mintWeaponN` 과 관련 함수의 시그니처에 `chosenElement` 와 `chosenElementFee` 파라미터를 추가합니다.",
+        "change_purpose_ko": "무기를 제작할 때 사용자가 속성을 선택할 수 있게 하고, 그에 따른 추가 수수료를 반영하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 제작 시 속성 선택 기능을 추가하는 작업입니다.",
+        "before_ko": "`function mintWeaponN(uint32 num)` 이 수량만 받고 `_payContract(msg.sender, mintWeaponFee * num)` 으로 고정 수수료를 청구했습니다.",
+        "after_ko": "`function mintWeaponN(uint32 num, uint16 chosenElement, uint16 chosenElementFee)` 로 바뀌어 속성과 그 수수료를 호출자가 함께 전달합니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "security",
+            "subtype": "caller_controlled_fee",
+            "severity": "high",
+            "file_path": "contracts/cryptoblades.sol",
+            "line_reference": "`mintWeaponN` 의 시그니처에 추가된 `chosenElementFee` 파라미터",
+            "evidence": "+    function mintWeaponN(uint32 num, uint16 chosenElement, uint16 chosenElementFee)",
+            "problem_ko": "수수료 금액을 외부 호출자가 인자로 전달하도록 시그니처를 바꿨습니다. 컨트랙트가 이 값을 신뢰하면 호출자가 원하는 값을 넣어 실제 수수료를 낮추거나 없앨 수 있습니다.",
+            "impact_ko": "제작 수수료를 우회할 수 있게 되어 프로토콜 수익이 유출됩니다. 온체인 컨트랙트이므로 배포 후에는 되돌리기 어렵습니다.",
+            "recommendation_ko": "수수료 값을 호출자 입력으로 받지 말고, 컨트랙트에 저장된 속성별 수수료 값을 조회해 사용합니다.",
+            "confidence": 0.75
+          }
+        ],
+        "affected_roles": [
+          "backend",
+          "frontend",
+          "qa",
+          "project_manager"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "수수료 계산에 쓰이는 값을 외부 호출자가 직접 지정하게 됩니다. 컨트랙트가 값을 검증하지 않으면 수수료를 우회할 수 있습니다.",
+            "evidence": "+    function mintWeaponN(uint32 num, uint16 chosenElement, uint16 chosenElementFee)"
+          },
+          {
+            "role": "frontend",
+            "impact_ko": "제작 호출 시 속성과 수수료 인자를 함께 전달해야 합니다.",
+            "evidence": "+    function mintWeaponN(uint32 num, uint16 chosenElement, uint16 chosenElementFee)"
+          },
+          {
+            "role": "qa",
+            "impact_ko": "`chosenElementFee` 에 0 이나 비정상 값을 넣어 호출했을 때 어떻게 되는지 확인해야 합니다.",
+            "evidence": "+    function mintWeaponN(uint32 num, uint16 chosenElement, uint16 chosenElementFee)"
+          },
+          {
+            "role": "project_manager",
+            "impact_ko": "수수료 정책이 코드로 강제되는지 확인이 필요합니다. 자산 손실로 직결될 수 있습니다.",
+            "evidence": "+    function mintWeaponN(uint32 num, uint16 chosenElement, uint16 chosenElementFee)"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "`chosenElementFee` 를 호출자 입력이 아니라 컨트랙트가 보유한 값에서 조회하도록 바꿉니다.",
+            "evidence": "+    function mintWeaponN(uint32 num, uint16 chosenElement, uint16 chosenElementFee)"
+          },
+          {
+            "role": "backend",
+            "task_ko": "같은 패턴이 적용된 다른 제작 함수들도 함께 점검합니다.",
+            "evidence": "+    function mintWeaponN(uint32 num, uint16 chosenElement, uint16 chosenElementFee)"
+          }
+        ],
+        "needs_confirmation": [
+          "함수 본문에서 `chosenElementFee` 를 검증하는지는 diff 에 잘려 있어 확인할 수 없습니다. 리뷰어가 \"같은 취약점\" 이라고 표현한 것으로 보아 다른 함수에서 이미 지적된 사안으로 보입니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": true,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "security-004",
+      "classification": {
+        "category": "security",
+        "subtype": "certificate_handling",
+        "difficulty": "medium",
+        "programming_language": "Go",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "security"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "5887",
+        "repository": "FiloSottile/mkcert",
+        "pr_number": 38,
+        "commit_sha": "",
+        "source_url": "https://github.com/FiloSottile/mkcert/pull/38",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.544771+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "truststore_java.go",
+        "pr_title_original": "support install into java cacerts file",
+        "pr_title_ko": "Java cacerts 파일에 설치하는 기능 지원",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -0,0 +1,121 @@\n+package main\n+\n+import (\n+\t\"bytes\"\n+\t\"crypto/sha1\"\n+\t\"crypto/sha256\"\n+\t\"crypto/x509\"\n+\t\"encoding/hex\"\n+\t\"encoding/pem\"\n+\t\"fmt\"\n+\t\"hash\"\n+\t\"io/ioutil\"\n+\t\"os\"\n+\t\"os/exec\"\n+\t\"path\"\n+\t\"strings\"\n+)\n+\n+var (\n+\thasJava    bool\n+\thasKeytool bool\n+\n+\tjavaHome    string\n+\tcacertsPath string\n+\tkeytoolPath string\n+\tstorePass   string = \"changeit\"\n+)\n+\n+func init() {\n+\tif v := os.Getenv(\"JAVA_HOME\"); v != \"\" {\n+\t\thasJava = true\n+\t\tjavaHome = v\n+\n+\t\t_, err := os.Stat(path.Join(v, \"bin/keytool\"))\n+\t\tif err == nil {\n+\t\t\thasKeytool = true\n+\t\t\tkeytoolPath = path.Join(v, \"bin/keytool\")\n+\t\t}\n+\n+\t\tcacertsPath = path.Join(v, \"jre/lib/security/cacerts\")\n+\t}\n+}\n+\n+func (m *mkcert) checkJava() bool {\n+\t// exists returns true if the given x509.Certificate's fingerprint\n+\t// is in the keytool -list output\n+\texists := func(c *x509.Certificate, h hash.Hash, keytoolOutput []byte) bool {\n+\t\t_, err := h.Write(c.Raw)\n+\t\tif err != nil {\n+\t\t\treturn false\n+\t\t}\n+\t\t// keytool outputs SHA1 and SHA256 certificates in uppercase hex\n+\t\t// with each octet pair deliniated by \":\"\n+\t\tfp := []byte(strings.ToUpper(hex.EncodeToString(h.Sum(nil))))\n+\t\treturn bytes.Contains(keytoolOutput, fp)\n+\t}\n+\n+\tkeytoolOutput, err := exec.Command(keytoolPath, \"-list\", \"-keystore\", cacertsPath, \"-storepass\", storePass).CombinedOutput()\n+\tif err != nil {\n+\t\thasKeytool = false\n+\t\treturn false\n+\t}\n+\tkeytoolOutput = bytes.Replace(keytoolOutput, []byte(\":\"), nil, -1) // drop : in whole thing\n+\n+\t// pre-Java 9 uses SHA1 fingerprints\n+\ts1, s256 := sha1.New(), sha256.New()\n+\treturn exists(m.caCert, s1, keytoolOutput) || exists(m.caCert, s256, keytoolOutput)\n+}\n+\n+func (m *mkcert) installJava() {\n+\ttmp, err := ioutil.TempFile(\"\", \"mkcert-java\")\n+\tfatalIfErr(err, \"failed creating temp file for java install\")\n+\tdefer os.Remove(tmp.Name())\n+\n+\terr = ioutil.WriteFile(tmp.Name(), pem.EncodeToMemory(&pem.Block{\n+\t\tType:  \"CERTIFICATE\",\n+\t\tBytes: m.caCert.Raw,\n+\t}), 0644)\n+\tfatalIfErr(err, \"failed to write java cert into temp file\")",
+        "diff_truncated": false,
+        "review_comment_original": "Could you use the certificate file on disk? See for example the macOS `security` input.",
+        "review_comment_ko": "디스크에 있는 인증서 파일을 사용할 수 있을까요? 예를 들어 macOS 의 `security` 입력 방식을 참고해 주세요.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "Java 트러스트스토어(`cacerts`)에 루트 인증서를 설치하는 `truststore_java.go` 를 새로 추가합니다.",
+        "change_purpose_ko": "mkcert 가 만든 로컬 CA 인증서를 Java 애플리케이션도 신뢰하도록 `cacerts` 에 등록하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 Java cacerts 파일 설치 지원이 목적입니다.",
+        "before_ko": "Java 트러스트스토어를 다루는 코드가 없었습니다. 이 diff 는 파일 전체를 새로 추가합니다.",
+        "after_ko": "`crypto/x509`, `encoding/pem`, `crypto/sha1`, `crypto/sha256` 등을 사용해 인증서를 다루는 구현이 추가되었습니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "security",
+            "subtype": "certificate_handling",
+            "severity": "medium",
+            "file_path": "truststore_java.go",
+            "line_reference": "`truststore_java.go` 의 인증서 처리 구현부",
+            "evidence": "+\t\"crypto/sha1\"",
+            "problem_ko": "인증서를 디스크의 원본 파일이 아니라 코드에서 재구성해 다루고 있습니다. 다른 플랫폼 구현(macOS `security`)은 파일 경로를 그대로 넘기는 방식을 쓰고 있어 처리 방식이 일관되지 않습니다.",
+            "impact_ko": "인코딩·재구성 과정에서 원본과 다른 바이트열이 트러스트스토어에 등록될 수 있습니다. 신뢰 체인이 의도와 다르게 구성될 여지가 생깁니다.",
+            "recommendation_ko": "macOS 경로와 동일하게 디스크에 있는 인증서 파일을 입력으로 사용해 처리 방식을 일치시킵니다.",
+            "confidence": 0.7
+          }
+        ],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "인증서를 메모리에서 재구성하는 대신 디스크의 원본 파일을 쓰면 인코딩 과정에서 값이 달라질 여지가 줄어듭니다.",
+            "evidence": "+\t\"crypto/sha1\""
+          },
+          {
+            "role": "qa",
+            "impact_ko": "설치된 인증서가 원본과 동일한지, Java 애플리케이션이 실제로 신뢰하는지 확인해야 합니다.",
+            "evidence": "+\t\"crypto/sha1\""
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "macOS `security` 경로와 동일하게 디스크의 인증서 파일을 직접 입력으로 사용하도록 정리합니다.",
+            "evidence": "+\t\"crypto/sha1\""
+          }
+        ],
+        "needs_confirmation": [
+          "현재 구현이 인증서를 어떤 형태로 만들어 전달하는지는 diff 앞부분(import 목록)만으로는 확인할 수 없습니다.",
+          "`crypto/sha1` 을 사용하는 목적이 지문 계산인지 다른 용도인지 확인이 필요합니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": true,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "performance-001",
+      "classification": {
+        "category": "performance",
+        "subtype": "duplicate_disk_load",
+        "difficulty": "hard",
+        "programming_language": "Python",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "performance"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "3601",
+        "repository": "Chia-Network/chia-blockchain",
+        "pr_number": 19630,
+        "commit_sha": "",
+        "source_url": "https://github.com/Chia-Network/chia-blockchain/pull/19630",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.320106+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "chia/data_layer/data_store.py",
+        "pr_title_original": "Optimize add missing files",
+        "pr_title_ko": "누락 파일 추가 로직 최적화",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -1667,20 +1667,21 @@ async def write_tree_to_file(\n         if node_hash == bytes32.zeros:\n             return\n \n+        delta_file_cache = DeltaFileCache()\n+        with log_exceptions(log=log, message=\"Error while getting merkle blob\"):\n+            root_path = self.get_merkle_path(store_id=store_id, root_hash=root.node_hash)\n+        delta_file_cache.load_hash_to_index(root_path)\n         merkle_blob = await self.get_merkle_blob(store_id=store_id, root_hash=root.node_hash)",
+        "diff_truncated": false,
+        "review_comment_original": "i think this is loading the blob from disk twice?  i would have to look back, but i think i figured out how to pass a pyo3 object back into rust without overhead which would allow these to be re-ordered with the already loaded merkle blob being passed to the delta file cache.  this would still avoid asking the blob to create a python dict or whatever and then passing that back into a conversion back to rust.",
+        "review_comment_ko": "이 부분이 blob 을 디스크에서 두 번 읽는 것 같은데요? 다시 확인해 봐야겠지만, pyo3 객체를 오버헤드 없이 rust 로 되돌려 넘기는 방법을 알아낸 것 같습니다. 그러면 이미 로드된 merkle blob 을 delta 파일 캐시에 넘기도록 순서를 바꿀 수 있습니다.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "`write_tree_to_file()` 에서 `DeltaFileCache` 를 만들고 루트 경로로 해시 인덱스를 로드한 뒤, 이어서 merkle blob 을 가져옵니다.",
+        "change_purpose_ko": "누락된 파일을 추가하는 과정의 성능을 개선하기 위해 delta 파일 캐시를 도입합니다.",
+        "change_reason_ko": "PR 제목에 따르면 누락 파일 추가 경로의 최적화가 목적입니다.",
+        "before_ko": "`merkle_blob = await self.get_merkle_blob(...)` 로 blob 을 가져오는 것으로 시작했습니다.",
+        "after_ko": "`delta_file_cache.load_hash_to_index(root_path)` 로 먼저 디스크에서 인덱스를 읽고, 그 다음에 `get_merkle_blob()` 을 호출합니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "performance",
+            "subtype": "duplicate_disk_load",
+            "severity": "medium",
+            "file_path": "chia/data_layer/data_store.py",
+            "line_reference": "`write_tree_to_file()` 의 `load_hash_to_index()` 호출과 뒤이은 `get_merkle_blob()` 호출",
+            "evidence": "+        delta_file_cache.load_hash_to_index(root_path)\n         merkle_blob = await self.get_merkle_blob(store_id=store_id, root_hash=root.node_hash)",
+            "problem_ko": "delta 파일 캐시가 루트 경로에서 해시 인덱스를 읽은 직후, 같은 루트 해시로 merkle blob 을 다시 가져옵니다. 같은 데이터를 디스크에서 두 번 읽습니다.",
+            "impact_ko": "성능 개선을 목적으로 한 변경이 오히려 디스크 읽기를 한 번 더 늘립니다. blob 이 큰 저장소일수록 손해가 커집니다.",
+            "recommendation_ko": "merkle blob 을 먼저 가져온 뒤 그 객체를 delta 파일 캐시에 전달해, 디스크 읽기를 한 번으로 줄입니다.",
+            "confidence": 0.75
+          }
+        ],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "같은 blob 데이터를 서로 다른 두 경로가 각각 디스크에서 읽습니다. 최적화를 위한 변경이 오히려 I/O 를 늘립니다.",
+            "evidence": "+        delta_file_cache.load_hash_to_index(root_path)\n         merkle_blob = await self.get_merkle_blob(store_id=store_id, root_hash=root.node_hash)"
+          },
+          {
+            "role": "qa",
+            "impact_ko": "트리 파일 작성 시간과 디스크 읽기량을 변경 전후로 비교해야 합니다.",
+            "evidence": "+        delta_file_cache.load_hash_to_index(root_path)\n         merkle_blob = await self.get_merkle_blob(store_id=store_id, root_hash=root.node_hash)"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "이미 로드한 merkle blob 을 delta 파일 캐시에 전달하도록 호출 순서를 바꿔 중복 읽기를 없앱니다.",
+            "evidence": "+        delta_file_cache.load_hash_to_index(root_path)\n         merkle_blob = await self.get_merkle_blob(store_id=store_id, root_hash=root.node_hash)"
+          }
+        ],
+        "needs_confirmation": [
+          "리뷰어도 \"다시 확인해 봐야겠다\" 고 밝혔습니다. `load_hash_to_index()` 와 `get_merkle_blob()` 이 실제로 같은 파일을 읽는지는 두 함수 구현을 확인해야 합니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": true,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "performance-002",
+      "classification": {
+        "category": "performance",
+        "subtype": "missing_preallocation",
+        "difficulty": "easy",
+        "programming_language": "Go",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "performance"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "4674",
+        "repository": "DiceDB/dice",
+        "pr_number": 197,
+        "commit_sha": "",
+        "source_url": "https://github.com/DiceDB/dice/pull/197",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.425241+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "core/store.go",
+        "pr_title_original": "feat: support KEYS command",
+        "pr_title_ko": "feat: KEYS 명령 지원",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -140,6 +145,23 @@ func DelByPtr(ptr unsafe.Pointer) bool {\n \treturn false\n }\n \n+// List all keys in the store by given pattern\n+func Keys(p string) []string {\n+\tstoreMutex.RLock()\n+\tdefer storeMutex.RUnlock()\n+\tkeypoolMutex.RLock()\n+\tdefer keypoolMutex.RUnlock()\n+\n+\tkeys := make([]string, 0)",
+        "diff_truncated": false,
+        "review_comment_original": "We might be able to do a small optimization here, if the pattern is an empty string, then preallocate the slice's capacity to be the same as the length of the keypool (to avoid frequent allocations)",
+        "review_comment_ko": "여기서 작은 최적화가 가능할 것 같습니다. 패턴이 빈 문자열이면 슬라이스 용량을 keypool 길이와 같게 미리 할당하면 잦은 재할당을 피할 수 있습니다.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "저장소의 키를 패턴으로 조회하는 `Keys(p string) []string` 함수를 추가합니다.",
+        "change_purpose_ko": "Redis 의 `KEYS` 명령을 지원하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 `KEYS` 명령 지원 추가가 목적입니다.",
+        "before_ko": "키 목록을 조회하는 함수가 없었습니다.",
+        "after_ko": "`Keys()` 가 추가되어 뮤텍스를 읽기 잠금한 뒤 `keys := make([]string, 0)` 으로 슬라이스를 만들고 키를 채웁니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "performance",
+            "subtype": "missing_preallocation",
+            "severity": "low",
+            "file_path": "core/store.go",
+            "line_reference": "`Keys()` 함수의 결과 슬라이스 생성",
+            "evidence": "+\tkeys := make([]string, 0)",
+            "problem_ko": "결과를 담을 슬라이스를 용량 지정 없이 생성합니다. 키를 추가할 때마다 용량이 부족해지면 새 배열을 할당하고 기존 값을 복사합니다.",
+            "impact_ko": "키가 많을수록 재할당과 복사가 반복되어 조회 지연과 메모리 사용량이 늘어납니다. `KEYS` 는 전체 키를 훑는 명령이라 영향이 직접적입니다.",
+            "recommendation_ko": "예상 결과 크기를 알 수 있을 때(예: 패턴이 비어 모든 키가 대상일 때) `make([]string, 0, len(keypool))` 처럼 용량을 미리 지정합니다.",
+            "confidence": 0.85
+          }
+        ],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "키가 많은 저장소에서 결과 슬라이스가 여러 번 재할당되고 복사됩니다. 조회 지연과 메모리 사용량이 함께 늘어납니다.",
+            "evidence": "+\tkeys := make([]string, 0)"
+          },
+          {
+            "role": "qa",
+            "impact_ko": "키가 많은 상태에서 `KEYS` 호출 지연을 측정해야 합니다.",
+            "evidence": "+\tkeys := make([]string, 0)"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "패턴이 모든 키를 포함할 때 `make([]string, 0, len(keypool))` 로 용량을 미리 잡습니다.",
+            "evidence": "+\tkeys := make([]string, 0)"
+          }
+        ],
+        "needs_confirmation": []
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": true,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "performance-003",
+      "classification": {
+        "category": "performance",
+        "subtype": "retain_cycle_avoidance",
+        "difficulty": "medium",
+        "programming_language": "Swift",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "performance"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "1945",
+        "repository": "Automattic/pocket-casts-ios",
+        "pr_number": 3005,
+        "commit_sha": "",
+        "source_url": "https://github.com/Automattic/pocket-casts-ios/pull/3005",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.156883+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "podcasts/WatchManager+Send.swift",
+        "pr_title_original": "Watch Log crash fix",
+        "pr_title_ko": "Watch 로그 크래시 수정",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -23,14 +23,17 @@ extension WatchManager {\n             return\n         }\n \n+        // Hold a local reference so we don't potentially run into a deallocated `self` when the below blocks are run.\n+        let cachedLog = self.cachedLog\n+\n         // since we don't know how long it takes for a send message to timeout, wait only 10 seconds for a watch response before giving up here\n         var haveCalledCompletion = false\n-        logFileRequestTimedAction.startTimer(for: 5.seconds) { [weak self] in\n+        logFileRequestTimedAction.startTimer(for: 5.seconds) { [cachedLog] in",
+        "diff_truncated": false,
+        "review_comment_original": "Keep a local copy in case self has been deallocated. It shouldn't be changing in the interim anyway and its a cached copy so isn't expected to be the most up to date.",
+        "review_comment_ko": "self 가 해제된 경우를 대비해 지역 복사본을 유지합니다. 어차피 그 사이에 값이 바뀌지 않을 것이고, 캐시된 사본이라 항상 최신이어야 하는 것도 아닙니다.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "타이머 클로저가 `self` 를 약한 참조로 캡처하던 것을 `cachedLog` 값만 캡처하도록 바꿉니다.",
+        "change_purpose_ko": "Watch 로그 전송 과정에서 발생하던 크래시를 막기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 Watch 로그 관련 크래시 수정이 목적입니다.",
+        "before_ko": "`logFileRequestTimedAction.startTimer(for: 5.seconds) { [weak self] in` 으로 `self` 를 약하게 캡처했습니다.",
+        "after_ko": "클로저 밖에서 `let cachedLog = self.cachedLog` 로 값을 복사한 뒤 `{ [cachedLog] in` 으로 값만 캡처합니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "performance",
+            "subtype": "retain_cycle_avoidance",
+            "severity": "medium",
+            "file_path": "podcasts/WatchManager+Send.swift",
+            "line_reference": "`logFileRequestTimedAction.startTimer` 클로저의 캡처 목록",
+            "evidence": "-        logFileRequestTimedAction.startTimer(for: 5.seconds) { [weak self] in",
+            "problem_ko": "5초 뒤 실행되는 타이머 클로저가 `self` 를 캡처합니다. 그 사이에 객체가 해제되면 클로저 안에서 해제된 인스턴스에 접근하게 됩니다.",
+            "impact_ko": "타이머가 발화하는 시점에 화면이 이미 사라졌다면 크래시가 발생합니다. 사용자가 화면을 빠르게 전환할 때 재현됩니다.",
+            "recommendation_ko": "필요한 값(`cachedLog`)만 미리 지역 변수로 복사해 캡처하고, 클로저가 `self` 에 의존하지 않도록 합니다.",
+            "confidence": 0.75
+          }
+        ],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "클로저가 더 이상 `self` 에 의존하지 않아, 타이머가 실행될 때 객체가 이미 해제되어 있어도 안전합니다. 대신 캡처한 값은 복사 시점 기준으로 고정됩니다.",
+            "evidence": "-        logFileRequestTimedAction.startTimer(for: 5.seconds) { [weak self] in"
+          },
+          {
+            "role": "qa",
+            "impact_ko": "화면을 빠르게 벗어나는 상황에서 로그 전송이 크래시 없이 동작하는지 확인해야 합니다.",
+            "evidence": "-        logFileRequestTimedAction.startTimer(for: 5.seconds) { [weak self] in"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "같은 파일의 다른 타이머 클로저에도 동일한 캡처 문제가 있는지 점검합니다.",
+            "evidence": "-        logFileRequestTimedAction.startTimer(for: 5.seconds) { [weak self] in"
+          }
+        ],
+        "needs_confirmation": [
+          "`cachedLog` 가 값 타입인지 참조 타입인지에 따라 복사의 의미가 달라집니다. 이 diff 만으로는 확인할 수 없습니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": true,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "performance-004",
+      "classification": {
+        "category": "performance",
+        "subtype": "benchmark_granularity",
+        "difficulty": "medium",
+        "programming_language": "Go",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "performance"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "4690",
+        "repository": "DiceDB/dice",
+        "pr_number": 229,
+        "commit_sha": "",
+        "source_url": "https://github.com/DiceDB/dice/pull/229",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.426906+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "core/queueref_test.go",
+        "pr_title_original": "#184 : Test cases and benchmarking for queueref remove",
+        "pr_title_ko": "#184 : queueref remove 에 대한 테스트 케이스와 벤치마크",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -56,3 +59,152 @@ func TestQueueRef(t *testing.T) {\n \t\tt.Error(\"iterating through the queueref should return the objs in the order they were added. Expected: \", expectedVals, \" Got: \", observedVals)\n \t}\n }\n+\n+// Test for removing from queue with single non-expired keys\n+func TestRemoveSingleNonExpiredKeys(t *testing.T) {\n+\tqr := core.NewQueueRef()\n+\tval := 10\n+\tcore.Put(\"key1\", core.NewObj(val, -1, core.OBJ_TYPE_STRING, core.OBJ_ENCODING_INT))\n+\tqr.Insert(\"key1\")\n+\tif qe, err := qr.Remove(); err != nil || qe.Obj.Value != val {\n+\t\tt.Error(\"removal from queue with single non expired key failed, Expected : \", val, \" Got : \", qe.Obj.Value)\n+\t}\n+}\n+\n+// Test for removing from queue with multiple non-expired keys\n+func TestRemoveMultipleNonExpiredKeys(t *testing.T) {\n+\tqr := core.NewQueueRef()\n+\tval := [3]int{10, 20, 30}\n+\tcore.Put(\"key1\", core.NewObj(val[0], -1, core.OBJ_TYPE_STRING, core.OBJ_ENCODING_INT))\n+\tqr.Insert(\"key1\")\n+\tcore.Put(\"key2\", core.NewObj(val[1], -1, core.OBJ_TYPE_STRING, core.OBJ_ENCODING_INT))\n+\tqr.Insert(\"key2\")\n+\tcore.Put(\"key3\", core.NewObj(val[2], -1, core.OBJ_TYPE_STRING, core.OBJ_ENCODING_INT))\n+\tqr.Insert(\"key3\")\n+\tfor i := 0; i < len(val); i++ {\n+\t\tif qe, err := qr.Remove(); err != nil || qe.Obj.Value != val[i] {\n+\t\t\tt.Error(\"removal from queue with multiple non expired keys failed, Expected : \", val[i], \" Got : \", qe.Obj.Value)\n+\t\t\tbreak\n+\t\t}\n+\t}\n+}\n+\n+// Test for removing from queue with expired keys before non-expired\n+func TestRemoveExpiredBeforeNonExpire(t *testing.T) {\n+\tqr := core.NewQueueRef()\n+\tval := [3]int{10, 20}\n+\tcore.Put(\"key1\", core.NewObj(val[0], 1, core.OBJ_TYPE_STRING, core.OBJ_ENCODING_INT))\n+\tqr.Insert(\"key1\")\n+\tcore.Put(\"key2\", core.NewObj(val[1], -1, core.OBJ_TYPE_STRING, core.OBJ_ENCODING_INT))\n+\tqr.Insert(\"key2\")\n+\ttime.Sleep(2 * time.Millisecond)\n+\tif qe, err := qr.Remove(); err != nil || qe.Obj.Value != val[1] {\n+\t\tt.Error(\"test for removing expired key before non-expired failed , Expected : \", val[1], \" Got : \", qe.Obj.Value)\n+\t}\n+}\n+\n+// Test for removing from queue with multiple expired keys before non-expired\n+func TestRemoveMultipleExpiredBeforeNonExpire(t *testing.T) {\n+\tqr := core.NewQueueRef()\n+\tval := [3]int{10, 20, 30}\n+\tcore.Put(\"key1\", core.NewObj(val[0], 1, core.OBJ_TYPE_STRING, core.OBJ_ENCODING_INT))\n+\tqr.Insert(\"key1\")\n+\tcore.Put(\"key2\", core.NewObj(val[1], 1, core.OBJ_TYPE_STRING, core.OBJ_ENCODING_INT))\n+\tqr.Insert(\"key2\")\n+\tcore.Put(\"key3\", core.NewObj(val[2], -1, core.OBJ_TYPE_STRING, core.OBJ_ENCODING_INT))\n+\tqr.Insert(\"key3\")\n+\ttime.Sleep(2 * time.Millisecond)\n+\tif qe, err := qr.Remove(); err != nil || qe.Obj.Value != val[2] {\n+\t\tt.Error(\"test for removing mulitple expired key before non-expired failed , Expected : \", val[2], \" Got : \", qe.Obj.Value)\n+\t}\n+}\n+\n+// Test for removing from queue with all expired keys\n+func TestRemoveAllExpired(t *testing.T) {\n+\tqr := core.NewQueueRef()\n+\tval := [3]int{10, 20, 30}\n+\tcore.Put(\"key1\", core.NewObj(val[0], 1, core.OBJ_TYPE_STRING, core.OBJ_ENCODING_INT))\n+\tqr.Insert(\"key1\")\n+\tcore.Put(\"key2\", core.NewObj(val[1], 1, core.OBJ_TYPE_STRING, core.OBJ_ENCODING_INT))\n+\tqr.Insert(\"key2\")\n+\tcore.Put(\"key3\", core.NewObj(val[2], 1, core.OBJ_TYPE_STRING, core.OBJ_ENCODING_INT))\n+\tqr.Insert(\"key3\")\n+\ttime.Sleep(2 * time.Millisecond)\n+\tif _, err := qr.Remove(); err == nil {\n+\t\tt.Error(\"test for removing all expired key failed, Expected : \", core.ErrQueueEmpty, \" Got : \", err)\n+\t}\n+\t// remove from empty queue\n+\tif _, err := qr.Remove(); err == nil {\n+\t\tfmt.Println(err)\n+\t\tt.Error(\"test for removing from empty queue failed Expected : \", core.ErrQueueEmpty, \" Got : \", err)\n+\t}\n+}\n+\n+// Benchmark queueref by inserting expired, non-expired and expired keys in order and removing them\n+func BenchmarkQueueRef(b *testing.B) {",
+        "diff_truncated": false,
+        "review_comment_original": "I have a few suggestions to improve the benchmark:\r\n\r\n1. Let's split the benchmark into separate operations - insertion and removal. This will give us more granular performance insights for each operation.\r\n2. Please use `b.Run()` calls to create sub-benchmarks for different data sizes and operations.\r\n3. Call `b.ResetTimer()` to ensure we're only timing the operations we intend to measure, not the setup code. Once the setup is complete (initializing queue, dataset, channel, etc.) make a call to `b.ResetTimer()` to ensure these operations don't affect the benchmark results.\r\n\r\nYou can probably structure it this way:\r\n\r\n```go\r\nfunc BenchmarkQueueRef(b *testing.B) {\r\n    benchmarkCases := []struct {\r\n        name         string\r\n        expiredFirst int\r\n        nonExpired   int\r\n        expiredLast  int\r\n    }{\r\n        {\"Small\", 10, 20, 30},\r\n        {\"Medium\", 100, 200, 300},\r\n        {\"Large\", 100, 2000, 3000},\r\n        {\"VeryLarge\", 10000, 20000, 30000},\r\n    }\r\n\r\n    for _, bc := range benchmarkCases {\r\n        // Setup code...\r\n\r\n        b.Run(fmt.Sprintf(\"%s_Insert\", bc.name), func(b *testing.B) {\r\n            for i := 0; i < b.N; i++ {\r\n                // Insertion benchmark...\r\n            }\r\n        })\r\n\r\n        b.Run(fmt.Sprintf(\"%s_Remove\", bc.name), func(b *testing.B) {\r\n            for i := 0; i < b.N; i++ {\r\n                // Removal benchmark...\r\n            }\r\n        })\r\n    }\r\n}",
+        "review_comment_ko": "벤치마크를 개선할 몇 가지 제안이 있습니다.\n\n1. 벤치마크를 삽입과 제거로 분리합시다. 각 연산에 대해 더 세밀한 성능 정보를 얻을 수 있습니다.\n2. `b.Run()` 호출을 사용해 주세요.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "`queueref` 의 제거 동작에 대한 테스트와 벤치마크를 추가합니다.",
+        "change_purpose_ko": "큐 참조 자료구조의 제거 연산을 검증하고 성능을 측정하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 이슈 #184 에 대한 테스트와 벤치마크 추가가 목적입니다.",
+        "before_ko": "`TestQueueRef` 만 있었고 제거 동작에 대한 별도 테스트와 벤치마크가 없었습니다.",
+        "after_ko": "`TestRemoveSingleNonExpiredKeys` 등 제거 관련 테스트와 벤치마크가 추가되었습니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "performance",
+            "subtype": "benchmark_granularity",
+            "severity": "low",
+            "file_path": "core/queueref_test.go",
+            "line_reference": "추가된 queueref 테스트·벤치마크 블록",
+            "evidence": "+// Test for removing from queue with single non-expired keys\n+func TestRemoveSingleNonExpiredKeys(t *testing.T) {",
+            "problem_ko": "삽입과 제거를 하나의 벤치마크에서 함께 측정하면 각 연산의 비용을 분리해 볼 수 없습니다. `b.Run()` 으로 하위 벤치마크를 나누지도 않았습니다.",
+            "impact_ko": "성능 회귀가 생겼을 때 어느 연산에서 발생했는지 알 수 없어 원인 추적이 어렵습니다.",
+            "recommendation_ko": "삽입과 제거를 별도 벤치마크로 분리하고 `b.Run()` 으로 이름 붙인 하위 벤치마크를 구성합니다.",
+            "confidence": 0.7
+          }
+        ],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "삽입과 제거를 한 벤치마크에 묶으면 어느 연산이 느린지 구분할 수 없습니다.",
+            "evidence": "+// Test for removing from queue with single non-expired keys\n+func TestRemoveSingleNonExpiredKeys(t *testing.T) {"
+          },
+          {
+            "role": "qa",
+            "impact_ko": "벤치마크 결과를 연산별로 비교할 수 있어야 회귀를 잡을 수 있습니다.",
+            "evidence": "+// Test for removing from queue with single non-expired keys\n+func TestRemoveSingleNonExpiredKeys(t *testing.T) {"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "qa",
+            "task_ko": "벤치마크를 삽입과 제거로 나누고 `b.Run()` 으로 하위 벤치마크를 구성합니다.",
+            "evidence": "+// Test for removing from queue with single non-expired keys\n+func TestRemoveSingleNonExpiredKeys(t *testing.T) {"
+          }
+        ],
+        "needs_confirmation": [
+          "벤치마크 함수 본문은 diff 뒷부분에 있어 이 hunk 에서는 테스트 함수만 확인됩니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": true,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "performance-005",
+      "classification": {
+        "category": "performance",
+        "subtype": "batchable_update",
+        "difficulty": "medium",
+        "programming_language": "Solidity",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "performance"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "4522",
+        "repository": "CryptoBlades/cryptoblades",
+        "pr_number": 1349,
+        "commit_sha": "",
+        "source_url": "https://github.com/CryptoBlades/cryptoblades/pull/1349",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.410310+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "contracts/TokensManager.sol",
+        "pr_title_original": "Charge native token fee on combat",
+        "pr_title_ko": "전투 시 네이티브 토큰 수수료 부과",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -0,0 +1,67 @@\n+pragma solidity ^0.6.0;\n+import \"@openzeppelin/contracts-upgradeable/proxy/Initializable.sol\";\n+import \"@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol\";\n+import \"@openzeppelin/contracts/math/SafeMath.sol\";\n+import \"abdk-libraries-solidity/ABDKMath64x64.sol\";\n+import \"./cryptoblades.sol\";\n+\n+contract TokensManager is Initializable, AccessControlUpgradeable {\n+    using SafeMath for uint256;\n+    using ABDKMath64x64 for int128;\n+\n+    bytes32 public constant GAME_ADMIN = keccak256(\"GAME_ADMIN\");\n+\n+    CryptoBlades public game;\n+\n+    uint256 public combatTokenChargePercent;\n+    // Note: All prices are multiplied by 100\n+    uint256 public tokenPrice;\n+    uint256 public skillTokenPrice;\n+\n+    modifier restricted() {\n+        _restricted();\n+        _;\n+    }\n+\n+    function _restricted() internal view {\n+        require(hasRole(GAME_ADMIN, msg.sender));\n+    }\n+\n+    function initialize(\n+        address gameContract\n+    ) public initializer {\n+        __AccessControl_init_unchained();\n+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);\n+\n+        game = CryptoBlades(gameContract);\n+        combatTokenChargePercent = 25;\n+    }\n+\n+    function fight(uint256 char, uint256 wep, uint32 target, uint8 fightMultiplier) external payable {\n+        uint256 expectedTokens = game.fight(char, wep, target, fightMultiplier);\n+\n+        uint256 offset = ABDKMath64x64.mulu(getSkillToNativeRatio(), expectedTokens.mul(combatTokenChargePercent));\n+\n+        require(msg.value == offset, 'Offset error');\n+    }\n+\n+    function retrieve(address addressToTransferTo, uint256 amount) external restricted {\n+        payable(addressToTransferTo).transfer(amount);\n+    }\n+\n+    function getSkillToNativeRatio() public view returns (int128) {\n+        return ABDKMath64x64.divu(skillTokenPrice, tokenPrice);\n+    }\n+\n+    function setTokenPrice(uint256 price) external restricted {\n+        tokenPrice = price;\n+    }\n+",
+        "diff_truncated": false,
+        "review_comment_original": "A little sidebar here, not necessary to change anything now but, for the future:\r\nThe bot that updates the native token and skill token prices might want to send updates for both at once, in which case it would make sense for a function that takes parameters for both. This is only really relevant for cutting costs on expensive networks, and only if the rate of updates is frequent enough to make a difference.",
+        "review_comment_ko": "여담이지만 지금 당장 바꿀 필요는 없고 앞으로를 위해 적어 둡니다. 네이티브 토큰과 skill 토큰 가격을 갱신하는 봇이 두 값을 한 번에 보내고 싶어 할 수 있는데, 그렇다면 두 값을 한 번에 설정하는 함수가 있는 편이 낫습니다.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "토큰 가격과 수수료를 관리하는 `TokensManager` 컨트랙트를 새로 추가합니다.",
+        "change_purpose_ko": "전투 시 네이티브 토큰으로 수수료를 부과하기 위해 토큰 가격 관리 컨트랙트를 도입합니다.",
+        "change_reason_ko": "PR 제목에 따르면 전투에 네이티브 토큰 수수료를 부과하는 것이 목적입니다.",
+        "before_ko": "해당 컨트랙트가 존재하지 않았습니다. 이 diff 는 파일 전체를 새로 추가합니다.",
+        "after_ko": "`TokensManager` 가 `Initializable` 과 `AccessControlUpgradeable` 을 상속하고 `SafeMath`, `ABDKMath64x64` 를 사용해 가격을 다룹니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "performance",
+            "subtype": "batchable_update",
+            "severity": "low",
+            "file_path": "contracts/TokensManager.sol",
+            "line_reference": "`TokensManager` 컨트랙트의 가격 설정 인터페이스",
+            "evidence": "+contract TokensManager is Initializable, AccessControlUpgradeable {",
+            "problem_ko": "토큰 가격을 개별적으로만 설정할 수 있는 구조로 보입니다. 두 토큰 가격을 함께 갱신하는 운영 시나리오에서는 트랜잭션을 두 번 보내야 합니다.",
+            "impact_ko": "가격 갱신 봇이 매번 트랜잭션을 두 번 발행해 가스 비용이 두 배가 됩니다. 갱신 주기가 짧을수록 누적 비용이 커집니다.",
+            "recommendation_ko": "두 토큰 가격을 한 번에 설정하는 함수를 추가해 갱신 트랜잭션을 한 번으로 줄입니다.",
+            "confidence": 0.6
+          }
+        ],
+        "affected_roles": [
+          "backend",
+          "project_manager"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "가격을 값마다 따로 설정하면 갱신 봇이 트랜잭션을 두 번 보내야 합니다. 온체인에서는 트랜잭션 수가 곧 비용입니다.",
+            "evidence": "+contract TokensManager is Initializable, AccessControlUpgradeable {"
+          },
+          {
+            "role": "project_manager",
+            "impact_ko": "가격 갱신 운영 비용에 영향을 주므로 봇 운영 방식과 함께 검토해야 합니다.",
+            "evidence": "+contract TokensManager is Initializable, AccessControlUpgradeable {"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "네이티브 토큰과 skill 토큰 가격을 한 번에 설정하는 함수를 추가할지 검토합니다.",
+            "evidence": "+contract TokensManager is Initializable, AccessControlUpgradeable {"
+          }
+        ],
+        "needs_confirmation": [
+          "리뷰어가 \"지금 바꿀 필요는 없다\" 고 명시했습니다. 즉시 수정해야 하는 결함이 아니라 향후 개선 제안입니다.",
+          "가격 설정 함수의 실제 시그니처는 diff 뒷부분에 있어 이 hunk 에서는 확인할 수 없습니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": true,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "n_plus_one-001",
+      "classification": {
+        "category": "n_plus_one",
+        "subtype": "repeated_lookup_in_loop",
+        "difficulty": "hard",
+        "programming_language": "Python",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "refactor"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "3595",
+        "repository": "Chia-Network/chia-blockchain",
+        "pr_number": 19609,
+        "commit_sha": "",
+        "source_url": "https://github.com/Chia-Network/chia-blockchain/pull/19609",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.319280+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "chia/data_layer/data_store.py",
+        "pr_title_original": "Optimize DL functions for get keys/values.",
+        "pr_title_ko": "키/값 조회를 위한 DL 함수 최적화",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -654,6 +654,34 @@ async def get_terminal_node_by_hash(\n         kid, vid = merkle_blob.get_node_by_hash(node_hash)\n         return await self.get_terminal_node(kid, vid, store_id)\n \n+    async def get_terminal_nodes_by_hashes(\n+        self,\n+        node_hashes: list[bytes32],\n+        store_id: bytes32,\n+        root_hash: Union[bytes32, Unspecified] = unspecified,\n+    ) -> list[TerminalNode]:\n+        resolved_root_hash: Optional[bytes32]\n+        if root_hash is unspecified:\n+            root = await self.get_tree_root(store_id=store_id)\n+            resolved_root_hash = root.node_hash\n+        else:\n+            resolved_root_hash = root_hash\n+\n+        merkle_blob = await self.get_merkle_blob(store_id=store_id, root_hash=resolved_root_hash)\n+        kv_ids: list[KeyOrValueId] = []\n+        for node_hash in node_hashes:\n+            kid, vid = merkle_blob.get_node_by_hash(node_hash)\n+            kv_ids.append(KeyOrValueId(kid.raw))\n+            kv_ids.append(KeyOrValueId(vid.raw))\n+        table_blobs = await self.get_table_blobs(kv_ids, store_id)\n+\n+        terminal_nodes: list[TerminalNode] = []\n+        for node_hash in node_hashes:\n+            kid, vid = merkle_blob.get_node_by_hash(node_hash)",
+        "diff_truncated": false,
+        "review_comment_original": "looks like duplicate loops that could be combined and avoid recalling `.get_node_by_hash()`?  I didn't dig into the details of the table blobs here but it seems like something that could be built along the way.  maybe?",
+        "review_comment_ko": "중복된 루프로 보이는데, 이를 합쳐서 `.get_node_by_hash()` 재호출을 피할 수 있지 않을까요? 여기 테이블 blob 세부까지 파고들지는 않았지만, 진행하면서 함께 만들어 둘 수 있는 종류로 보입니다.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "여러 노드 해시를 한 번에 조회하는 `get_terminal_nodes_by_hashes()` 를 추가합니다.",
+        "change_purpose_ko": "데이터 레이어에서 키/값을 조회할 때 노드를 하나씩 가져오던 것을 묶어 처리해 성능을 개선하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 DL 조회 함수 최적화가 목적입니다.",
+        "before_ko": "`get_terminal_node_by_hash()` 로 노드 해시 하나씩 조회했습니다.",
+        "after_ko": "`get_terminal_nodes_by_hashes()` 가 추가되어 merkle blob 을 한 번 로드한 뒤 `for node_hash in node_hashes:` 루프에서 `merkle_blob.get_node_by_hash(node_hash)` 를 호출해 `kv_ids` 를 모읍니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "n_plus_one",
+            "subtype": "repeated_lookup_in_loop",
+            "severity": "medium",
+            "file_path": "chia/data_layer/data_store.py",
+            "line_reference": "`get_terminal_nodes_by_hashes()` 의 `for node_hash in node_hashes:` 루프",
+            "evidence": "+        for node_hash in node_hashes:\n+            kid, vid = merkle_blob.get_node_by_hash(node_hash)",
+            "problem_ko": "노드 해시마다 `merkle_blob.get_node_by_hash()` 를 반복 호출하고, 같은 대상을 다시 순회하는 루프가 뒤에 이어집니다. 한 번의 순회로 필요한 값을 모두 모을 수 있는데 조회를 두 번 반복합니다.",
+            "impact_ko": "조회할 노드 수에 비례해 불필요한 조회가 배로 늘어납니다. 키/값을 대량으로 읽는 경로에서 응답 시간이 늘어납니다.",
+            "recommendation_ko": "두 루프를 하나로 합쳐 노드마다 한 번만 조회하고, 필요한 값을 그 자리에서 함께 구성합니다.",
+            "confidence": 0.8
+          }
+        ],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "merkle blob 로드는 한 번으로 줄었지만, 노드 조회는 여전히 해시 수만큼 반복됩니다. 뒤이어 같은 순회가 또 있으면 비용이 두 배가 됩니다.",
+            "evidence": "+        for node_hash in node_hashes:\n+            kid, vid = merkle_blob.get_node_by_hash(node_hash)"
+          },
+          {
+            "role": "qa",
+            "impact_ko": "노드 수가 많은 저장소에서 조회 시간을 기존 구현과 비교해야 합니다.",
+            "evidence": "+        for node_hash in node_hashes:\n+            kid, vid = merkle_blob.get_node_by_hash(node_hash)"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "이 함수 뒤에 이어지는 순회와 이 루프를 합쳐 `get_node_by_hash()` 호출을 한 번만 수행하도록 정리합니다.",
+            "evidence": "+        for node_hash in node_hashes:\n+            kid, vid = merkle_blob.get_node_by_hash(node_hash)"
+          }
+        ],
+        "needs_confirmation": [
+          "리뷰어가 지적한 \"중복된 루프\" 의 나머지 한쪽은 diff 에 잘려 있어 이 hunk 만으로는 전체 구조를 확인할 수 없습니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": true,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "functional_bug-001",
+      "classification": {
+        "category": "functional_bug",
+        "subtype": "debug_code_left_in",
+        "difficulty": "easy",
+        "programming_language": "C#",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "bug"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "3141",
+        "repository": "AvaloniaUI/Avalonia",
+        "pr_number": 1350,
+        "commit_sha": "",
+        "source_url": "https://github.com/AvaloniaUI/Avalonia/pull/1350",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.273741+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "src/Avalonia.Visuals/Rendering/DeferredRenderer.cs",
+        "pr_title_original": "Clip Focus Adorners",
+        "pr_title_ko": "포커스 애드너 클리핑",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -243,6 +243,15 @@ private void Render(IDrawingContextImpl context, VisualNode node, IVisual layer,\n             {\n                 clipBounds = node.ClipBounds.Intersect(clipBounds);\n \n+                var np = node.Visual.GetType().GetProperty(\"Name\");\n+                var name = (string)np.GetValue(node.Visual);\n+\n+                if (name == \"abcd\")",
+        "diff_truncated": false,
+        "review_comment_original": "Can we pick a more descriptive name (and maybe save it in a constant so it isn't a magic string)?\r\nAlso, is this used for anything other than debugging?\r\n",
+        "review_comment_ko": "더 서술적인 이름을 고를 수 있을까요? 매직 문자열이 되지 않도록 상수로 저장하는 것도 좋겠습니다. 그리고 이것이 디버깅 외의 다른 용도로도 쓰입니까?",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "`DeferredRenderer.Render()` 에서 리플렉션으로 시각 요소의 `Name` 속성을 읽어 `\"abcd\"` 와 비교하는 코드를 추가합니다.",
+        "change_purpose_ko": "포커스 애드너의 클리핑 동작을 다루기 위한 변경이지만, 이 부분은 특정 이름을 가진 요소를 골라내는 검사입니다.",
+        "change_reason_ko": "PR 제목은 포커스 애드너 클리핑이라고만 밝히고 있어, 이 검사가 왜 필요한지는 확인할 수 없습니다.",
+        "before_ko": "클립 영역을 계산하는 코드만 있었습니다.",
+        "after_ko": "`node.Visual.GetType().GetProperty(\"Name\")` 으로 이름을 읽어 `if (name == \"abcd\")` 를 검사하는 코드가 추가되었습니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "functional_bug",
+            "subtype": "debug_code_left_in",
+            "severity": "medium",
+            "file_path": "src/Avalonia.Visuals/Rendering/DeferredRenderer.cs",
+            "line_reference": "`Render()` 안의 `Name` 속성 리플렉션 조회와 문자열 비교",
+            "evidence": "+                if (name == \"abcd\")",
+            "problem_ko": "렌더링 경로에 하드코딩된 문자열 `\"abcd\"` 와 비교하는 분기가 들어 있습니다. 이름만 보면 디버깅용 임시 코드로 보이며, 리플렉션으로 속성을 읽는 방식도 렌더 루프에 적합하지 않습니다.",
+            "impact_ko": "의도하지 않은 요소가 이 분기를 타면 렌더 결과가 달라집니다. 매 렌더마다 리플렉션 호출 비용도 발생합니다.",
+            "recommendation_ko": "디버깅 코드라면 제거하고, 실제로 필요한 분기라면 의미를 드러내는 상수로 정의한 뒤 리플렉션 대신 타입이나 명시적 속성으로 판단합니다.",
+            "confidence": 0.9
+          }
+        ],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "렌더 경로마다 리플렉션으로 속성을 조회하고 하드코딩된 문자열과 비교합니다. 디버깅용 코드가 그대로 남으면 렌더 성능과 동작 모두에 영향을 줍니다.",
+            "evidence": "+                if (name == \"abcd\")"
+          },
+          {
+            "role": "qa",
+            "impact_ko": "이름이 `abcd` 인 요소가 있는 화면에서만 다르게 동작하므로 일반 테스트로는 드러나지 않습니다.",
+            "evidence": "+                if (name == \"abcd\")"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "디버깅 목적이면 이 블록을 제거하고, 필요한 기능이면 의미 있는 이름의 상수로 정의한 뒤 리플렉션 대신 타입 검사를 사용합니다.",
+            "evidence": "+                if (name == \"abcd\")"
+          }
+        ],
+        "needs_confirmation": [
+          "리뷰어도 \"디버깅 외의 용도가 있는지\" 를 물었습니다. 이 검사의 의도는 diff 만으로 확정할 수 없습니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "functional_bug-002",
+      "classification": {
+        "category": "functional_bug",
+        "subtype": "wrong_target_object",
+        "difficulty": "hard",
+        "programming_language": "C#",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "bug"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "3148",
+        "repository": "AvaloniaUI/Avalonia",
+        "pr_number": 1774,
+        "commit_sha": "",
+        "source_url": "https://github.com/AvaloniaUI/Avalonia/pull/1774",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.274734+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "src/Avalonia.Animation/AnimatorStateMachine`1.cs",
+        "pr_title_original": "Code-behind Animation Trigger",
+        "pr_title_ko": "코드 비하인드 애니메이션 트리거",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -243,7 +243,10 @@ private void InternalStep(PlayState _playState, Func<double, T, T> Interpolator)\n                         {\n                             _targetControl.SetValue(_parent.Property, _lastInterpValue, BindingPriority.LocalValue);\n                         }\n+\n                         _targetObserver.OnCompleted();\n+                        _targetAnimation.SetDone(_targetControl);",
+        "diff_truncated": false,
+        "review_comment_original": "I've been doing some tests by re-implementing the page transitions, and I found a bug here. If the user animates a render transformation, then the value of `_targetControl` is the Transform object, not the control that is being transformed. This causes the animation to never be registered as completed.",
+        "review_comment_ko": "페이지 전환을 다시 구현하면서 테스트해 봤는데 여기서 버그를 찾았습니다. 사용자가 렌더 변환(render transformation)을 애니메이션하면 `_targetControl` 값이 Transform 객체가 됩니다.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "`AnimatorStateMachine.InternalStep()` 에서 애니메이션 완료 시 `_targetAnimation.SetDone(_targetControl)` 을 호출하도록 추가합니다.",
+        "change_purpose_ko": "코드 비하인드에서 애니메이션을 트리거할 수 있도록 완료 처리를 보완하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 코드 비하인드 애니메이션 트리거 기능을 추가하는 작업입니다.",
+        "before_ko": "`_targetObserver.OnCompleted()` 만 호출했습니다.",
+        "after_ko": "`_targetObserver.OnCompleted()` 뒤에 `_targetAnimation.SetDone(_targetControl)` 호출이 추가되었습니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "functional_bug",
+            "subtype": "wrong_target_object",
+            "severity": "high",
+            "file_path": "src/Avalonia.Animation/AnimatorStateMachine`1.cs",
+            "line_reference": "`InternalStep()` 의 애니메이션 완료 처리",
+            "evidence": "+                        _targetAnimation.SetDone(_targetControl);",
+            "problem_ko": "`_targetControl` 을 완료 처리 대상으로 그대로 넘깁니다. 사용자가 렌더 변환을 애니메이션하면 이 필드에는 컨트롤이 아니라 Transform 객체가 들어가므로, 잘못된 대상에 완료 처리가 적용됩니다.",
+            "impact_ko": "렌더 변환을 사용하는 애니메이션에서 완료 상태가 실제 컨트롤에 반영되지 않습니다. 페이지 전환이 끝나도 상태가 정리되지 않아 이후 동작이 어긋납니다.",
+            "recommendation_ko": "`_targetControl` 이 Transform 인 경우를 판별해 실제 소유 컨트롤을 찾아 넘기거나, 완료 처리에 필요한 대상을 별도 필드로 보관합니다.",
+            "confidence": 0.8
+          }
+        ],
+        "affected_roles": [
+          "backend",
+          "frontend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "`_targetControl` 이 항상 컨트롤이라고 가정하고 완료 처리에 넘깁니다. 렌더 변환을 애니메이션하면 이 값이 Transform 객체가 되어 가정이 깨집니다.",
+            "evidence": "+                        _targetAnimation.SetDone(_targetControl);"
+          },
+          {
+            "role": "frontend",
+            "impact_ko": "렌더 변환을 사용하는 페이지 전환 애니메이션이 완료 처리에서 잘못 동작할 수 있습니다.",
+            "evidence": "+                        _targetAnimation.SetDone(_targetControl);"
+          },
+          {
+            "role": "qa",
+            "impact_ko": "일반 속성 애니메이션과 렌더 변환 애니메이션을 각각 검증해야 합니다.",
+            "evidence": "+                        _targetAnimation.SetDone(_targetControl);"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "`_targetControl` 이 Transform 인 경우를 구분해, 완료 처리에 실제 대상 컨트롤을 넘기도록 수정합니다.",
+            "evidence": "+                        _targetAnimation.SetDone(_targetControl);"
+          }
+        ],
+        "needs_confirmation": [
+          "`SetDone()` 이 인자로 무엇을 기대하는지는 이 hunk 밖의 정의를 확인해야 합니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "functional_bug-003",
+      "classification": {
+        "category": "functional_bug",
+        "subtype": "docstring_indentation",
+        "difficulty": "easy",
+        "programming_language": "Python",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "bug"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "2274",
+        "repository": "Avaiga/taipy",
+        "pr_number": 1224,
+        "commit_sha": "",
+        "source_url": "https://github.com/Avaiga/taipy/pull/1224",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.189208+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "taipy/core/data/data_node.py",
+        "pr_title_original": "<DataNode>.is_up_to_date raises error when never written before",
+        "pr_title_ko": "<DataNode>.is_up_to_date 가 한 번도 기록되지 않은 경우 오류를 발생시키는 문제",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -505,25 +505,27 @@ def is_valid(self) -> bool:\n     def is_up_to_date(self) -> bool:\n         \"\"\"Indicate if this data node is up-to-date.\n \n-        Returns:\n-            False if a preceding data node has been updated before the selected data node\n-            or the selected data is invalid.<br/>\n-            True otherwise.\n-        \"\"\"\n+    Returns:\n+        False if a preceding data node has been updated before the selected data node\n+        or the selected data is invalid.<br/>\n+        True otherwise.\n+    \"\"\"",
+        "diff_truncated": false,
+        "review_comment_original": "We have a wrong indentation here.\r\n```suggestion\r\n        Returns:\r\n            False if a preceding data node has been updated before the selected data node\r\n            or the selected data is invalid.<br/>\r\n            True otherwise.\r\n        \"\"\"\r\n```",
+        "review_comment_ko": "여기 들여쓰기가 잘못되어 있습니다.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "`DataNode.is_up_to_date` 의 독스트링 들여쓰기를 수정합니다.",
+        "change_purpose_ko": "데이터 노드가 한 번도 기록되지 않은 상태에서 `is_up_to_date` 가 오류를 내던 문제를 고치는 과정의 일부입니다.",
+        "change_reason_ko": "PR 제목에 따르면 미기록 데이터 노드 처리 오류를 수정하는 작업입니다.",
+        "before_ko": "독스트링의 `Returns:` 블록이 함수 본문에 맞춰 8칸으로 들여쓰여 있었습니다.",
+        "after_ko": "해당 블록이 4칸으로 바뀌어 독스트링 안에서 들여쓰기가 어긋납니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "functional_bug",
+            "subtype": "docstring_indentation",
+            "severity": "low",
+            "file_path": "taipy/core/data/data_node.py",
+            "line_reference": "`is_up_to_date()` 독스트링의 `Returns:` 블록",
+            "evidence": "+    Returns:\n+        False if a preceding data node has been updated before the selected data node",
+            "problem_ko": "독스트링 안의 `Returns:` 절 들여쓰기가 주변 코드 기준과 어긋나게 4칸으로 바뀌었습니다. 함수 본문 안의 독스트링은 본문 들여쓰기를 따라야 합니다.",
+            "impact_ko": "문서 생성 도구가 반환값 설명을 인식하지 못해 공개 API 문서에서 해당 절이 누락되거나 잘못 렌더링됩니다.",
+            "recommendation_ko": "`Returns:` 블록의 들여쓰기를 함수 본문 기준(8칸)으로 되돌립니다.",
+            "confidence": 0.9
+          }
+        ],
+        "affected_roles": [
+          "backend",
+          "planning"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "독스트링 들여쓰기가 어긋나면 문서 생성 도구가 `Returns:` 절을 제대로 인식하지 못합니다.",
+            "evidence": "+    Returns:\n+        False if a preceding data node has been updated before the selected data node"
+          },
+          {
+            "role": "planning",
+            "impact_ko": "공개 API 문서에 반환값 설명이 누락되거나 깨져 보일 수 있습니다.",
+            "evidence": "+    Returns:\n+        False if a preceding data node has been updated before the selected data node"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "독스트링 들여쓰기를 함수 본문 기준으로 되돌리고, 문서 빌드 결과를 확인합니다.",
+            "evidence": "+    Returns:\n+        False if a preceding data node has been updated before the selected data node"
+          }
+        ],
+        "needs_confirmation": []
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "functional_bug-004",
+      "classification": {
+        "category": "functional_bug",
+        "subtype": "incomplete_error_message",
+        "difficulty": "easy",
+        "programming_language": "Python",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "bug"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "635",
+        "repository": "All-Hands-AI/OpenHands",
+        "pr_number": 9566,
+        "commit_sha": "",
+        "source_url": "https://github.com/All-Hands-AI/OpenHands/pull/9566",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.026408+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "openhands/runtime/impl/docker/docker_runtime.py",
+        "pr_title_original": "Add additional networks",
+        "pr_title_ko": "추가 네트워크 지원",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -196,6 +196,17 @@ async def connect(self) -> None:\n             self.set_runtime_status(RuntimeStatus.READY)\n         self._runtime_initialized = True\n \n+        for network_name in self.config.sandbox.additional_networks:\n+            try:\n+                network = self.docker_client.networks.get(network_name)\n+                network.connect(self.container)\n+            except Exception as e:\n+                self.log(\n+                    'error',\n+                    f'Error: Failed to connect instance {self.container_name} to network {network_name}'",
+        "diff_truncated": false,
+        "review_comment_original": "```suggestion\r\n                    f'Error: Failed to connect instance {self.container_name} to network {network_name}',\r\n```",
+        "review_comment_ko": "```suggestion\n                  f'Error: Failed to connect instance {self.container_name} to network {network_name}',\n```",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "컨테이너를 추가 네트워크에 연결하는 반복문을 `connect()` 에 추가하고, 실패 시 오류 로그를 남깁니다.",
+        "change_purpose_ko": "샌드박스 컨테이너를 설정에 지정된 추가 네트워크에 연결하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 추가 네트워크 지원이 목적입니다.",
+        "before_ko": "런타임 초기화만 수행하고 추가 네트워크 연결 절차가 없었습니다.",
+        "after_ko": "`for network_name in self.config.sandbox.additional_networks:` 루프에서 네트워크를 조회해 연결하고, 예외가 발생하면 오류 로그를 남깁니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "functional_bug",
+            "subtype": "incomplete_error_message",
+            "severity": "low",
+            "file_path": "openhands/runtime/impl/docker/docker_runtime.py",
+            "line_reference": "추가 네트워크 연결 실패 시의 오류 로그 문자열",
+            "evidence": "+                    f'Error: Failed to connect instance {self.container_name} to network {network_name}'",
+            "problem_ko": "예외를 `as e` 로 잡아 두고도 로그 메시지에 예외 내용을 포함하지 않습니다. 어떤 이유로 연결이 실패했는지 로그만 보고는 알 수 없습니다.",
+            "impact_ko": "네트워크 이름 오타, 권한 부족, Docker 데몬 문제 등 원인이 서로 다른 실패가 모두 같은 메시지로 기록되어 장애 대응이 어려워집니다.",
+            "recommendation_ko": "로그 메시지에 잡은 예외(`{e}`)를 함께 포함하고, 이 실패를 무시할지 초기화를 중단할지 정책을 정합니다.",
+            "confidence": 0.7
+          }
+        ],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "네트워크 연결이 실패해도 예외를 잡아 로그만 남기고 진행합니다. 로그에 실패 원인이 빠지면 원인 추적이 어렵습니다.",
+            "evidence": "+                    f'Error: Failed to connect instance {self.container_name} to network {network_name}'"
+          },
+          {
+            "role": "qa",
+            "impact_ko": "존재하지 않는 네트워크 이름을 설정했을 때 어떤 로그가 남는지 확인해야 합니다.",
+            "evidence": "+                    f'Error: Failed to connect instance {self.container_name} to network {network_name}'"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "오류 로그 문자열의 형식을 정리하고, 잡은 예외 내용도 함께 기록합니다.",
+            "evidence": "+                    f'Error: Failed to connect instance {self.container_name} to network {network_name}'"
+          },
+          {
+            "role": "project_manager",
+            "task_ko": "네트워크 연결 실패를 무시해도 되는지, 아니면 초기화를 중단해야 하는지 정책을 정합니다.",
+            "evidence": "+                    f'Error: Failed to connect instance {self.container_name} to network {network_name}'"
+          }
+        ],
+        "needs_confirmation": [
+          "리뷰 댓글이 제안 블록만 담고 있어, 지적의 초점이 문자열 형식인지 예외 내용 누락인지는 명확하지 않습니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "api_contract-001",
+      "classification": {
+        "category": "api_contract",
+        "subtype": "protocol_parity",
+        "difficulty": "medium",
+        "programming_language": "Go",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "security"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "4828",
+        "repository": "DiceDB/dice",
+        "pr_number": 458,
+        "commit_sha": "",
+        "source_url": "https://github.com/DiceDB/dice/pull/458",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.440438+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "internal/eval/commands.go",
+        "pr_title_original": "Added support for COMMAND command",
+        "pr_title_ko": "COMMAND 명령 지원 추가",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -686,3 +686,26 @@ func init() {\n \tDiceCmds[\"PFADD\"] = pfAddCmdMeta\n \tDiceCmds[\"PFCOUNT\"] = pfCountCmdMeta\n }\n+\n+func convertKeySpecsToSlice(keySpecs KeySpecs) []interface{} {",
+        "diff_truncated": false,
+        "review_comment_original": "Shall we keep parity with redis output? For `COMMAND` e.g. our output for `HELLO`\r\n```\r\n0.0.0.0:7379> command\r\n 1) 1) \"HELLO\"\r\n    2) (integer) -1\r\n    3) 1) \"BeginIndex\"\r\n       2) (integer) 0\r\n       3) \"LastKey\"\r\n       4) (integer) 0\r\n       5) \"Step\"\r\n       6) (integer) 0\r\n```\r\nRedis output:\r\n```\r\n205) 1) \"hello\"\r\n     2) (integer) -1\r\n     3) 1) \"noscript\"\r\n        2) \"loading\"\r\n        3) \"stale\"\r\n        4) \"fast\"\r\n        5) \"no_auth\"\r\n        6) \"allow_busy\"\r\n     4) (integer) 0\r\n     5) (integer) 0\r\n     6) (integer) 0\r\n     7) 1) \"@fast\"\r\n        2) \"@connection\"\r\n     8) (empty array)\r\n     9) (empty array)\r\n     10) (empty array)\r\n```\r\nRedis output follows below format:\r\n\r\n1. Name\r\n2. Arity\r\n3. Flags\r\n4. First key\r\n5. Last key\r\n6. Step\r\n7. [ACL categories](https://redis.io/operate/oss_and_stack/management/security/acl) (as of Redis 6.0)\r\n8. [Tips](https://redis.io/develop/reference/command-tips.md) (as of Redis 7.0)\r\n9. [Key specifications](https://redis.io/develop/reference/key-specs.md) (as of Redis 7.0)\r\n10. Subcommands (as of Redis 7.0)\r\n\r\nWe don't have all the fields set but for the ones we do have available we should maintain parity.\r\nMore details you can found [here](https://redis.io/docs/latest/commands/command/).",
+        "review_comment_ko": "redis 출력과 형식을 맞추는 것이 좋지 않을까요? 예를 들어 `COMMAND` 에서 `HELLO` 에 대한 우리 출력은 다음과 같습니다.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "`KeySpecs` 를 응답용 슬라이스로 변환하는 `convertKeySpecsToSlice()` 를 추가해 `COMMAND` 명령의 출력을 구성합니다.",
+        "change_purpose_ko": "Redis 의 `COMMAND` 명령을 지원해 클라이언트가 명령 메타데이터를 조회할 수 있게 하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 `COMMAND` 명령 지원 추가가 목적입니다.",
+        "before_ko": "`COMMAND` 명령과 그 출력 변환 함수가 없었습니다.",
+        "after_ko": "`convertKeySpecsToSlice(keySpecs KeySpecs) []interface{}` 가 추가되어 명령 메타데이터를 응답 형태로 변환합니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "api_contract",
+            "subtype": "protocol_parity",
+            "severity": "medium",
+            "file_path": "internal/eval/commands.go",
+            "line_reference": "`convertKeySpecsToSlice()` 가 만드는 `COMMAND` 응답 구조",
+            "evidence": "+func convertKeySpecsToSlice(keySpecs KeySpecs) []interface{} {",
+            "problem_ko": "`COMMAND` 응답 구조를 자체 형식으로 구성합니다. Redis 호환을 지향하는 서버인데 응답 필드 구성과 중첩 구조가 Redis 스펙과 일치하는지 확인되지 않았습니다.",
+            "impact_ko": "Redis 클라이언트 라이브러리가 `COMMAND` 응답을 파싱하지 못하거나 잘못 해석합니다. 드롭인 대체를 기대한 사용자가 연동에 실패합니다.",
+            "recommendation_ko": "Redis 의 `COMMAND` 응답 스펙에 맞춰 필드 구성과 순서를 정렬하고, 대표 명령으로 출력 비교 테스트를 추가합니다.",
+            "confidence": 0.75
+          }
+        ],
+        "affected_roles": [
+          "backend",
+          "qa",
+          "project_manager"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "응답 구조가 Redis 와 다르면 기존 Redis 클라이언트가 이 서버를 그대로 사용할 수 없습니다.",
+            "evidence": "+func convertKeySpecsToSlice(keySpecs KeySpecs) []interface{} {"
+          },
+          {
+            "role": "qa",
+            "impact_ko": "실제 Redis 의 `COMMAND` 출력과 필드 구조·순서를 대조해 검증해야 합니다.",
+            "evidence": "+func convertKeySpecsToSlice(keySpecs KeySpecs) []interface{} {"
+          },
+          {
+            "role": "project_manager",
+            "impact_ko": "Redis 호환을 표방하는 제품이라면 프로토콜 일치 여부가 제품 약속에 해당합니다.",
+            "evidence": "+func convertKeySpecsToSlice(keySpecs KeySpecs) []interface{} {"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "실제 Redis 의 `COMMAND` 응답 스펙과 필드 구조를 대조해 형식을 맞춥니다.",
+            "evidence": "+func convertKeySpecsToSlice(keySpecs KeySpecs) []interface{} {"
+          },
+          {
+            "role": "qa",
+            "task_ko": "대표 명령 몇 개에 대해 Redis 출력과 비교하는 테스트를 추가합니다.",
+            "evidence": "+func convertKeySpecsToSlice(keySpecs KeySpecs) []interface{} {"
+          }
+        ],
+        "needs_confirmation": [
+          "현재 구현이 실제로 어떤 구조를 만드는지는 함수 본문이 diff 뒷부분에 있어 확인할 수 없습니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": true,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "api_contract-002",
+      "classification": {
+        "category": "api_contract",
+        "subtype": "undocumented_parameter_behavior",
+        "difficulty": "medium",
+        "programming_language": "Python",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "bug"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "2249",
+        "repository": "Avaiga/taipy",
+        "pr_number": 1042,
+        "commit_sha": "",
+        "source_url": "https://github.com/Avaiga/taipy/pull/1042",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.186409+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "taipy/core/taipy.py",
+        "pr_title_original": "Feature/#392 - Sort mechanism for `get_primary_scenarios()` and `get_scenarios()` API",
+        "pr_title_ko": "Feature/#392 - get_primary_scenarios() 와 get_scenarios() 정렬 기능",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -516,22 +522,44 @@ def get_scenarios(cycle: Optional[Cycle] = None, tag: Optional[str] = None) -> L\n     Parameters:\n          cycle (Optional[Cycle^]): The optional `Cycle^` to filter scenarios by.\n          tag (Optional[str]): The optional tag to filter scenarios by.\n+         is_sorted (Optional[bool]): The option to sort scenarios. The default sorting key is name.\n+         descending (Optional[bool]): The option to sort scenarios on the sorting key in descending order.\n+         sort_key (Optional[Literal[\"name\", \"id\", \"creation_date\", \"tags\"]]): The optiononal sort_key to decide upon\n+         what key scenarios are sorted. The sorting is in increasing order for dates, in alphabetical order for name\n+         and id, in lexographical order for tags.\n \n     Returns:\n-        The list of scenarios filtered by cycle or tag. If no filtering criteria\n-            are provided, this method returns all existing scenarios.\n+        The list of scenarios filtered by cycle or tag and optionally sorted by name, id, creation_date or tags.\n+        If no filtering criteria are provided, this method returns all existing scenarios.\n+        If is_sorted is set to true, but an incorrect or no sort_key is provided, then the scenarios are sorted by name.\n+        If the attribute sort_key of some scenarios are equivalent, a second criteria is used. \n+        In this case, these scenarios are sorted by their unique id's.",
+        "diff_truncated": false,
+        "review_comment_original": "```suggestion\r\n        If no filtering criterion is provided, this method returns all existing scenarios.\r\n        If is_sorted is set to true, the scenarios are sorted by sort_key. If an incorrect\r\n        or no sort_key is provided, the scenarios are sorted by name.\r\n```",
+        "review_comment_ko": "```suggestion\n  필터링 조건이 주어지지 않으면 이 메서드는 기존 시나리오를 모두 반환합니다.\n  is_sorted 가 true 로 설정되면 시나리오는 sort_key 로 정렬됩니다. 잘못된 sort_key 가 주어지거나 지정되지 않으면...\n```",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "`get_scenarios()` 에 `is_sorted`, `descending`, `sort_key` 파라미터를 추가하고 독스트링에 설명을 넣습니다.",
+        "change_purpose_ko": "시나리오 조회 결과를 정렬할 수 있도록 공개 API 를 확장하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 이슈 #392 의 정렬 기능 추가 작업입니다.",
+        "before_ko": "`get_scenarios(cycle, tag)` 가 필터링만 지원했고 반환값 설명도 필터 기준만 언급했습니다.",
+        "after_ko": "정렬 관련 파라미터 세 개가 추가되고, 각 파라미터의 의미와 정렬 순서 규칙이 독스트링에 기술되었습니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "api_contract",
+            "subtype": "undocumented_parameter_behavior",
+            "severity": "low",
+            "file_path": "taipy/core/taipy.py",
+            "line_reference": "`get_scenarios()` 독스트링의 `sort_key` 파라미터 설명",
+            "evidence": "+         sort_key (Optional[Literal[\"name\", \"id\", \"creation_date\", \"tags\"]]): The optiononal sort_key to de",
+            "problem_ko": "공개 API 에 정렬 파라미터를 추가하면서 잘못된 `sort_key` 가 주어졌을 때의 동작을 문서에 정의하지 않았습니다. 설명에 오타(`optiononal`)도 있습니다.",
+            "impact_ko": "호출자가 예외를 기대해야 할지 기본 정렬을 기대해야 할지 알 수 없습니다. 구현이 바뀌면 조용히 동작이 달라집니다.",
+            "recommendation_ko": "잘못되거나 누락된 `sort_key` 일 때의 동작(기본 키로 정렬)을 독스트링에 명시하고 오타를 수정합니다.",
+            "confidence": 0.75
+          }
+        ],
+        "affected_roles": [
+          "backend",
+          "planning",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "공개 함수에 선택 파라미터가 세 개 늘어납니다. 잘못된 `sort_key` 가 들어왔을 때의 동작이 문서로 정의되어야 호출자가 대응할 수 있습니다.",
+            "evidence": "+         sort_key (Optional[Literal[\"name\", \"id\", \"creation_date\", \"tags\"]]): The optiononal sort_key to de"
+          },
+          {
+            "role": "planning",
+            "impact_ko": "정렬 기준과 기본값이 사용자에게 보이는 동작을 결정합니다.",
+            "evidence": "+         sort_key (Optional[Literal[\"name\", \"id\", \"creation_date\", \"tags\"]]): The optiononal sort_key to de"
+          },
+          {
+            "role": "qa",
+            "impact_ko": "잘못된 `sort_key` 를 넘겼을 때 예외인지 기본 정렬인지 확인해야 합니다.",
+            "evidence": "+         sort_key (Optional[Literal[\"name\", \"id\", \"creation_date\", \"tags\"]]): The optiononal sort_key to de"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "잘못되거나 누락된 `sort_key` 에 대한 동작을 독스트링에 명시하고, 그 동작을 검증하는 테스트를 추가합니다.",
+            "evidence": "+         sort_key (Optional[Literal[\"name\", \"id\", \"creation_date\", \"tags\"]]): The optiononal sort_key to de"
+          }
+        ],
+        "needs_confirmation": [
+          "독스트링에 오타(`optiononal`)가 보이며, 잘못된 `sort_key` 처리에 대한 서술이 잘려 있어 실제 동작을 확인할 수 없습니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": true,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "api_contract-003",
+      "classification": {
+        "category": "api_contract",
+        "subtype": "ambiguous_public_name",
+        "difficulty": "easy",
+        "programming_language": "Swift",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "question"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "1925",
+        "repository": "Automattic/pocket-casts-ios",
+        "pr_number": 1602,
+        "commit_sha": "",
+        "source_url": "https://github.com/Automattic/pocket-casts-ios/pull/1602",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.154561+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "podcasts/Categories/CategoriesSelectorViewController.swift",
+        "pr_title_original": "Categories Redesign: Pills",
+        "pr_title_ko": "카테고리 재설계: Pills",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -0,0 +1,41 @@\n+import SwiftUI\n+import PocketCastsServer\n+\n+class CategoriesSelectorViewController: UIHostingController<CategoriesSelectorView>, DiscoverSummaryProtocol {\n+\n+    class Observable: ObservableObject {",
+        "diff_truncated": false,
+        "review_comment_original": "Can we rename that to `DiscoverItemObservable`?\r\n\r\nI think it conveys a better name because `Observable` is super generic and it took me a while to understand why we were using this.\r\n\r\nSame on `CategoriesSelectorView`.",
+        "review_comment_ko": "이것을 `DiscoverItemObservable` 로 이름을 바꿀 수 있을까요? `Observable` 은 너무 일반적인 이름이라 왜 이것을 쓰는지 이해하는 데 시간이 걸렸습니다. `Categ...` 에도 같은 의견입니다.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "카테고리 선택 화면을 담당하는 `CategoriesSelectorViewController` 와 그 안의 `Observable` 클래스를 새로 추가합니다.",
+        "change_purpose_ko": "카테고리 UI 를 Pills 형태로 재설계하기 위해 전용 뷰 컨트롤러를 도입합니다.",
+        "change_reason_ko": "PR 제목에 따르면 카테고리 재설계 작업입니다.",
+        "before_ko": "해당 파일이 존재하지 않았습니다. 이 diff 는 파일 전체를 새로 추가합니다.",
+        "after_ko": "`CategoriesSelectorViewController` 안에 `class Observable: ObservableObject` 가 중첩 정의되었습니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "api_contract",
+            "subtype": "ambiguous_public_name",
+            "severity": "low",
+            "file_path": "podcasts/Categories/CategoriesSelectorViewController.swift",
+            "line_reference": "`CategoriesSelectorViewController` 안의 중첩 `Observable` 클래스 선언",
+            "evidence": "+    class Observable: ObservableObject {",
+            "problem_ko": "타입 이름이 `Observable` 로, SwiftUI 의 일반 개념과 이름이 겹칩니다. 무엇을 관찰하고 어떤 데이터를 담는지 이름에서 드러나지 않습니다.",
+            "impact_ko": "코드를 읽는 사람이 타입의 역할을 파악하는 데 시간이 걸리고, 다른 화면에서 참조할 때 혼동이 생깁니다.",
+            "recommendation_ko": "`DiscoverItemObservable` 처럼 담고 있는 데이터가 드러나는 이름으로 바꿉니다.",
+            "confidence": 0.85
+          }
+        ],
+        "affected_roles": [
+          "frontend",
+          "backend",
+          "design"
+        ],
+        "role_impacts": [
+          {
+            "role": "frontend",
+            "impact_ko": "`Observable` 이라는 이름은 SwiftUI 의 일반 개념과 겹쳐 어떤 데이터를 담는지 알기 어렵습니다.",
+            "evidence": "+    class Observable: ObservableObject {"
+          },
+          {
+            "role": "backend",
+            "impact_ko": "다른 화면에서 이 타입을 참조할 때 이름만으로 용도를 알 수 없습니다.",
+            "evidence": "+    class Observable: ObservableObject {"
+          },
+          {
+            "role": "design",
+            "impact_ko": "카테고리 선택 UI 구성 요소가 새로 도입됩니다.",
+            "evidence": "+    class Observable: ObservableObject {"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "frontend",
+            "task_ko": "`Observable` 을 `DiscoverItemObservable` 처럼 담고 있는 데이터를 드러내는 이름으로 바꿉니다.",
+            "evidence": "+    class Observable: ObservableObject {"
+          }
+        ],
+        "needs_confirmation": [
+          "리뷰어가 함께 언급한 다른 타입(`Categ...`)이 무엇인지는 댓글이 잘려 있어 확인할 수 없습니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": true,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "exception_handling-001",
+      "classification": {
+        "category": "exception_handling",
+        "subtype": "optional_handling",
+        "difficulty": "medium",
+        "programming_language": "Swift",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "suggestion"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "373",
+        "repository": "Alamofire/Alamofire",
+        "pr_number": 24,
+        "commit_sha": "",
+        "source_url": "https://github.com/Alamofire/Alamofire/pull/24",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:08.992132+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "Source/Alamofire.swift",
+        "pr_title_original": "Update to support the Xcode 6 Beta5 changes to Swift",
+        "pr_title_ko": "Swift 의 Xcode 6 Beta5 변경 사항 지원",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -467,7 +467,7 @@ public struct Alamofire {\n                 dispatch_async(dispatch_get_global_queue(priority, 0), {\n                     let (responseObject: AnyObject?, error: NSError?) = serializer(self.request, self.response, self.delegate.data, self.delegate.error)\n \n-                    dispatch_async(queue ? queue : dispatch_get_main_queue(), {\n+                    dispatch_async((queue != nil) ? queue : dispatch_get_main_queue(), {",
+        "diff_truncated": false,
+        "review_comment_original": "This looks a little more succinct:\n\n``` swift\ndispatch_async(queue ?? dispatch_get_main_queue(), {\n  completionHandler(self.request, self.response, responseObject, error)\n})\n```\n",
+        "review_comment_ko": "이렇게 하면 조금 더 간결해 보입니다.\n\n``` swift\ndispatch_async(queue ?? dispatch_get_main_queue(), {\n  completionHandler(self.request, self.response, responseObject, error)\n})\n```",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "응답 처리 큐를 고를 때 쓰던 삼항 연산자 조건을 `queue ? ...` 에서 `(queue != nil) ? ...` 으로 바꿉니다.",
+        "change_purpose_ko": "옵셔널 값을 조건식에 직접 쓰던 코드를 명시적인 nil 비교로 고치기 위해서입니다.",
+        "change_reason_ko": "PR 제목과 설명을 확인할 수 없어 변경 배경을 단정할 수 없습니다.",
+        "before_ko": "`dispatch_async(queue ? queue : dispatch_get_main_queue(), {` 처럼 옵셔널을 조건식에 그대로 사용했습니다.",
+        "after_ko": "`dispatch_async((queue != nil) ? queue : dispatch_get_main_queue(), {` 로 nil 비교를 명시합니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "exception_handling",
+            "subtype": "optional_handling",
+            "severity": "medium",
+            "file_path": "Source/Alamofire.swift",
+            "line_reference": "응답 처리 큐를 고르는 삼항 연산자",
+            "evidence": "+                    dispatch_async((queue != nil) ? queue : dispatch_get_main_queue(), {",
+            "problem_ko": "nil 비교를 명시했지만 삼항 연산자의 참 분기가 여전히 옵셔널 `queue` 를 그대로 돌려줍니다. 기본값을 고르는 의도가 코드에 직접 드러나지 않고, 언래핑도 이루어지지 않습니다.",
+            "impact_ko": "옵셔널이 언래핑되지 않은 채 API 로 전달되어 타입 불일치나 예상치 못한 동작이 생길 수 있습니다.",
+            "recommendation_ko": "nil 병합 연산자를 사용해 `queue ?? dispatch_get_main_queue()` 로 기본값 선택과 언래핑을 한 번에 처리합니다.",
+            "confidence": 0.8
+          }
+        ],
+        "affected_roles": [
+          "backend"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "옵셔널 처리 방식이 명시적으로 바뀌었지만, 삼항 연산자는 여전히 옵셔널을 그대로 반환해 언래핑 문제가 남습니다.",
+            "evidence": "+                    dispatch_async((queue != nil) ? queue : dispatch_get_main_queue(), {"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "nil 병합 연산자 `??` 를 사용해 기본값 선택과 언래핑을 한 번에 처리합니다.",
+            "evidence": "+                    dispatch_async((queue != nil) ? queue : dispatch_get_main_queue(), {"
+          }
+        ],
+        "needs_confirmation": [
+          "이 코드가 대상으로 하는 Swift 버전에서 삼항 연산자의 결과 타입이 어떻게 추론되는지는 diff 만으로 확정할 수 없습니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "exception_handling-002",
+      "classification": {
+        "category": "exception_handling",
+        "subtype": "fragile_argument_validation",
+        "difficulty": "medium",
+        "programming_language": "Shell",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "style"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "1215",
+        "repository": "Automattic/pocket-casts-android",
+        "pr_number": 4002,
+        "commit_sha": "",
+        "source_url": "https://github.com/Automattic/pocket-casts-android/pull/4002",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.084167+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": ".buildkite/commands/should-skip-job.sh",
+        "pr_title_original": "[Tooling] Skip jobs if there are no relevant code changes",
+        "pr_title_ko": "[Tooling] 관련 코드 변경이 없으면 작업을 건너뛰기",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -0,0 +1,73 @@\n+#!/bin/bash -eu\n+\n+# Usage: should-skip-job.sh --job-type [validation|build|lint]\n+# --job-type validation: For jobs like unit/instrumented tests, manifest validation…\n+#     Skip when changes are limited to documentation, tooling, non-code files, and localization files\n+# --job-type lint: For jobs doing linting, especially ones that might include linting of localization files\n+#     Skip when changes are limited to documentation, tooling, and non-code files.\n+#     Does not skip if localization files changed (so that linter can run to report translation inconsistencies)\n+# --job-type build: For jobs building an apk binary, e.g. Assemble, Prototype Builds…\n+#     Skip when changes are limited to documentation, tooling, and non-code files\n+#\n+# Return codes:\n+# 0 - Job should be skipped (script also handles displaying the message and annotation)\n+# 1 - Job should not be skipped\n+# 15 - Error in script parameters\n+\n+COMMON_PATTERNS=(\n+  \"*.md\"\n+  \"*.pot\"\n+  \"*.txt\"\n+  \".gitignore\"\n+  \"config/**\"\n+  \"fastlane/**\"\n+  \"Gemfile\"\n+  \"Gemfile.lock\"\n+  \"gradle/**\"\n+  \"version.properties\"\n+)\n+\n+# Check if arguments are valid\n+if [ -z \"${1:-}\" ] || [ \"$1\" != \"--job-type\" ] || [ -z \"${2:-}\" ]; then\n+  echo \"Error: Must specify --job-type [validation|build|lint]\"\n+  buildkite-agent step cancel\n+  exit 15\n+fi\n+\n+# Function to display skip message and create annotation\n+show_skip_message() {\n+  local job_type=$1\n+  local message=\"Skipping ${BUILDKITE_LABEL:-Job} - no relevant files changed\"\n+  local context=\"skip-$(echo \"${BUILDKITE_LABEL:-$job_type}\" | sed -E -e 's/[^[:alnum:]]+/-/g' | tr A-Z a-z)\"\n+  \n+  echo \"$message\" | buildkite-agent annotate --style \"info\" --context \"$context\"\n+  echo \"$message\"\n+}\n+\n+job_type=\"$2\"\n+case \"$job_type\" in\n+  \"validation\")\n+    # We should skip if changes are limited to documentation, tooling, non-code files, and localization files\n+    PATTERNS=(\"${COMMON_PATTERNS[@]}\" \"**/strings.xml\")\n+    if pr_changed_files --all-match \"${PATTERNS[@]}\"; then\n+      show_skip_message \"$job_type\"\n+      exit 0\n+    fi\n+    exit 1\n+    ;;\n+  \"build\"|\"lint\")\n+    # We should skip if changes are limited to documentation, tooling, and non-code files\n+    # We'll let the job run (won't skip) if PR includes changes in localization files though\n+    PATTERNS=(\"${COMMON_PATTERNS[@]}\")\n+    if pr_changed_files --all-match \"${PATTERNS[@]}\"; then\n+      show_skip_message \"$job_type\"\n+      exit 0\n+    fi\n+    exit 1\n+    ;;\n+  *)\n+    echo \"Error: Job type must be either 'validation', 'build', or 'lint'\"",
+        "diff_truncated": false,
+        "review_comment_original": "It _should_ be possible to make the \"must be either\" a bit more robust by defining vars for each case\r\n\r\n```bash\r\nVALIDATION=\"validation\"\r\nBUILD=\"build\"\r\nLINT=\"lint\"\r\n\r\njob_type=\"$2\"\r\ncase \"$job_type\" in\r\n  $VALIDATION)\r\n    # We should skip if changes are limited to documentation, tooling, non-code files, and localization files\r\n    PATTERNS=(\"${COMMON_PATTERNS[@]}\" \"**/strings.xml\")\r\n    if pr_changed_files --all-match \"${PATTERNS[@]}\"; then\r\n      show_skip_message \"$job_type\"\r\n      exit 0\r\n    fi\r\n    exit 1\r\n    ;;\r\n  $BUILD|$LINT)\r\n    # We should skip if changes are limited to documentation, tooling, and non-code files\r\n    # We'll let the job run (won't skip) if PR includes changes in localization files though\r\n    PATTERNS=(\"${COMMON_PATTERNS[@]}\")\r\n    if pr_changed_files --all-match \"${PATTERNS[@]}\"; then\r\n      show_skip_message \"$job_type\"\r\n      exit 0\r\n    fi\r\n    exit 1\r\n    ;;\r\n  *)\r\n    echo \"Error: Job type must be either '$VALIDATION', '$BUILD', or '$LINT'\"\r\n```",
+        "review_comment_ko": "각 경우에 대해 변수를 정의하면 \"must be either\" 부분을 좀 더 견고하게 만들 수 있을 것 같습니다.\n\n```bash\nVALIDATION=\"validation\"\nBUILD=\"build\"\nLINT=\"lint\"\n\njob_type=\"$2\"\ncase \"$job_type\"\n```",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "변경 내용에 따라 CI 작업을 건너뛸지 판단하는 `should-skip-job.sh` 스크립트를 새로 추가합니다.",
+        "change_purpose_ko": "문서나 도구 설정만 바뀐 경우 불필요한 CI 작업을 건너뛰어 파이프라인 시간을 줄이기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 관련 코드 변경이 없을 때 작업을 건너뛰는 도구를 만드는 작업입니다.",
+        "before_ko": "해당 스크립트가 존재하지 않았습니다. 이 diff 는 파일 전체를 새로 추가합니다.",
+        "after_ko": "`--job-type [validation|build|lint]` 인자를 받아 작업 종류별로 건너뛸 조건을 판단하는 스크립트가 추가되었습니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "exception_handling",
+            "subtype": "fragile_argument_validation",
+            "severity": "medium",
+            "file_path": ".buildkite/commands/should-skip-job.sh",
+            "line_reference": "`should-skip-job.sh` 의 `--job-type` 인자 검증과 분기 처리",
+            "evidence": "+# Usage: should-skip-job.sh --job-type [validation|build|lint]",
+            "problem_ko": "허용되는 작업 종류 문자열이 검증 메시지와 분기 조건에 각각 하드코딩되어 있습니다. 한쪽만 수정하면 두 곳이 어긋나고, 오타가 나도 검증을 통과할 수 있습니다.",
+            "impact_ko": "잘못된 작업 종류가 통과하면 CI 작업을 건너뛰지 말아야 할 상황에서 건너뛰게 됩니다. 검증되지 않은 변경이 병합될 수 있습니다.",
+            "recommendation_ko": "작업 종류를 변수로 한 번만 정의하고, 인자 검증과 `case` 분기가 모두 그 변수를 참조하도록 바꿉니다.",
+            "confidence": 0.7
+          }
+        ],
+        "affected_roles": [
+          "backend",
+          "qa",
+          "project_manager"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "작업 종류 문자열이 여러 곳에 반복되면 오타가 나도 인자 검증을 통과해 잘못된 분기를 탈 수 있습니다.",
+            "evidence": "+# Usage: should-skip-job.sh --job-type [validation|build|lint]"
+          },
+          {
+            "role": "qa",
+            "impact_ko": "잘못된 작업 종류를 넘겼을 때 스크립트가 명확히 실패하는지 확인해야 합니다.",
+            "evidence": "+# Usage: should-skip-job.sh --job-type [validation|build|lint]"
+          },
+          {
+            "role": "project_manager",
+            "impact_ko": "CI 작업을 잘못 건너뛰면 검증 없이 병합될 수 있어 위험이 큽니다.",
+            "evidence": "+# Usage: should-skip-job.sh --job-type [validation|build|lint]"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "작업 종류 문자열을 변수로 정의하고 검증과 `case` 분기에서 같은 변수를 참조하도록 정리합니다.",
+            "evidence": "+# Usage: should-skip-job.sh --job-type [validation|build|lint]"
+          }
+        ],
+        "needs_confirmation": [
+          "인자 검증과 `case` 분기의 실제 코드는 diff 뒷부분에 있어 이 hunk 에서는 사용법 주석만 확인됩니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "exception_handling-003",
+      "classification": {
+        "category": "exception_handling",
+        "subtype": "unconditional_recompute",
+        "difficulty": "medium",
+        "programming_language": "TypeScript",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "question"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "0",
+        "repository": "4ian/GDevelop",
+        "pr_number": 6970,
+        "commit_sha": "",
+        "source_url": "https://github.com/4ian/GDevelop/pull/6970",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:08.948179+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "Extensions/AnchorBehavior/anchorruntimebehavior.ts",
+        "pr_title_original": "Fix anchor behavior when objects has custom origin",
+        "pr_title_ko": "객체에 사용자 지정 원점이 있을 때 앵커 동작 수정",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -270,8 +270,13 @@ namespace gdjs {\n             this._rightEdgeAnchor !== HorizontalAnchor.None &&\n             this._leftEdgeAnchor !== HorizontalAnchor.None\n           ) {\n-            this.owner.setWidth(right - left);\n-            this.owner.setX(left);\n+            const width = right - left;\n+            this.owner.setX(\n+              left +\n+                ((this.owner.getX() - this.owner.getDrawableX()) * width) /\n+                  this.owner.getWidth()\n+            );",
+        "diff_truncated": false,
+        "review_comment_original": "Should we had `if (this.owner.getX() === this.owner.getDrawableX())` to avoid extra computations 90% of the time at the cost of the `if`?",
+        "review_comment_ko": "`if (this.owner.getX() === this.owner.getDrawableX())` 를 추가해서, `if` 문 비용을 치르는 대신 90% 의 경우에 불필요한 계산을 피하는 것은 어떨까요?",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "앵커 동작에서 좌우 앵커가 모두 설정된 경우, 객체의 원점과 그리기 좌표 차이를 반영해 위치를 계산하도록 수정합니다.",
+        "change_purpose_ko": "객체에 사용자 지정 원점이 설정되어 있을 때 앵커 위치가 어긋나던 문제를 고치기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 사용자 지정 원점이 있는 객체의 앵커 동작 수정이 목적입니다.",
+        "before_ko": "`this.owner.setWidth(right - left);` 와 `this.owner.setX(left);` 로 단순히 값을 설정했습니다.",
+        "after_ko": "`(this.owner.getX() - this.owner.getDrawableX()) * width` 를 계산해 원점 차이를 반영한 위치를 설정합니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "performance",
+            "subtype": "unconditional_recompute",
+            "severity": "low",
+            "file_path": "Extensions/AnchorBehavior/anchorruntimebehavior.ts",
+            "line_reference": "좌우 앵커가 모두 설정된 분기의 위치 계산",
+            "evidence": "+            this.owner.setX(\n+              left +\n+                ((this.owner.getX() - this.owner.getDrawableX()) * width) /",
+            "problem_ko": "원점과 그리기 좌표가 같은지 확인하지 않고 매번 좌표를 조회해 곱셈과 나눗셈을 수행합니다. 대부분의 객체는 두 값이 같아 계산 결과가 0 이 됩니다.",
+            "impact_ko": "매 프레임 실행되는 앵커 갱신 경로에서 대다수 객체가 불필요한 계산을 반복합니다. 객체 수가 많은 장면에서 프레임 처리 시간이 늘어납니다.",
+            "recommendation_ko": "`this.owner.getX() === this.owner.getDrawableX()` 를 먼저 검사해, 원점 보정이 필요 없는 경우에는 기존의 단순 계산 경로를 사용합니다.",
+            "confidence": 0.8
+          }
+        ],
+        "affected_roles": [
+          "backend",
+          "frontend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "매 프레임 실행되는 앵커 갱신 경로에 좌표 조회와 곱셈·나눗셈이 추가됩니다. 원점을 쓰지 않는 대다수 객체도 이 비용을 치릅니다.",
+            "evidence": "+            this.owner.setX(\n+              left +\n+                ((this.owner.getX() - this.owner.getDrawableX()) * width) /"
+          },
+          {
+            "role": "frontend",
+            "impact_ko": "사용자 지정 원점을 쓰는 객체의 앵커 위치가 올바르게 표시됩니다.",
+            "evidence": "+            this.owner.setX(\n+              left +\n+                ((this.owner.getX() - this.owner.getDrawableX()) * width) /"
+          },
+          {
+            "role": "qa",
+            "impact_ko": "원점을 설정한 객체와 기본 원점 객체 모두에서 앵커 위치를 확인해야 합니다.",
+            "evidence": "+            this.owner.setX(\n+              left +\n+                ((this.owner.getX() - this.owner.getDrawableX()) * width) /"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "원점과 그리기 좌표가 같은 경우를 먼저 검사해 추가 계산을 건너뛰도록 최적화합니다.",
+            "evidence": "+            this.owner.setX(\n+              left +\n+                ((this.owner.getX() - this.owner.getDrawableX()) * width) /"
+          }
+        ],
+        "needs_confirmation": [
+          "리뷰어가 언급한 \"90%\" 는 경험적 추정이며 diff 로 검증할 수 없습니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "refactoring-001",
+      "classification": {
+        "category": "refactoring",
+        "subtype": "misplaced_responsibility",
+        "difficulty": "medium",
+        "programming_language": "C#",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "refactor"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "3142",
+        "repository": "AvaloniaUI/Avalonia",
+        "pr_number": 1450,
+        "commit_sha": "",
+        "source_url": "https://github.com/AvaloniaUI/Avalonia/pull/1450",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.274017+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "src/Avalonia.Controls/Utils/UndoRedoHelper.cs",
+        "pr_title_original": "Clear TextBox undo stack on binding change.",
+        "pr_title_ko": "바인딩 변경 시 TextBox 실행 취소 스택 비우기",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -91,6 +110,11 @@ public void Snapshot()\n             }\n         }\n \n+        public void Clear()\n+        {\n+            if (!_undoRedoing) _states.Clear();",
+        "diff_truncated": false,
+        "review_comment_original": "Looks like a hack. Could we move this check to the TextBox itself?",
+        "review_comment_ko": "핵(hack)처럼 보입니다. 이 검사를 TextBox 자체로 옮길 수 있을까요?",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "`UndoRedoHelper` 에 실행 취소 상태를 비우는 `Clear()` 메서드를 추가합니다.",
+        "change_purpose_ko": "바인딩이 바뀌었을 때 TextBox 의 실행 취소 스택을 초기화하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 바인딩 변경 시 실행 취소 스택을 비우는 것이 목적입니다.",
+        "before_ko": "`UndoRedoHelper` 에 상태를 비우는 공개 메서드가 없었습니다.",
+        "after_ko": "`public void Clear()` 가 추가되어 `if (!_undoRedoing) _states.Clear();` 로 실행 취소 중이 아닐 때만 상태를 비웁니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "refactoring",
+            "subtype": "misplaced_responsibility",
+            "severity": "low",
+            "file_path": "src/Avalonia.Controls/Utils/UndoRedoHelper.cs",
+            "line_reference": "`UndoRedoHelper.Clear()` 안의 `_undoRedoing` 검사",
+            "evidence": "+            if (!_undoRedoing) _states.Clear();",
+            "problem_ko": "범용 헬퍼의 `Clear()` 안에 특정 호출 시점을 가정한 조건이 들어 있습니다. 호출자가 언제 호출해도 안전하게 만들려는 방어 코드가 헬퍼 내부에 숨어 있어, 실제로 지워지지 않는 경우가 조용히 생깁니다.",
+            "impact_ko": "호출자는 `Clear()` 를 불렀는데 상태가 남아 있을 수 있고, 그 이유가 코드에 드러나지 않습니다. 다른 사용처에서 예상과 다른 동작을 하게 됩니다.",
+            "recommendation_ko": "조건 검사를 호출하는 쪽(TextBox)으로 옮기고, 헬퍼는 요청받은 대로 상태를 비우도록 단순하게 유지합니다.",
+            "confidence": 0.8
+          }
+        ],
+        "affected_roles": [
+          "backend",
+          "frontend"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "범용 헬퍼가 특정 호출 상황을 가정한 조건을 내부에 갖게 됩니다. 다른 사용처에서 이 조건이 예상과 다르게 동작할 수 있습니다.",
+            "evidence": "+            if (!_undoRedoing) _states.Clear();"
+          },
+          {
+            "role": "frontend",
+            "impact_ko": "바인딩이 바뀔 때 실행 취소 이력이 초기화됩니다.",
+            "evidence": "+            if (!_undoRedoing) _states.Clear();"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "`_undoRedoing` 검사를 호출하는 쪽(TextBox)으로 옮기고, 헬퍼의 `Clear()` 는 조건 없이 상태만 비우도록 정리합니다.",
+            "evidence": "+            if (!_undoRedoing) _states.Clear();"
+          }
+        ],
+        "needs_confirmation": [
+          "`_undoRedoing` 이 참인 동안 `Clear()` 가 호출되는 경로가 실제로 있는지는 이 hunk 밖에서 확인해야 합니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "refactoring-002",
+      "classification": {
+        "category": "refactoring",
+        "subtype": "mixed_refactor_and_logic_change",
+        "difficulty": "hard",
+        "programming_language": "Python",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "refactor"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "3614",
+        "repository": "Chia-Network/chia-blockchain",
+        "pr_number": 19713,
+        "commit_sha": "",
+        "source_url": "https://github.com/Chia-Network/chia-blockchain/pull/19713",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.321638+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "chia/consensus/block_body_validation.py",
+        "pr_title_original": "CHIA-2900 Fast forward mempool optimization",
+        "pr_title_ko": "CHIA-2900 멤풀 fast forward 최적화",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -102,40 +104,24 @@ def include_spends(self, conds: Optional[SpendBundleConditions], block: FullBloc\n             assert block.foliage_transaction_block is not None\n             timestamp = block.foliage_transaction_block.timestamp\n             for spend in conds.spends:\n-                self.removals_since_fork[bytes32(spend.coin_id)] = ForkRem(bytes32(spend.puzzle_hash), height)\n+                spend_coin_id = bytes32(spend.coin_id)\n+                spend_ph = bytes32(spend.puzzle_hash)\n+                self.removals_since_fork[spend_coin_id] = ForkRem(spend_ph, height)\n+                spend_maybe_ff_singleton = bool(spend.flags & ELIGIBLE_FOR_FF)\n                 for puzzle_hash, amount, hint in spend.create_coin:\n-                    coin = Coin(bytes32(spend.coin_id), bytes32(puzzle_hash), uint64(amount))\n-                    self.additions_since_fork[coin.name()] = ForkAdd(coin, height, timestamp, hint, False)\n-        for coin in block.get_included_reward_coins():\n-            assert block.foliage_transaction_block is not None\n-            timestamp = block.foliage_transaction_block.timestamp\n-            assert coin.name() not in self.additions_since_fork\n-            self.additions_since_fork[coin.name()] = ForkAdd(coin, block.height, timestamp, None, True)\n-\n-    def include_block(",
+        "diff_truncated": false,
+        "review_comment_original": "any changes to this logic are very hard to spot since you refactored this code at the same time. If you think we should remove this function, doing so (without any logic changes) should be a separate PR.",
+        "review_comment_ko": "같은 시점에 이 코드를 리팩터링해서 이 로직의 변경 사항을 알아보기가 매우 어렵습니다. 이 함수를 제거해야 한다고 생각한다면, 로직 변경 없이 그 작업만 별도로 하는 편이 좋겠습니다.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "`include_spends()` 에서 지출 정보를 지역 변수로 추출하고 fast forward 대상 여부 판정을 추가합니다.",
+        "change_purpose_ko": "멤풀의 fast forward 처리를 최적화하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 CHIA-2900 멤풀 fast forward 최적화 작업입니다.",
+        "before_ko": "`self.removals_since_fork[bytes32(spend.coin_id)] = ForkRem(bytes32(spend.puzzle_hash), he...` 처럼 값을 인라인으로 변환해 대입했습니다.",
+        "after_ko": "`spend_coin_id`, `spend_ph`, `spend_maybe_ff_singleton` 을 지역 변수로 추출하고, 그 값들로 대입과 판정을 수행합니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "refactoring",
+            "subtype": "mixed_refactor_and_logic_change",
+            "severity": "medium",
+            "file_path": "chia/consensus/block_body_validation.py",
+            "line_reference": "`include_spends()` 의 지출 처리 루프",
+            "evidence": "+                spend_coin_id = bytes32(spend.coin_id)\n+                spend_ph = bytes32(spend.puzzle_hash)",
+            "problem_ko": "변수 추출 같은 형태 변경과 fast forward 판정 추가 같은 동작 변경이 한 diff 에 섞여 있습니다. 어느 줄이 동작을 바꾸는지 리뷰어가 가려내기 어렵습니다.",
+            "impact_ko": "합의 규칙에 관여하는 코드에서 의도하지 않은 동작 변화가 리뷰를 통과할 위험이 커집니다. 문제가 생겼을 때 원인 커밋을 특정하기도 어렵습니다.",
+            "recommendation_ko": "동작을 바꾸지 않는 리팩터링을 먼저 별도 커밋으로 분리하고, 로직 변경은 그 위에 따로 올립니다.",
+            "confidence": 0.85
+          }
+        ],
+        "affected_roles": [
+          "backend",
+          "qa",
+          "project_manager"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "변수 추출과 동작 변경이 한 커밋에 섞여 있어 어떤 부분이 실제 로직 변화인지 구분하기 어렵습니다.",
+            "evidence": "+                spend_coin_id = bytes32(spend.coin_id)\n+                spend_ph = bytes32(spend.puzzle_hash)"
+          },
+          {
+            "role": "qa",
+            "impact_ko": "합의 규칙에 관여하는 코드이므로 동작 변화 여부를 정확히 가려내야 합니다.",
+            "evidence": "+                spend_coin_id = bytes32(spend.coin_id)\n+                spend_ph = bytes32(spend.puzzle_hash)"
+          },
+          {
+            "role": "project_manager",
+            "impact_ko": "블록체인 합의 경로의 변경이라 리뷰 난이도가 곧 위험도로 이어집니다.",
+            "evidence": "+                spend_coin_id = bytes32(spend.coin_id)\n+                spend_ph = bytes32(spend.puzzle_hash)"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "순수 리팩터링(변수 추출)과 실제 로직 변경을 별도 커밋으로 분리해 다시 제출합니다.",
+            "evidence": "+                spend_coin_id = bytes32(spend.coin_id)\n+                spend_ph = bytes32(spend.puzzle_hash)"
+          }
+        ],
+        "needs_confirmation": [
+          "`spend_maybe_ff_singleton` 추가가 순수 리팩터링인지 동작 변경인지는 이 hunk 뒷부분을 함께 봐야 판단할 수 있습니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "refactoring-003",
+      "classification": {
+        "category": "refactoring",
+        "subtype": "locale_dependent_behavior",
+        "difficulty": "medium",
+        "programming_language": "Swift",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "refactor"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "4006",
+        "repository": "CodeEditApp/CodeEdit",
+        "pr_number": 334,
+        "commit_sha": "",
+        "source_url": "https://github.com/CodeEditApp/CodeEdit/pull/334",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.360025+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "CodeEditModules/Modules/CodeFile/src/TextView/CodeEditorTextView.swift",
+        "pr_title_original": "Custom Context Menu for Code Editor",
+        "pr_title_ko": "코드 에디터용 사용자 지정 컨텍스트 메뉴",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -89,4 +89,156 @@ public class CodeEditorTextView: NSTextView {\n             replacementRange: selectedRange()\n         )\n     }\n+\n+    /// input a backslash (\\\\)\n+    @IBAction func inputBackSlash(_ sender: Any?) {\n+        super.insertText(\n+            \"\\\\\",\n+            replacementRange: selectedRange()\n+        )\n+    }\n+\n+    /// Override of the default context menu in the editor...\n+    ///\n+    /// This is a basic view without any functionality, once we have most the items built\n+    /// we will start connecting the menu items to their respective actions.\n+    public override func menu(for event: NSEvent) -> NSMenu? {\n+        guard var menu = super.menu(for: event) else { return nil }\n+\n+        menu = helpMenu(menu)\n+        menu = codeMenu(menu)\n+        menu = gitMenu(menu)\n+        menu = removeSubMenus(menu)\n+        menu = removeTextMenu(menu)\n+\n+        return menu\n+    }\n+\n+    func helpMenu(_ menu: NSMenu) -> NSMenu {\n+        menu.insertItem(withTitle: \"Jump To Definition\",\n+                        action: nil,\n+                        keyEquivalent: \"\",\n+                        at: 1)\n+\n+        menu.insertItem(withTitle: \"Show Code Actions\",\n+                        action: nil,\n+                        keyEquivalent: \"\",\n+                        at: 2)\n+\n+        menu.insertItem(withTitle: \"Show Quick Help\",\n+                        action: nil,\n+                        keyEquivalent: \"\",\n+                        at: 3)\n+\n+        menu.insertItem(.separator(), at: 4)\n+\n+        return menu\n+    }\n+\n+    func codeMenu(_ menu: NSMenu) -> NSMenu {\n+\n+        menu.insertItem(withTitle: \"Refactor\",\n+                        action: nil,\n+                        keyEquivalent: \"\",\n+                        at: 5)\n+\n+        menu.insertItem(withTitle: \"Find\",\n+                        action: nil,\n+                        keyEquivalent: \"\",\n+                        at: 6)\n+\n+        menu.insertItem(withTitle: \"Navigate\",\n+                        action: nil,\n+                        keyEquivalent: \"\",\n+                        at: 7)\n+\n+        menu.insertItem(.separator(), at: 8)\n+\n+        return menu\n+    }\n+\n+    func gitMenu(_ menu: NSMenu) -> NSMenu {\n+        menu.insertItem(withTitle: \"Show Last Change For Line\",\n+                        action: nil,\n+                        keyEquivalent: \"\",\n+                        at: 9)\n+\n+        menu.insertItem(withTitle: \"Create Code Snippet...\",\n+                        action: nil,\n+                        keyEquivalent: \"\",\n+                        at: 10)\n+\n+        menu.insertItem(withTitle: \"Add Pull Request Discussion to Current Line\",\n+                        action: nil,\n+                        keyEquivalent: \"\",\n+                        at: 11)\n+\n+        menu.insertItem(.separator(), at: 12)\n+\n+        return menu\n+    }\n+\n+    func removeSubMenus(_ menu: NSMenu) -> NSMenu {",
+        "diff_truncated": false,
+        "review_comment_original": "How does this work/perform on non-english systems?\r\nis it maybe better to not use the `super.menu(for: event)` to remove this.\r\nThis means that we must make a custom `cut`, `copy`, `paste`.",
+        "review_comment_ko": "비영어 시스템에서는 이것이 어떻게 동작하고 성능은 어떻습니까? `super.menu(for: event)` 를 사용하지 않고 이를 제거하는 편이 나을 수도 있습니다. 그러면 `cut`, `copy`, `paste` 를 직접 구현해야 합니다.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "`CodeEditorTextView` 에 백슬래시 입력 등 사용자 지정 컨텍스트 메뉴 동작을 추가합니다.",
+        "change_purpose_ko": "코드 에디터에 맞는 컨텍스트 메뉴를 제공하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 코드 에디터용 사용자 지정 컨텍스트 메뉴 추가가 목적입니다.",
+        "before_ko": "기본 텍스트 뷰의 컨텍스트 메뉴를 그대로 사용했습니다.",
+        "after_ko": "`@IBAction func inputBackSlash(_ sender: Any?)` 등 사용자 지정 액션이 추가되고, 기본 메뉴를 가공하는 코드가 함께 들어갔습니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "refactoring",
+            "subtype": "locale_dependent_behavior",
+            "severity": "medium",
+            "file_path": "CodeEditModules/Modules/CodeFile/src/TextView/CodeEditorTextView.swift",
+            "line_reference": "`CodeEditorTextView` 의 사용자 지정 컨텍스트 메뉴 구성 코드",
+            "evidence": "+    /// input a backslash (\\\\)\n+    @IBAction func inputBackSlash(_ sender: Any?) {",
+            "problem_ko": "시스템이 제공하는 기본 메뉴(`super.menu(for:)`)를 가져다 가공하는 방식은 항목 이름이 시스템 언어에 따라 달라지는 문제에 노출됩니다. 영어 환경을 전제로 만들면 다른 언어에서 동작하지 않습니다.",
+            "impact_ko": "영어가 아닌 시스템 언어를 쓰는 사용자에게 컨텍스트 메뉴가 잘못 구성되거나 일부 항목이 사라집니다.",
+            "recommendation_ko": "기본 메뉴를 가공하지 말고 필요한 항목만 직접 구성하며, 표준 동작은 시스템 셀렉터에 연결해 언어에 의존하지 않게 합니다.",
+            "confidence": 0.7
+          }
+        ],
+        "affected_roles": [
+          "frontend",
+          "qa",
+          "design"
+        ],
+        "role_impacts": [
+          {
+            "role": "frontend",
+            "impact_ko": "시스템 언어에 따라 기본 메뉴 항목 이름이 달라지므로, 이름을 기준으로 항목을 다루면 비영어 환경에서 동작하지 않습니다.",
+            "evidence": "+    /// input a backslash (\\\\)\n+    @IBAction func inputBackSlash(_ sender: Any?) {"
+          },
+          {
+            "role": "qa",
+            "impact_ko": "영어 외 시스템 언어에서 컨텍스트 메뉴가 올바르게 구성되는지 확인해야 합니다.",
+            "evidence": "+    /// input a backslash (\\\\)\n+    @IBAction func inputBackSlash(_ sender: Any?) {"
+          },
+          {
+            "role": "design",
+            "impact_ko": "컨텍스트 메뉴 구성이 언어에 따라 달라 보일 수 있습니다.",
+            "evidence": "+    /// input a backslash (\\\\)\n+    @IBAction func inputBackSlash(_ sender: Any?) {"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "frontend",
+            "task_ko": "기본 메뉴를 가공하는 대신 필요한 항목을 직접 구성하고, `cut`/`copy`/`paste` 는 표준 셀렉터로 연결합니다.",
+            "evidence": "+    /// input a backslash (\\\\)\n+    @IBAction func inputBackSlash(_ sender: Any?) {"
+          },
+          {
+            "role": "qa",
+            "task_ko": "비영어 시스템 언어 환경에서 메뉴 동작을 검증합니다.",
+            "evidence": "+    /// input a backslash (\\\\)\n+    @IBAction func inputBackSlash(_ sender: Any?) {"
+          }
+        ],
+        "needs_confirmation": [
+          "메뉴 항목을 이름으로 찾는지 셀렉터로 찾는지는 diff 뒷부분을 봐야 확인할 수 있습니다. 리뷰어도 질문 형태로 지적했습니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "refactoring-004",
+      "classification": {
+        "category": "refactoring",
+        "subtype": "unnecessary_mutability",
+        "difficulty": "easy",
+        "programming_language": "Swift",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "nitpick"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "3985",
+        "repository": "CodeEditApp/CodeEdit",
+        "pr_number": 232,
+        "commit_sha": "",
+        "source_url": "https://github.com/CodeEditApp/CodeEdit/pull/232",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.357841+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "CodeEditModules/Modules/GitClone/src/GitCloneView.swift",
+        "pr_title_original": "Add functionality for cloning from git in welcome view",
+        "pr_title_ko": "환영 화면에서 git clone 기능 추가",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -0,0 +1,164 @@\n+//\n+//  GitCloneView.swift\n+//  CodeEdit\n+//\n+//  Created by Aleksi Puttonen on 23.3.2022.\n+//\n+\n+import SwiftUI\n+import GitClient\n+import Foundation\n+import ShellClient\n+\n+public struct GitCloneView: View {\n+    var shellClient: ShellClient",
+        "diff_truncated": false,
+        "review_comment_original": "nit: this can be a private _let_",
+        "review_comment_ko": "nit: 이것은 private _let_ 으로 할 수 있습니다.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "환영 화면에서 저장소를 복제할 수 있는 `GitCloneView` 를 새로 추가합니다.",
+        "change_purpose_ko": "환영 화면에서 바로 git 저장소를 복제할 수 있게 하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 환영 화면의 git clone 기능 추가가 목적입니다.",
+        "before_ko": "해당 파일이 존재하지 않았습니다. 이 diff 는 파일 전체를 새로 추가합니다.",
+        "after_ko": "`GitCloneView` 가 추가되어 SwiftUI 와 `GitClient` 를 사용해 복제 화면을 구성합니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "refactoring",
+            "subtype": "unnecessary_mutability",
+            "severity": "low",
+            "file_path": "CodeEditModules/Modules/GitClone/src/GitCloneView.swift",
+            "line_reference": "`GitCloneView` 의 프로퍼티 선언부",
+            "evidence": "+import SwiftUI\n+import GitClient",
+            "problem_ko": "값이 바뀌지 않는 프로퍼티가 `var` 로, 그리고 외부에 열린 접근 수준으로 선언되어 있습니다.",
+            "impact_ko": "불변임이 드러나지 않아 읽는 사람이 변경 가능성을 고려하게 되고, 필요 없는 접근 범위가 유지보수 부담으로 남습니다.",
+            "recommendation_ko": "변경되지 않는 프로퍼티를 `private let` 으로 선언해 불변성과 접근 범위를 함께 좁힙니다.",
+            "confidence": 0.6
+          }
+        ],
+        "affected_roles": [
+          "frontend"
+        ],
+        "role_impacts": [
+          {
+            "role": "frontend",
+            "impact_ko": "변경되지 않는 값을 `var` 로 선언하면 의도가 드러나지 않고, 접근 수준도 필요 이상으로 열려 있습니다.",
+            "evidence": "+import SwiftUI\n+import GitClient"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "frontend",
+            "task_ko": "변경되지 않는 프로퍼티를 `private let` 으로 바꿉니다.",
+            "evidence": "+import SwiftUI\n+import GitClient"
+          }
+        ],
+        "needs_confirmation": [
+          "리뷰어가 지목한 정확한 프로퍼티는 댓글이 짧아 특정할 수 없습니다. 파일 앞부분만으로는 대상을 확정하기 어렵습니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "refactoring-005",
+      "classification": {
+        "category": "refactoring",
+        "subtype": "redundant_return",
+        "difficulty": "easy",
+        "programming_language": "Swift",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "nitpick"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "4043",
+        "repository": "CodeEditApp/CodeEdit",
+        "pr_number": 608,
+        "commit_sha": "",
+        "source_url": "https://github.com/CodeEditApp/CodeEdit/pull/608",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.363738+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "CodeEditModules/Modules/StatusBar/src/Model/StatusBarTabType.swift",
+        "pr_title_original": "StatusBar: Cleanup & Tests",
+        "pr_title_ko": "StatusBar: 정리 및 테스트",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -0,0 +1,20 @@\n+//\n+//  StatusBarTabType.swift\n+//  CodeEditModules/StatusBar\n+//\n+//  Created by Lukas Pistrol on 11.05.22.\n+//\n+\n+import Foundation\n+\n+/// A collection of types describing possible tabs in the Status Bar.\n+public enum StatusBarTabType: String, CaseIterable, Identifiable {\n+    case terminal\n+    case debugger\n+    case output\n+\n+    public var id: String { return self.rawValue }",
+        "diff_truncated": false,
+        "review_comment_original": "nit: we can remove the `return` statement",
+        "review_comment_ko": "nit: `return` 문을 제거할 수 있습니다.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "상태 표시줄 탭 종류를 나타내는 `StatusBarTabType` 을 새로 추가합니다.",
+        "change_purpose_ko": "상태 표시줄 코드를 정리하고 테스트를 추가하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 StatusBar 정리와 테스트 추가가 목적입니다.",
+        "before_ko": "해당 파일이 존재하지 않았습니다. 이 diff 는 파일 전체를 새로 추가합니다.",
+        "after_ko": "`StatusBarTabType` 정의가 추가되었습니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "refactoring",
+            "subtype": "redundant_return",
+            "severity": "low",
+            "file_path": "CodeEditModules/Modules/StatusBar/src/Model/StatusBarTabType.swift",
+            "line_reference": "`StatusBarTabType` 의 단일 표현식 반환부",
+            "evidence": "+import Foundation",
+            "problem_ko": "단일 표현식으로 끝나는 프로퍼티나 함수에 `return` 을 명시했습니다. Swift 에서는 생략할 수 있어 주변 코드 스타일과 어긋납니다.",
+            "impact_ko": "동작에는 영향이 없지만 스타일 일관성이 떨어집니다.",
+            "recommendation_ko": "단일 표현식인 경우 `return` 을 생략해 주변 코드와 스타일을 맞춥니다.",
+            "confidence": 0.55
+          }
+        ],
+        "affected_roles": [
+          "frontend"
+        ],
+        "role_impacts": [
+          {
+            "role": "frontend",
+            "impact_ko": "단일 표현식 프로퍼티나 함수에서 `return` 을 생략할 수 있는데 명시해 두면 코드 스타일이 주변과 어긋납니다.",
+            "evidence": "+import Foundation"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "frontend",
+            "task_ko": "단일 표현식으로 끝나는 프로퍼티나 함수에서 `return` 을 생략합니다.",
+            "evidence": "+import Foundation"
+          }
+        ],
+        "needs_confirmation": [
+          "리뷰어가 지목한 정확한 위치는 댓글이 짧고 diff 앞부분만 제공되어 특정할 수 없습니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "refactoring-006",
+      "classification": {
+        "category": "refactoring",
+        "subtype": "idiomatic_api_choice",
+        "difficulty": "easy",
+        "programming_language": "Kotlin",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "style"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "1214",
+        "repository": "Automattic/pocket-casts-android",
+        "pr_number": 3998,
+        "commit_sha": "",
+        "source_url": "https://github.com/Automattic/pocket-casts-android/pull/3998",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.083714+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "modules/features/podcasts/src/main/java/au/com/shiftyjelly/pocketcasts/podcasts/view/components/DividerSubTitle.kt",
+        "pr_title_original": "Recommendations: Add similar shows section header when Podroll exists",
+        "pr_title_ko": "추천: Podroll 이 있을 때 유사 프로그램 섹션 헤더 추가",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -22,41 +22,46 @@ import au.com.shiftyjelly.pocketcasts.compose.AppThemeWithBackground\n import au.com.shiftyjelly.pocketcasts.compose.components.TextH60\n import au.com.shiftyjelly.pocketcasts.compose.preview.ThemePreviewParameterProvider\n import au.com.shiftyjelly.pocketcasts.compose.theme\n-import au.com.shiftyjelly.pocketcasts.podcasts.R\n import au.com.shiftyjelly.pocketcasts.ui.theme.Theme\n-import au.com.shiftyjelly.pocketcasts.localization.R as LR\n+import au.com.shiftyjelly.pocketcasts.images.R as IR\n \n @Composable\n-fun PodrollHeader(onClick: () -> Unit) {\n+fun DividerSubTitle(\n+    @DrawableRes icon: Int,\n+    title: String,\n+    onClick: (() -> Unit)?,\n+) {\n     Row(\n         verticalAlignment = Alignment.CenterVertically,\n         modifier = Modifier\n             .fillMaxWidth()\n-            .clickable(role = Role.Button) {\n-                onClick()\n+            .let { modifier ->\n+                onClick?.let { click ->\n+                    modifier.clickable(role = Role.Button, onClick = click)\n+                } ?: modifier",
+        "diff_truncated": false,
+        "review_comment_original": "I think using `then` is more conventional than `let`.\r\n\r\n```\r\n.then(\r\n    if (onClick != null) {\r\n        Modifier.clickable(role = Role.Button, onClick = onClick)\r\n    } else {\r\n        Modifier\r\n    }\r\n)\r\n```",
+        "review_comment_ko": "여기서는 `let` 보다 `then` 이 더 관용적이라고 생각합니다.\n\n```\n.then(\n    if (onClick != null) {\n        Modifier.clickable(role = Role.Button, onClick = onClick)\n    } else {\n        Modifier\n```",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "`DividerSubTitle` 컴포저블에 클릭 처리와 아이콘 리소스를 추가하고 import 를 정리합니다.",
+        "change_purpose_ko": "Podroll 이 있을 때 유사 프로그램 섹션 헤더를 표시하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 추천 섹션 헤더 추가가 목적입니다.",
+        "before_ko": "지역화 리소스(`localization.R as LR`)를 참조했습니다.",
+        "after_ko": "이미지 리소스(`images.R as IR`)를 참조하도록 바뀌고, 조건부 `Modifier` 구성이 추가되었습니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "refactoring",
+            "subtype": "idiomatic_api_choice",
+            "severity": "low",
+            "file_path": "modules/features/podcasts/src/main/java/au/com/shiftyjelly/pocketcasts/podcasts/view/components/DividerSubTitle.kt",
+            "line_reference": "`DividerSubTitle` 의 조건부 `Modifier` 구성",
+            "evidence": "+import au.com.shiftyjelly.pocketcasts.images.R as IR",
+            "problem_ko": "조건에 따라 `Modifier` 를 덧붙이는 데 `let` 을 사용했습니다. Compose 에서는 `then` 으로 체이닝하는 방식이 관용적이며, 다른 코드와 형태가 어긋납니다.",
+            "impact_ko": "동작은 같지만 Compose 코드베이스의 관용 표현과 달라 읽고 수정하는 데 부담이 됩니다.",
+            "recommendation_ko": "`Modifier.then(if (onClick != null) Modifier.clickable(...) else Modifier)` 형태로 바꿔 체이닝 방식을 통일합니다.",
+            "confidence": 0.65
+          }
+        ],
+        "affected_roles": [
+          "frontend",
+          "design"
+        ],
+        "role_impacts": [
+          {
+            "role": "frontend",
+            "impact_ko": "조건부 `Modifier` 를 `let` 으로 구성하면 Compose 에서 관용적으로 쓰이는 `then` 체이닝과 형태가 달라 읽기 어렵습니다.",
+            "evidence": "+import au.com.shiftyjelly.pocketcasts.images.R as IR"
+          },
+          {
+            "role": "design",
+            "impact_ko": "Podroll 이 있을 때 섹션 헤더가 표시됩니다.",
+            "evidence": "+import au.com.shiftyjelly.pocketcasts.images.R as IR"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "frontend",
+            "task_ko": "조건부 `Modifier` 구성을 `Modifier.then(...)` 형태로 바꿉니다.",
+            "evidence": "+import au.com.shiftyjelly.pocketcasts.images.R as IR"
+          }
+        ],
+        "needs_confirmation": [
+          "리뷰어가 지목한 `let` 사용부는 diff 뒷부분에 있어 이 hunk 에서는 import 변경만 확인됩니다."
+        ]
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "refactoring-007",
+      "classification": {
+        "category": "refactoring",
+        "subtype": "non_descriptive_test_name",
+        "difficulty": "easy",
+        "programming_language": "Swift",
+        "has_actual_issue": true,
+        "category_source": "human_selected",
+        "dataset_comment_type": "suggestion"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "374",
+        "repository": "Alamofire/Alamofire",
+        "pr_number": 494,
+        "commit_sha": "",
+        "source_url": "https://github.com/Alamofire/Alamofire/pull/494",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:08.996612+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "Tests/DownloadTests.swift",
+        "pr_title_original": "Created more robust data, upload and download progress tests",
+        "pr_title_ko": "데이터·업로드·다운로드 진행률 테스트를 더 견고하게 작성",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -97,27 +97,41 @@ class DownloadResponseTestCase: BaseTestCase {\n         }\n     }\n \n-    func testDownloadRequestWithProgress() {\n+    func testDownloadRequestWithProgress2() {",
+        "diff_truncated": false,
+        "review_comment_original": "I'd get more descriptive with the name.\n",
+        "review_comment_ko": "이름을 좀 더 서술적으로 짓는 편이 좋겠습니다.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "다운로드 진행률 테스트 함수의 이름을 `testDownloadRequestWithProgress` 에서 `testDownloadRequestWithProgress2` 로 바꿉니다.",
+        "change_purpose_ko": "다운로드 응답 테스트를 보강하는 과정에서 기존 테스트와 이름이 겹치지 않게 하려는 것으로 보입니다.",
+        "change_reason_ko": "PR 제목과 설명을 확인할 수 없어 변경 배경을 단정할 수 없습니다.",
+        "before_ko": "`func testDownloadRequestWithProgress()` 였습니다.",
+        "after_ko": "`func testDownloadRequestWithProgress2()` 로 숫자를 덧붙였습니다.",
+        "review_result": "request_changes",
+        "issues": [
+          {
+            "issue_id": "issue-001",
+            "category": "refactoring",
+            "subtype": "non_descriptive_test_name",
+            "severity": "low",
+            "file_path": "Tests/DownloadTests.swift",
+            "line_reference": "다운로드 진행률 테스트 함수 이름",
+            "evidence": "+    func testDownloadRequestWithProgress2() {",
+            "problem_ko": "이름 뒤에 숫자 `2` 를 붙여 기존 테스트와 구분했습니다. 이름이 무엇을 다르게 검증하는지 전혀 설명하지 못합니다.",
+            "impact_ko": "테스트가 실패했을 때 어떤 시나리오가 깨졌는지 이름만으로 알 수 없어 원인 추적이 느려집니다.",
+            "recommendation_ko": "검증 대상을 드러내는 이름(예: 진행률 보고 주기나 대상 조건을 담은 이름)으로 바꿉니다.",
+            "confidence": 0.85
+          }
+        ],
+        "affected_roles": [
+          "qa",
+          "backend"
+        ],
+        "role_impacts": [
+          {
+            "role": "qa",
+            "impact_ko": "테스트 이름만으로는 무엇을 검증하는지 알 수 없어, 실패했을 때 원인 파악이 늦어집니다.",
+            "evidence": "+    func testDownloadRequestWithProgress2() {"
+          },
+          {
+            "role": "backend",
+            "impact_ko": "테스트 이름이 검증 대상을 설명하지 못하면 회귀 원인을 좁히기 어렵습니다.",
+            "evidence": "+    func testDownloadRequestWithProgress2() {"
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "qa",
+            "task_ko": "숫자 접미사 대신 검증 대상을 드러내는 이름으로 바꿉니다.",
+            "evidence": "+    func testDownloadRequestWithProgress2() {"
+          }
+        ],
+        "needs_confirmation": []
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 1,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": false
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "control-001",
+      "classification": {
+        "category": "control",
+        "subtype": "passed_review",
+        "difficulty": "easy",
+        "programming_language": "TypeScript",
+        "has_actual_issue": false,
+        "category_source": "human_selected",
+        "dataset_comment_type": "control"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "3556",
+        "repository": "AykutSarac/jsoncrack.com",
+        "pr_number": 62,
+        "commit_sha": "",
+        "source_url": "https://github.com/AykutSarac/jsoncrack.com/pull/62",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.314488+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "src/components/Modal/index.tsx",
+        "pr_title_original": "Add `useKeyPress` hooks and shortcut in ImportModal ",
+        "pr_title_ko": "ImportModal 에 `useKeyPress` 훅과 단축키 추가",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -2,6 +2,7 @@ import React from \"react\";\n import { ReactComponent } from \"src/typings/global\";\n import { Button } from \"src/components/Button\";\n import * as Styled from \"./styles\";\n+import useKeyPress from \"src/hooks/useKeyPress\";\n \n type ControlProps = React.PropsWithChildren<{\n   setVisible: (status: boolean) => void;\n@@ -31,6 +32,12 @@ const Content: ReactComponent = ({ children }) => {\n };\n \n const Controls: React.FC<ControlProps> = ({ children, setVisible }) => {\n+  const handleEspacePress = useKeyPress(\"Escape\");\n+\n+  React.useEffect(() => {\n+    if (handleEspacePress) setVisible(false);\n+  }, [handleEspacePress]);\n+\n   return (\n     <Styled.ControlsWrapper>\n       <Button onClick={() => setVisible(false)}>Close</Button>",
+        "diff_truncated": false,
+        "review_comment_original": "No issues found.",
+        "review_comment_ko": "지적 사항 없음.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "모달 컴포넌트에 `useKeyPress` 훅을 import 하고 관련 처리를 추가합니다.",
+        "change_purpose_ko": "모달에서 키 입력을 처리하기 위한 것으로 보입니다.",
+        "change_reason_ko": "PR 제목과 설명을 확인할 수 없어 변경 배경을 단정할 수 없습니다.",
+        "before_ko": "모달 컴포넌트가 키 입력 훅을 사용하지 않았습니다.",
+        "after_ko": "`import useKeyPress from \"src/hooks/useKeyPress\";` 가 추가되고 관련 코드가 들어갔습니다.",
+        "review_result": "approve",
+        "issues": [],
+        "affected_roles": [
+          "frontend"
+        ],
+        "role_impacts": [
+          {
+            "role": "frontend",
+            "impact_ko": "모달에서 키 입력에 반응하는 동작이 추가됩니다.",
+            "evidence": "+import useKeyPress from \"src/hooks/useKeyPress\";"
+          }
+        ],
+        "follow_up_tasks": [],
+        "needs_confirmation": []
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 0,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": true
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "control-002",
+      "classification": {
+        "category": "control",
+        "subtype": "passed_review",
+        "difficulty": "easy",
+        "programming_language": "TypeScript",
+        "has_actual_issue": false,
+        "category_source": "human_selected",
+        "dataset_comment_type": "control"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "3557",
+        "repository": "AykutSarac/jsoncrack.com",
+        "pr_number": 469,
+        "commit_sha": "",
+        "source_url": "https://github.com/AykutSarac/jsoncrack.com/pull/469",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.314742+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "src/layout/PageLayout/Footer.tsx",
+        "pr_title_original": "fix: stick footer to bottom of the page",
+        "pr_title_ko": "fix: 푸터를 페이지 하단에 고정",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -8,7 +8,7 @@ import { JSONCrackLogo } from \"../JsonCrackLogo\";\n \n export const Footer = () => {\n   return (\n-    <Container mt={60} px={60} pb=\"xl\" bg=\"black\" fluid>\n+    <Container w=\"100%\" mt={60} px={60} pb=\"xl\" bg=\"black\" fluid>\n       <Divider color=\"gray.3\" mb=\"xl\" mx={-60} />\n       <Flex justify=\"space-between\">\n         <Stack gap={4} visibleFrom=\"sm\">",
+        "diff_truncated": false,
+        "review_comment_original": "No issues found.",
+        "review_comment_ko": "지적 사항 없음.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "푸터의 `Container` 에 `w=\"100%\"` 속성을 추가합니다.",
+        "change_purpose_ko": "푸터가 화면 너비를 가득 채우도록 하기 위한 것으로 보입니다.",
+        "change_reason_ko": "PR 제목과 설명을 확인할 수 없어 변경 배경을 단정할 수 없습니다.",
+        "before_ko": "`<Container mt={60} px={60} pb=\"xl\" bg=\"black\" fluid>` 였습니다.",
+        "after_ko": "`<Container w=\"100%\" mt={60} px={60} pb=\"xl\" bg=\"black\" fluid>` 로 너비 속성이 추가되었습니다.",
+        "review_result": "approve",
+        "issues": [],
+        "affected_roles": [
+          "frontend",
+          "design"
+        ],
+        "role_impacts": [
+          {
+            "role": "frontend",
+            "impact_ko": "푸터 컨테이너의 너비 계산 방식이 바뀝니다.",
+            "evidence": "+    <Container w=\"100%\" mt={60} px={60} pb=\"xl\" bg=\"black\" fluid>"
+          },
+          {
+            "role": "design",
+            "impact_ko": "푸터가 화면 너비를 가득 채웁니다.",
+            "evidence": "+    <Container w=\"100%\" mt={60} px={60} pb=\"xl\" bg=\"black\" fluid>"
+          }
+        ],
+        "follow_up_tasks": [],
+        "needs_confirmation": []
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 0,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": true
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "control-003",
+      "classification": {
+        "category": "control",
+        "subtype": "passed_review",
+        "difficulty": "easy",
+        "programming_language": "TypeScript",
+        "has_actual_issue": false,
+        "category_source": "human_selected",
+        "dataset_comment_type": "control"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "3574",
+        "repository": "Azure/azure-rest-api-specs",
+        "pr_number": 40154,
+        "commit_sha": "",
+        "source_url": "https://github.com/Azure/azure-rest-api-specs/pull/40154",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.316521+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "eng/tools/typespec-migration-validation/src/document.ts",
+        "pr_title_original": "Fix some issues in command tsmv",
+        "pr_title_ko": "tsmv 명령의 일부 문제 수정",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -44,6 +44,9 @@ export function processDocument(document: OpenAPI2Document): OpenAPI2Document {\n   if (document.securityDefinitions) {\n     delete newDocument.securityDefinitions;\n   }\n+  if (document.tags) {\n+    delete newDocument.tags;\n+  }\n   if (document.info && document.info[\"x-typespec-generated\"]) {\n     delete newDocument.info[\"x-typespec-generated\"];\n   }",
+        "diff_truncated": false,
+        "review_comment_original": "No issues found.",
+        "review_comment_ko": "지적 사항 없음.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "문서 전처리 함수에서 `tags` 속성도 제거하도록 조건을 추가합니다.",
+        "change_purpose_ko": "TypeSpec 마이그레이션 검증 시 비교 대상에서 제외할 속성을 늘리기 위한 것으로 보입니다.",
+        "change_reason_ko": "PR 제목과 설명을 확인할 수 없어 변경 배경을 단정할 수 없습니다.",
+        "before_ko": "`securityDefinitions` 만 제거했습니다.",
+        "after_ko": "`if (document.tags) { delete newDocument.tags; }` 가 추가되어 `tags` 도 제거합니다.",
+        "review_result": "approve",
+        "issues": [],
+        "affected_roles": [
+          "backend"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "검증 시 비교 대상에서 `tags` 가 빠집니다.",
+            "evidence": "+  if (document.tags) {"
+          }
+        ],
+        "follow_up_tasks": [],
+        "needs_confirmation": []
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 0,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": true
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "control-004",
+      "classification": {
+        "category": "control",
+        "subtype": "passed_review",
+        "difficulty": "easy",
+        "programming_language": "TypeScript",
+        "has_actual_issue": false,
+        "category_source": "human_selected",
+        "dataset_comment_type": "control"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "3575",
+        "repository": "Azure/azure-rest-api-specs",
+        "pr_number": 40303,
+        "commit_sha": "",
+        "source_url": "https://github.com/Azure/azure-rest-api-specs/pull/40303",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.316840+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": "eng/tools/openapi-diff-runner/test/command-helpers.test.ts",
+        "pr_title_original": "[openapi-diff-runner] Properly handle renames in same-version check",
+        "pr_title_ko": "[openapi-diff-runner] 동일 버전 검사에서 rename 을 올바르게 처리",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -347,16 +347,16 @@ describe(\"command-helpers\", () => {\n         headCommitish: TEST_CONSTANTS.COMMITS.HEAD,\n       });\n \n-      // Expected result should have renames added to additions and deletions, and no renames property\n       const expectedResult = {\n-        additions: [...mockResult.additions, ...mockResult.renames.map((rename) => rename.to)],\n+        additions: mockResult.additions,\n         modifications: mockResult.modifications,\n-        deletions: [...mockResult.deletions, ...mockResult.renames.map((rename) => rename.from)],\n+        deletions: mockResult.deletions,\n+        renames: mockResult.renames,\n         total:\n           mockResult.additions.length +\n           mockResult.modifications.length +\n           mockResult.deletions.length +\n-          mockResult.renames.length * 2,\n+          mockResult.renames.length,\n       };\n \n       expect(result).toEqual(expectedResult);\n@@ -375,6 +375,7 @@ describe(\"command-helpers\", () => {\n         additions: [],\n         modifications: [],\n         deletions: [],\n+        renames: [],\n         total: 0,\n       });\n     });\n@@ -415,17 +416,16 @@ describe(\"command-helpers\", () => {\n \n       // Only Swagger files should be returned, with renames added to additions and deletions\n       expect(result).toEqual({\n-        additions: [\n-          TEST_CONSTANTS.SWAGGER_PATHS.FOO,\n-          TEST_CONSTANTS.SWAGGER_PATHS.BAZ,\n-          TEST_CONSTANTS.SWAGGER_PATHS.NEW_MGMT, // from valid rename\n-        ],\n+        additions: [TEST_CONSTANTS.SWAGGER_PATHS.FOO, TEST_CONSTANTS.SWAGGER_PATHS.BAZ],\n         modifications: [TEST_CONSTANTS.SWAGGER_PATHS.QUX_MGMT],\n-        deletions: [\n-          TEST_CONSTANTS.SWAGGER_PATHS.OLD_DATA,\n-          TEST_CONSTANTS.SWAGGER_PATHS.OLD_MGMT, // from valid rename\n+        deletions: [TEST_CONSTANTS.SWAGGER_PATHS.OLD_DATA],\n+        renames: [\n+          {\n+            from: TEST_CONSTANTS.SWAGGER_PATHS.OLD_MGMT,\n+            to: TEST_CONSTANTS.SWAGGER_PATHS.NEW_MGMT,\n+        ",
+        "diff_truncated": false,
+        "review_comment_original": "No issues found.",
+        "review_comment_ko": "지적 사항 없음.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "테스트의 기대값에서 rename 항목을 additions 에 합치던 부분을 제거하고 `mockResult.additions` 를 그대로 사용합니다.",
+        "change_purpose_ko": "rename 처리 방식 변경에 맞춰 테스트 기대값을 조정하기 위한 것으로 보입니다.",
+        "change_reason_ko": "PR 제목과 설명을 확인할 수 없어 변경 배경을 단정할 수 없습니다.",
+        "before_ko": "`additions: [...mockResult.additions, ...mockResult.renames.map((rename) => rename.to)]` 였습니다.",
+        "after_ko": "`additions: mockResult.additions` 로 단순화되고 관련 주석이 제거되었습니다.",
+        "review_result": "approve",
+        "issues": [],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "rename 을 additions 로 합치지 않는 동작이 기대값에 반영됩니다.",
+            "evidence": "+        additions: mockResult.additions,"
+          },
+          {
+            "role": "qa",
+            "impact_ko": "rename 이 포함된 입력에 대한 기대 결과가 바뀝니다.",
+            "evidence": "+        additions: mockResult.additions,"
+          }
+        ],
+        "follow_up_tasks": [],
+        "needs_confirmation": []
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 0,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": true
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    },
+    {
+      "id": "control-005",
+      "classification": {
+        "category": "control",
+        "subtype": "passed_review",
+        "difficulty": "easy",
+        "programming_language": "JavaScript",
+        "has_actual_issue": false,
+        "category_source": "human_selected",
+        "dataset_comment_type": "control"
+      },
+      "source": {
+        "type": "huggingface_dataset",
+        "dataset_name": "ronantakizawa/github-codereview",
+        "dataset_split": "train",
+        "dataset_row_id": "3576",
+        "repository": "Azure/azure-rest-api-specs",
+        "pr_number": 40396,
+        "commit_sha": "",
+        "source_url": "https://github.com/Azure/azure-rest-api-specs/pull/40396",
+        "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요 (사용 조건 확인 필요)",
+        "retrieved_at": "2026-08-02T17:12:09.317233+00:00"
+      },
+      "translation": {
+        "method": "claude-assisted",
+        "review_status": "pending",
+        "notes": ""
+      },
+      "input": {
+        "file_path": ".github/workflows/test/arm-auto-signoff/trivial-changes-check.test.js",
+        "pr_title_original": "Include .tsp files as trivial/non-functional changes for ARM auto sign-off",
+        "pr_title_ko": "ARM 자동 승인에서 .tsp 파일을 사소한/비기능 변경으로 포함",
+        "pr_description_original": "",
+        "pr_description_ko": "",
+        "diff": "@@ -44,6 +44,7 @@ describe(\"checkTrivialChanges\", () => {\n     expect(result).toMatchObject({\n       rmDocumentation: false,\n       rmExamples: false,\n+      rmTypeSpec: false,\n       rmFunctional: false,\n       rmOther: false,\n       other: false,\n@@ -71,6 +72,7 @@ describe(\"checkTrivialChanges\", () => {\n     expect(result).toMatchObject({\n       rmDocumentation: false,\n       rmExamples: false,\n+      rmTypeSpec: false,\n       rmFunctional: false,\n       rmOther: false,\n       other: true,\n@@ -96,6 +98,7 @@ describe(\"checkTrivialChanges\", () => {\n     expect(result).toMatchObject({\n       rmDocumentation: false,\n       rmExamples: false,\n+      rmTypeSpec: false,\n       rmFunctional: false,\n       rmOther: false,\n       other: true, // Non-RM changes block ARM auto-signoff even when there are no RM changes\n@@ -119,6 +122,7 @@ describe(\"checkTrivialChanges\", () => {\n     expect(result).toMatchObject({\n       rmDocumentation: false,\n       rmExamples: false,\n+      rmTypeSpec: false,\n       rmFunctional: true, // New spec files are functional\n       rmOther: false,\n       other: false,\n@@ -142,6 +146,7 @@ describe(\"checkTrivialChanges\", () => {\n     expect(result).toMatchObject({\n       rmDocumentation: false,\n       rmExamples: false,\n+      rmTypeSpec: false,\n       rmFunctional: true, // Deleted spec files are functional\n       rmOther: false,\n       other: false,\n@@ -166,6 +171,7 @@ describe(\"checkTrivialChanges\", () => {\n     expect(result).toMatchObject({\n       rmDocumentation: false,\n       rmExamples: false,\n+      rmTypeSpec: false,\n       rmFunctional: true, // Renamed spec files are functional\n       rmOther: false,\n       other: false,\n@@ -190,6 +196,7 @@ describe(\"checkTrivialChanges\", () => {\n     expect(result).toMatchObject({\n       rmDocumentation: true,\n       rmExamples: false,\n+      rmTypeSpec: false,\n       rmFunctional: false,\n       rmOther: false,\n       other: false,\n@@ -214,6 +221,7 @@ describe(\"checkTrivialChanges\", () => {\n     expect(r",
+        "diff_truncated": false,
+        "review_comment_original": "No issues found.",
+        "review_comment_ko": "지적 사항 없음.",
+        "additional_context": "이 diff 는 파일 전체가 아니라 리뷰 대상 코드 주변 약 50줄입니다. review_comment_* 는 정답의 근거이므로 모델 프롬프트에 넣지 않습니다."
+      },
+      "expected": {
+        "change_summary_ko": "사소한 변경 판정 테스트의 기대 객체에 `rmTypeSpec: false` 항목을 추가합니다.",
+        "change_purpose_ko": "판정 결과에 TypeSpec 관련 항목이 추가되면서 테스트 기대값을 맞추기 위한 것으로 보입니다.",
+        "change_reason_ko": "PR 제목과 설명을 확인할 수 없어 변경 배경을 단정할 수 없습니다.",
+        "before_ko": "기대 객체에 `rmDocumentation`, `rmExamples`, `rmFunctional`, `rmOther`, `other` 만 있었습니다.",
+        "after_ko": "`rmTypeSpec: false` 가 추가되었습니다.",
+        "review_result": "approve",
+        "issues": [],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "판정 결과 객체에 항목이 하나 늘어납니다.",
+            "evidence": "+      rmTypeSpec: false,"
+          },
+          {
+            "role": "qa",
+            "impact_ko": "테스트 기대값이 새 항목을 포함하도록 갱신됩니다.",
+            "evidence": "+      rmTypeSpec: false,"
+          }
+        ],
+        "follow_up_tasks": [],
+        "needs_confirmation": []
+      },
+      "evaluation_metadata": {
+        "expected_issue_count": 0,
+        "contains_security_issue": false,
+        "contains_performance_issue": false,
+        "contains_n_plus_one_issue": false,
+        "contains_breaking_change": false,
+        "is_control_sample": true
+      },
+      "human_review": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewed_at": null,
+        "notes": ""
+      }
+    }
+  ]
+}

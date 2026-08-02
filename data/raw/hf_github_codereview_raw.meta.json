@@ -1,0 +1,48 @@
+{
+  "dataset": "ronantakizawa/github-codereview",
+  "split": "train",
+  "license": "other (데이터셋 카드 표기) — 사용 조건 확인 필요",
+  "license_status": "확인 필요",
+  "retrieved_at": "2026-08-02T17:12:56.760004+00:00",
+  "scanned_rows": 200001,
+  "saved_rows": 41,
+  "quota": {
+    "security": 6,
+    "performance": 5,
+    "bug": 6,
+    "refactor": 4,
+    "style": 2,
+    "nitpick": 2,
+    "question": 3,
+    "suggestion": 8,
+    "none": 4,
+    "control": 5
+  },
+  "saved_by_type": {
+    "security": 6,
+    "performance": 5,
+    "bug": 6,
+    "refactor": 4,
+    "style": 2,
+    "nitpick": 2,
+    "question": 3,
+    "suggestion": 8,
+    "none": 0,
+    "control": 5
+  },
+  "skipped_reasons": {
+    "같은_PR_중복": 17,
+    "저장소_상한_초과": 2407,
+    "diff_너무_짧음": 17,
+    "diff_너무_김": 39,
+    "리뷰댓글_너무_김": 7
+  },
+  "filters": {
+    "min_diff_chars": 80,
+    "max_diff_chars": 6000,
+    "min_comment_chars": 25,
+    "max_comment_chars": 2000,
+    "max_per_repo": 3
+  },
+  "note": "reviewer_comment 는 평가 정답이므로 모델 입력에 넣지 않습니다. 민감정보(토큰/키/이메일)는 저장 전에 마스킹했습니다."
+}

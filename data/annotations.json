@@ -1,0 +1,2145 @@
+{
+  "annotation_version": "0.3.0",
+  "source_kind": "huggingface_github_codereview",
+  "style_guide": "한국어 '~합니다' 설명체로 통일. 코드/식별자/경로/명령어/오류 메시지는 원문 유지.",
+  "translation_method_default": "claude-assisted",
+  "dataset_design": {
+    "input_diff": "데이터셋의 diff_context. 리뷰어가 인라인 댓글을 단 코드 주변 약 50줄입니다.",
+    "answer_basis": "같은 행의 reviewer_comment(사람 리뷰어가 실제로 남긴 지적)입니다.",
+    "review_comment_excluded_from_input": "리뷰 댓글은 정답이므로 모델 입력에 넣지 않습니다. reference 아래에만 둡니다.",
+    "control_samples": "reviewer_comment 가 \"No issues found.\" 인 행입니다. 리뷰를 통과한 코드이며 issues 는 빈 배열입니다.",
+    "issue_location_semantics": {
+      "post_change": "이 변경이 새로 추가하거나 수정한 코드('+' 라인)에 대한 지적입니다. 리뷰 댓글은 대부분 여기에 해당합니다.",
+      "pre_change": "이 변경이 제거한 코드('-' 라인)에 있던 문제입니다."
+    }
+  },
+  "annotations": [
+    {
+      "ref": "DrewThomasson/ebook2audiobook#1289",
+      "id": "ctx-sec-001",
+      "classification": {
+        "category": "security",
+        "subtype": "supply_chain_unverified_execution",
+        "difficulty": "medium",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "v25.12.13",
+        "review_comment_ko": "`apk` 용 `install_programs` 분기가 `https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg` 에서 `un-get` 플러그인을 조건 없이 내려받아 `installplg` 로 즉시 실행합니다. 무결성 검증도, 변경되지 않는 커밋으로의 고정도 없습니다."
+      },
+      "expected": {
+        "summary_ko": "`install_programs` 함수의 `apk` 분기에 `un-get` 플러그인을 내려받아 설치하는 절차를 추가합니다.",
+        "purpose_ko": "Alpine 계열 환경에서 패키지 관리자를 준비하기 위해 필요한 플러그인을 자동으로 설치하려는 것으로 보입니다.",
+        "change_reason_ko": "PR 제목이 버전 표기뿐이어서 변경 배경을 단정할 수 없습니다.",
+        "before_ko": "`apk` 가 있으면 패키지 관리자 변수만 설정했습니다.",
+        "after_ko": "`un-get` 명령이 없으면 `curl -L` 로 원격 `.plg` 파일을 `/tmp` 에 내려받고 `installplg` 로 바로 실행합니다.",
+        "related_features": [
+          "설치 스크립트",
+          "패키지 관리자 준비",
+          "외부 플러그인 설치"
+        ],
+        "affected_roles": [
+          "backend",
+          "qa",
+          "project_manager"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "설치 스크립트가 외부 저장소의 최신 파일을 그대로 실행하게 됩니다. 그 저장소가 변조되면 설치를 실행한 시스템에서 임의 코드가 실행됩니다."
+          },
+          {
+            "role": "qa",
+            "impact_ko": "네트워크가 없거나 원격 파일이 바뀐 상황에서 설치가 어떻게 동작하는지 확인해야 합니다."
+          },
+          {
+            "role": "project_manager",
+            "impact_ko": "제3자 저장소에 대한 의존이 새로 생기므로 공급망 정책 검토가 필요합니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "다운로드 대상을 변경되지 않는 커밋 해시로 고정하고, 체크섬이나 서명을 검증한 뒤에만 실행합니다."
+          },
+          {
+            "role": "backend",
+            "task_ko": "검증 실패 시 설치를 중단하도록 오류 처리를 추가합니다."
+          }
+        ],
+        "needs_confirmation": [
+          "`installplg` 가 어떤 권한으로 실행되는지는 이 diff 에 나타나지 않아 영향 범위를 확정할 수 없습니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-sec-001-i1",
+            "category": "security",
+            "severity": "high",
+            "confidence": 0.9,
+            "location": "post_change",
+            "line_reference": "`install_programs` 의 `apk` 분기에서 `un-get` 플러그인을 내려받아 실행하는 부분",
+            "evidence": "+\t\t\t\tcurl -L -o /tmp/un-get.plg https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg\n+\t\t\t\tinstallplg /tmp/un-get.plg",
+            "problem_ko": "원격 저장소의 `master` 브랜치에서 실행 파일을 내려받아 곧바로 실행합니다. 커밋 고정도, 체크섬이나 서명 검증도 없습니다.",
+            "impact_ko": "해당 저장소가 침해되거나 소유자가 파일을 바꾸면, 이 설치 스크립트를 실행한 모든 시스템에서 공격자의 코드가 실행됩니다. 전형적인 공급망 원격 코드 실행 경로입니다.",
+            "recommendation_ko": "다운로드 URL 을 변경 불가능한 커밋 해시로 고정하고, 알려진 체크섬이나 서명을 검증한 뒤에만 `installplg` 를 실행합니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "DrewThomasson/ebook2audiobook#1291",
+      "id": "ctx-sec-002",
+      "classification": {
+        "category": "security",
+        "subtype": "supply_chain_unverified_execution",
+        "difficulty": "medium",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "v25.12.13",
+        "review_comment_ko": "`curl` 과 `installplg` 흐름이 `https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg` 에서 `un-get` 플러그인을 고정이나 무결성 검증 없이 내려받아 실행합니다. 해당 파일이 변조되면 공급망 원격 코드 실행 위험이 생깁니다."
+      },
+      "expected": {
+        "summary_ko": "플러그인 설치 분기의 조건을 `apk` 존재 여부에서 Unraid 환경 판정(`/etc/unraid-version` 또는 `installplg` 존재)으로 바꾸고 안내 문구를 다듬습니다.",
+        "purpose_ko": "플러그인 설치 경로가 Alpine 이 아니라 Unraid 환경에서 동작하도록 분기 조건을 바로잡으려는 것으로 보입니다.",
+        "change_reason_ko": "PR 제목이 버전 표기뿐이어서 변경 배경을 단정할 수 없습니다.",
+        "before_ko": "`elif command -v apk &> /dev/null; then` 으로 Alpine 패키지 관리자 존재 여부를 보고 분기했습니다.",
+        "after_ko": "`elif [[ -f /etc/unraid-version ]] || command -v installplg &>/dev/null; then` 으로 Unraid 환경을 판정합니다. 내부의 다운로드·실행 흐름은 그대로 유지됩니다.",
+        "related_features": [
+          "설치 스크립트",
+          "Unraid 환경 판정",
+          "외부 플러그인 설치"
+        ],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "분기 조건은 정확해졌지만 검증 없는 원격 실행 흐름은 그대로 남아 있습니다."
+          },
+          {
+            "role": "qa",
+            "impact_ko": "Alpine 환경과 Unraid 환경에서 각각 어느 분기를 타는지 확인해야 합니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "분기 조건 수정과 별개로, 원격 플러그인 다운로드에 커밋 고정과 무결성 검증을 추가합니다."
+          }
+        ],
+        "needs_confirmation": [
+          "분기 조건 변경으로 기존 Alpine 사용자가 어느 경로를 타게 되는지는 스크립트 전체를 봐야 확인할 수 있습니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-sec-002-i1",
+            "category": "security",
+            "severity": "high",
+            "confidence": 0.9,
+            "location": "post_change",
+            "line_reference": "Unraid 분기 안의 `curl` 다운로드와 `installplg` 실행",
+            "evidence": "+\t\telif [[ -f /etc/unraid-version ]] || command -v installplg &>/dev/null; then",
+            "problem_ko": "분기 조건만 바꾸고 그 안의 다운로드·실행 흐름은 손대지 않았습니다. 여전히 원격 `master` 브랜치의 파일을 검증 없이 내려받아 실행합니다.",
+            "impact_ko": "조건 수정으로 이 경로를 타는 환경이 오히려 명확해졌지만, 원격 파일이 변조되면 임의 코드가 실행되는 위험은 그대로입니다.",
+            "recommendation_ko": "다운로드 대상을 커밋 해시로 고정하고 체크섬 검증을 통과한 경우에만 `installplg` 를 실행하도록 함께 수정합니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "CryptoBlades/cryptoblades#582",
+      "id": "ctx-sec-003",
+      "classification": {
+        "category": "security",
+        "subtype": "caller_controlled_fee",
+        "difficulty": "hard",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "무기 제작 시 속성을 선택하는 기능",
+        "review_comment_ko": "여기에도 같은 `chosenElementFee` 취약점이 있습니다."
+      },
+      "expected": {
+        "summary_ko": "`mintWeaponN` 과 관련 함수의 시그니처에 `chosenElement` 와 `chosenElementFee` 파라미터를 추가합니다.",
+        "purpose_ko": "무기를 제작할 때 사용자가 속성을 선택할 수 있게 하고, 그에 따른 추가 수수료를 반영하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 제작 시 속성 선택 기능을 추가하는 작업입니다.",
+        "before_ko": "`function mintWeaponN(uint32 num)` 이 수량만 받고 `_payContract(msg.sender, mintWeaponFee * num)` 으로 고정 수수료를 청구했습니다.",
+        "after_ko": "`function mintWeaponN(uint32 num, uint16 chosenElement, uint16 chosenElementFee)` 로 바뀌어 속성과 그 수수료를 호출자가 함께 전달합니다.",
+        "related_features": [
+          "무기 제작",
+          "수수료 청구",
+          "속성 선택"
+        ],
+        "affected_roles": [
+          "backend",
+          "frontend",
+          "qa",
+          "project_manager"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "수수료 계산에 쓰이는 값을 외부 호출자가 직접 지정하게 됩니다. 컨트랙트가 값을 검증하지 않으면 수수료를 우회할 수 있습니다."
+          },
+          {
+            "role": "frontend",
+            "impact_ko": "제작 호출 시 속성과 수수료 인자를 함께 전달해야 합니다."
+          },
+          {
+            "role": "qa",
+            "impact_ko": "`chosenElementFee` 에 0 이나 비정상 값을 넣어 호출했을 때 어떻게 되는지 확인해야 합니다."
+          },
+          {
+            "role": "project_manager",
+            "impact_ko": "수수료 정책이 코드로 강제되는지 확인이 필요합니다. 자산 손실로 직결될 수 있습니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "`chosenElementFee` 를 호출자 입력이 아니라 컨트랙트가 보유한 값에서 조회하도록 바꿉니다."
+          },
+          {
+            "role": "backend",
+            "task_ko": "같은 패턴이 적용된 다른 제작 함수들도 함께 점검합니다."
+          }
+        ],
+        "needs_confirmation": [
+          "함수 본문에서 `chosenElementFee` 를 검증하는지는 diff 에 잘려 있어 확인할 수 없습니다. 리뷰어가 \"같은 취약점\" 이라고 표현한 것으로 보아 다른 함수에서 이미 지적된 사안으로 보입니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-sec-003-i1",
+            "category": "security",
+            "severity": "high",
+            "confidence": 0.75,
+            "location": "post_change",
+            "line_reference": "`mintWeaponN` 의 시그니처에 추가된 `chosenElementFee` 파라미터",
+            "evidence": "+    function mintWeaponN(uint32 num, uint16 chosenElement, uint16 chosenElementFee)",
+            "problem_ko": "수수료 금액을 외부 호출자가 인자로 전달하도록 시그니처를 바꿨습니다. 컨트랙트가 이 값을 신뢰하면 호출자가 원하는 값을 넣어 실제 수수료를 낮추거나 없앨 수 있습니다.",
+            "impact_ko": "제작 수수료를 우회할 수 있게 되어 프로토콜 수익이 유출됩니다. 온체인 컨트랙트이므로 배포 후에는 되돌리기 어렵습니다.",
+            "recommendation_ko": "수수료 값을 호출자 입력으로 받지 말고, 컨트랙트에 저장된 속성별 수수료 값을 조회해 사용합니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "FiloSottile/mkcert#38",
+      "id": "ctx-sec-004",
+      "classification": {
+        "category": "security",
+        "subtype": "certificate_handling",
+        "difficulty": "medium",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "Java cacerts 파일에 설치하는 기능 지원",
+        "review_comment_ko": "디스크에 있는 인증서 파일을 사용할 수 있을까요? 예를 들어 macOS 의 `security` 입력 방식을 참고해 주세요."
+      },
+      "expected": {
+        "summary_ko": "Java 트러스트스토어(`cacerts`)에 루트 인증서를 설치하는 `truststore_java.go` 를 새로 추가합니다.",
+        "purpose_ko": "mkcert 가 만든 로컬 CA 인증서를 Java 애플리케이션도 신뢰하도록 `cacerts` 에 등록하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 Java cacerts 파일 설치 지원이 목적입니다.",
+        "before_ko": "Java 트러스트스토어를 다루는 코드가 없었습니다. 이 diff 는 파일 전체를 새로 추가합니다.",
+        "after_ko": "`crypto/x509`, `encoding/pem`, `crypto/sha1`, `crypto/sha256` 등을 사용해 인증서를 다루는 구현이 추가되었습니다.",
+        "related_features": [
+          "Java 트러스트스토어 설치",
+          "루트 CA 등록",
+          "인증서 해시 계산"
+        ],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "인증서를 메모리에서 재구성하는 대신 디스크의 원본 파일을 쓰면 인코딩 과정에서 값이 달라질 여지가 줄어듭니다."
+          },
+          {
+            "role": "qa",
+            "impact_ko": "설치된 인증서가 원본과 동일한지, Java 애플리케이션이 실제로 신뢰하는지 확인해야 합니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "macOS `security` 경로와 동일하게 디스크의 인증서 파일을 직접 입력으로 사용하도록 정리합니다."
+          }
+        ],
+        "needs_confirmation": [
+          "현재 구현이 인증서를 어떤 형태로 만들어 전달하는지는 diff 앞부분(import 목록)만으로는 확인할 수 없습니다.",
+          "`crypto/sha1` 을 사용하는 목적이 지문 계산인지 다른 용도인지 확인이 필요합니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-sec-004-i1",
+            "category": "security",
+            "severity": "medium",
+            "confidence": 0.7,
+            "location": "post_change",
+            "line_reference": "`truststore_java.go` 의 인증서 처리 구현부",
+            "evidence": "+\t\"crypto/sha1\"",
+            "problem_ko": "인증서를 디스크의 원본 파일이 아니라 코드에서 재구성해 다루고 있습니다. 다른 플랫폼 구현(macOS `security`)은 파일 경로를 그대로 넘기는 방식을 쓰고 있어 처리 방식이 일관되지 않습니다.",
+            "impact_ko": "인코딩·재구성 과정에서 원본과 다른 바이트열이 트러스트스토어에 등록될 수 있습니다. 신뢰 체인이 의도와 다르게 구성될 여지가 생깁니다.",
+            "recommendation_ko": "macOS 경로와 동일하게 디스크에 있는 인증서 파일을 입력으로 사용해 처리 방식을 일치시킵니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "Chia-Network/chia-blockchain#19609",
+      "id": "ctx-npo-001",
+      "classification": {
+        "category": "n_plus_one",
+        "subtype": "repeated_lookup_in_loop",
+        "difficulty": "hard",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "키/값 조회를 위한 DL 함수 최적화",
+        "review_comment_ko": "중복된 루프로 보이는데, 이를 합쳐서 `.get_node_by_hash()` 재호출을 피할 수 있지 않을까요? 여기 테이블 blob 세부까지 파고들지는 않았지만, 진행하면서 함께 만들어 둘 수 있는 종류로 보입니다."
+      },
+      "expected": {
+        "summary_ko": "여러 노드 해시를 한 번에 조회하는 `get_terminal_nodes_by_hashes()` 를 추가합니다.",
+        "purpose_ko": "데이터 레이어에서 키/값을 조회할 때 노드를 하나씩 가져오던 것을 묶어 처리해 성능을 개선하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 DL 조회 함수 최적화가 목적입니다.",
+        "before_ko": "`get_terminal_node_by_hash()` 로 노드 해시 하나씩 조회했습니다.",
+        "after_ko": "`get_terminal_nodes_by_hashes()` 가 추가되어 merkle blob 을 한 번 로드한 뒤 `for node_hash in node_hashes:` 루프에서 `merkle_blob.get_node_by_hash(node_hash)` 를 호출해 `kv_ids` 를 모읍니다.",
+        "related_features": [
+          "데이터 레이어 노드 조회",
+          "merkle blob 접근",
+          "키/값 일괄 조회"
+        ],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "merkle blob 로드는 한 번으로 줄었지만, 노드 조회는 여전히 해시 수만큼 반복됩니다. 뒤이어 같은 순회가 또 있으면 비용이 두 배가 됩니다."
+          },
+          {
+            "role": "qa",
+            "impact_ko": "노드 수가 많은 저장소에서 조회 시간을 기존 구현과 비교해야 합니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "이 함수 뒤에 이어지는 순회와 이 루프를 합쳐 `get_node_by_hash()` 호출을 한 번만 수행하도록 정리합니다."
+          }
+        ],
+        "needs_confirmation": [
+          "리뷰어가 지적한 \"중복된 루프\" 의 나머지 한쪽은 diff 에 잘려 있어 이 hunk 만으로는 전체 구조를 확인할 수 없습니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-npo-001-i1",
+            "category": "n_plus_one",
+            "severity": "medium",
+            "confidence": 0.8,
+            "location": "post_change",
+            "line_reference": "`get_terminal_nodes_by_hashes()` 의 `for node_hash in node_hashes:` 루프",
+            "evidence": "+        for node_hash in node_hashes:\n+            kid, vid = merkle_blob.get_node_by_hash(node_hash)",
+            "problem_ko": "노드 해시마다 `merkle_blob.get_node_by_hash()` 를 반복 호출하고, 같은 대상을 다시 순회하는 루프가 뒤에 이어집니다. 한 번의 순회로 필요한 값을 모두 모을 수 있는데 조회를 두 번 반복합니다.",
+            "impact_ko": "조회할 노드 수에 비례해 불필요한 조회가 배로 늘어납니다. 키/값을 대량으로 읽는 경로에서 응답 시간이 늘어납니다.",
+            "recommendation_ko": "두 루프를 하나로 합쳐 노드마다 한 번만 조회하고, 필요한 값을 그 자리에서 함께 구성합니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "Chia-Network/chia-blockchain#19630",
+      "id": "ctx-perf-001",
+      "classification": {
+        "category": "performance",
+        "subtype": "duplicate_disk_load",
+        "difficulty": "hard",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "누락 파일 추가 로직 최적화",
+        "review_comment_ko": "이 부분이 blob 을 디스크에서 두 번 읽는 것 같은데요? 다시 확인해 봐야겠지만, pyo3 객체를 오버헤드 없이 rust 로 되돌려 넘기는 방법을 알아낸 것 같습니다. 그러면 이미 로드된 merkle blob 을 delta 파일 캐시에 넘기도록 순서를 바꿀 수 있습니다."
+      },
+      "expected": {
+        "summary_ko": "`write_tree_to_file()` 에서 `DeltaFileCache` 를 만들고 루트 경로로 해시 인덱스를 로드한 뒤, 이어서 merkle blob 을 가져옵니다.",
+        "purpose_ko": "누락된 파일을 추가하는 과정의 성능을 개선하기 위해 delta 파일 캐시를 도입합니다.",
+        "change_reason_ko": "PR 제목에 따르면 누락 파일 추가 경로의 최적화가 목적입니다.",
+        "before_ko": "`merkle_blob = await self.get_merkle_blob(...)` 로 blob 을 가져오는 것으로 시작했습니다.",
+        "after_ko": "`delta_file_cache.load_hash_to_index(root_path)` 로 먼저 디스크에서 인덱스를 읽고, 그 다음에 `get_merkle_blob()` 을 호출합니다.",
+        "related_features": [
+          "데이터 레이어 트리 파일 작성",
+          "delta 파일 캐시",
+          "merkle blob 로드"
+        ],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "같은 blob 데이터를 서로 다른 두 경로가 각각 디스크에서 읽습니다. 최적화를 위한 변경이 오히려 I/O 를 늘립니다."
+          },
+          {
+            "role": "qa",
+            "impact_ko": "트리 파일 작성 시간과 디스크 읽기량을 변경 전후로 비교해야 합니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "이미 로드한 merkle blob 을 delta 파일 캐시에 전달하도록 호출 순서를 바꿔 중복 읽기를 없앱니다."
+          }
+        ],
+        "needs_confirmation": [
+          "리뷰어도 \"다시 확인해 봐야겠다\" 고 밝혔습니다. `load_hash_to_index()` 와 `get_merkle_blob()` 이 실제로 같은 파일을 읽는지는 두 함수 구현을 확인해야 합니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-perf-001-i1",
+            "category": "performance",
+            "severity": "medium",
+            "confidence": 0.75,
+            "location": "post_change",
+            "line_reference": "`write_tree_to_file()` 의 `load_hash_to_index()` 호출과 뒤이은 `get_merkle_blob()` 호출",
+            "evidence": "+        delta_file_cache.load_hash_to_index(root_path)\n         merkle_blob = await self.get_merkle_blob(store_id=store_id, root_hash=root.node_hash)",
+            "problem_ko": "delta 파일 캐시가 루트 경로에서 해시 인덱스를 읽은 직후, 같은 루트 해시로 merkle blob 을 다시 가져옵니다. 같은 데이터를 디스크에서 두 번 읽습니다.",
+            "impact_ko": "성능 개선을 목적으로 한 변경이 오히려 디스크 읽기를 한 번 더 늘립니다. blob 이 큰 저장소일수록 손해가 커집니다.",
+            "recommendation_ko": "merkle blob 을 먼저 가져온 뒤 그 객체를 delta 파일 캐시에 전달해, 디스크 읽기를 한 번으로 줄입니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "DiceDB/dice#197",
+      "id": "ctx-perf-002",
+      "classification": {
+        "category": "performance",
+        "subtype": "missing_preallocation",
+        "difficulty": "easy",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "feat: KEYS 명령 지원",
+        "review_comment_ko": "여기서 작은 최적화가 가능할 것 같습니다. 패턴이 빈 문자열이면 슬라이스 용량을 keypool 길이와 같게 미리 할당하면 잦은 재할당을 피할 수 있습니다."
+      },
+      "expected": {
+        "summary_ko": "저장소의 키를 패턴으로 조회하는 `Keys(p string) []string` 함수를 추가합니다.",
+        "purpose_ko": "Redis 의 `KEYS` 명령을 지원하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 `KEYS` 명령 지원 추가가 목적입니다.",
+        "before_ko": "키 목록을 조회하는 함수가 없었습니다.",
+        "after_ko": "`Keys()` 가 추가되어 뮤텍스를 읽기 잠금한 뒤 `keys := make([]string, 0)` 으로 슬라이스를 만들고 키를 채웁니다.",
+        "related_features": [
+          "KEYS 명령",
+          "키 저장소 조회",
+          "슬라이스 할당"
+        ],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "키가 많은 저장소에서 결과 슬라이스가 여러 번 재할당되고 복사됩니다. 조회 지연과 메모리 사용량이 함께 늘어납니다."
+          },
+          {
+            "role": "qa",
+            "impact_ko": "키가 많은 상태에서 `KEYS` 호출 지연을 측정해야 합니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "패턴이 모든 키를 포함할 때 `make([]string, 0, len(keypool))` 로 용량을 미리 잡습니다."
+          }
+        ],
+        "needs_confirmation": [],
+        "issues": [
+          {
+            "id": "ctx-perf-002-i1",
+            "category": "performance",
+            "severity": "low",
+            "confidence": 0.85,
+            "location": "post_change",
+            "line_reference": "`Keys()` 함수의 결과 슬라이스 생성",
+            "evidence": "+\tkeys := make([]string, 0)",
+            "problem_ko": "결과를 담을 슬라이스를 용량 지정 없이 생성합니다. 키를 추가할 때마다 용량이 부족해지면 새 배열을 할당하고 기존 값을 복사합니다.",
+            "impact_ko": "키가 많을수록 재할당과 복사가 반복되어 조회 지연과 메모리 사용량이 늘어납니다. `KEYS` 는 전체 키를 훑는 명령이라 영향이 직접적입니다.",
+            "recommendation_ko": "예상 결과 크기를 알 수 있을 때(예: 패턴이 비어 모든 키가 대상일 때) `make([]string, 0, len(keypool))` 처럼 용량을 미리 지정합니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "Automattic/pocket-casts-ios#3005",
+      "id": "ctx-perf-003",
+      "classification": {
+        "category": "performance",
+        "subtype": "retain_cycle_avoidance",
+        "difficulty": "medium",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "Watch 로그 크래시 수정",
+        "review_comment_ko": "self 가 해제된 경우를 대비해 지역 복사본을 유지합니다. 어차피 그 사이에 값이 바뀌지 않을 것이고, 캐시된 사본이라 항상 최신이어야 하는 것도 아닙니다."
+      },
+      "expected": {
+        "summary_ko": "타이머 클로저가 `self` 를 약한 참조로 캡처하던 것을 `cachedLog` 값만 캡처하도록 바꿉니다.",
+        "purpose_ko": "Watch 로그 전송 과정에서 발생하던 크래시를 막기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 Watch 로그 관련 크래시 수정이 목적입니다.",
+        "before_ko": "`logFileRequestTimedAction.startTimer(for: 5.seconds) { [weak self] in` 으로 `self` 를 약하게 캡처했습니다.",
+        "after_ko": "클로저 밖에서 `let cachedLog = self.cachedLog` 로 값을 복사한 뒤 `{ [cachedLog] in` 으로 값만 캡처합니다.",
+        "related_features": [
+          "Watch 로그 전송",
+          "타이머 클로저",
+          "객체 수명 관리"
+        ],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "클로저가 더 이상 `self` 에 의존하지 않아, 타이머가 실행될 때 객체가 이미 해제되어 있어도 안전합니다. 대신 캡처한 값은 복사 시점 기준으로 고정됩니다."
+          },
+          {
+            "role": "qa",
+            "impact_ko": "화면을 빠르게 벗어나는 상황에서 로그 전송이 크래시 없이 동작하는지 확인해야 합니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "같은 파일의 다른 타이머 클로저에도 동일한 캡처 문제가 있는지 점검합니다."
+          }
+        ],
+        "needs_confirmation": [
+          "`cachedLog` 가 값 타입인지 참조 타입인지에 따라 복사의 의미가 달라집니다. 이 diff 만으로는 확인할 수 없습니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-perf-003-i1",
+            "category": "performance",
+            "severity": "medium",
+            "confidence": 0.75,
+            "location": "pre_change",
+            "line_reference": "`logFileRequestTimedAction.startTimer` 클로저의 캡처 목록",
+            "evidence": "-        logFileRequestTimedAction.startTimer(for: 5.seconds) { [weak self] in",
+            "problem_ko": "5초 뒤 실행되는 타이머 클로저가 `self` 를 캡처합니다. 그 사이에 객체가 해제되면 클로저 안에서 해제된 인스턴스에 접근하게 됩니다.",
+            "impact_ko": "타이머가 발화하는 시점에 화면이 이미 사라졌다면 크래시가 발생합니다. 사용자가 화면을 빠르게 전환할 때 재현됩니다.",
+            "recommendation_ko": "필요한 값(`cachedLog`)만 미리 지역 변수로 복사해 캡처하고, 클로저가 `self` 에 의존하지 않도록 합니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "DiceDB/dice#229",
+      "id": "ctx-perf-004",
+      "classification": {
+        "category": "performance",
+        "subtype": "benchmark_granularity",
+        "difficulty": "medium",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "#184 : queueref remove 에 대한 테스트 케이스와 벤치마크",
+        "review_comment_ko": "벤치마크를 개선할 몇 가지 제안이 있습니다.\n\n1. 벤치마크를 삽입과 제거로 분리합시다. 각 연산에 대해 더 세밀한 성능 정보를 얻을 수 있습니다.\n2. `b.Run()` 호출을 사용해 주세요."
+      },
+      "expected": {
+        "summary_ko": "`queueref` 의 제거 동작에 대한 테스트와 벤치마크를 추가합니다.",
+        "purpose_ko": "큐 참조 자료구조의 제거 연산을 검증하고 성능을 측정하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 이슈 #184 에 대한 테스트와 벤치마크 추가가 목적입니다.",
+        "before_ko": "`TestQueueRef` 만 있었고 제거 동작에 대한 별도 테스트와 벤치마크가 없었습니다.",
+        "after_ko": "`TestRemoveSingleNonExpiredKeys` 등 제거 관련 테스트와 벤치마크가 추가되었습니다.",
+        "related_features": [
+          "queueref 자료구조",
+          "테스트",
+          "벤치마크"
+        ],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "삽입과 제거를 한 벤치마크에 묶으면 어느 연산이 느린지 구분할 수 없습니다."
+          },
+          {
+            "role": "qa",
+            "impact_ko": "벤치마크 결과를 연산별로 비교할 수 있어야 회귀를 잡을 수 있습니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "qa",
+            "task_ko": "벤치마크를 삽입과 제거로 나누고 `b.Run()` 으로 하위 벤치마크를 구성합니다."
+          }
+        ],
+        "needs_confirmation": [
+          "벤치마크 함수 본문은 diff 뒷부분에 있어 이 hunk 에서는 테스트 함수만 확인됩니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-perf-004-i1",
+            "category": "performance",
+            "severity": "low",
+            "confidence": 0.7,
+            "location": "post_change",
+            "line_reference": "추가된 queueref 테스트·벤치마크 블록",
+            "evidence": "+// Test for removing from queue with single non-expired keys\n+func TestRemoveSingleNonExpiredKeys(t *testing.T) {",
+            "problem_ko": "삽입과 제거를 하나의 벤치마크에서 함께 측정하면 각 연산의 비용을 분리해 볼 수 없습니다. `b.Run()` 으로 하위 벤치마크를 나누지도 않았습니다.",
+            "impact_ko": "성능 회귀가 생겼을 때 어느 연산에서 발생했는지 알 수 없어 원인 추적이 어렵습니다.",
+            "recommendation_ko": "삽입과 제거를 별도 벤치마크로 분리하고 `b.Run()` 으로 이름 붙인 하위 벤치마크를 구성합니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "CryptoBlades/cryptoblades#1349",
+      "id": "ctx-perf-005",
+      "classification": {
+        "category": "performance",
+        "subtype": "batchable_update",
+        "difficulty": "medium",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "전투 시 네이티브 토큰 수수료 부과",
+        "review_comment_ko": "여담이지만 지금 당장 바꿀 필요는 없고 앞으로를 위해 적어 둡니다. 네이티브 토큰과 skill 토큰 가격을 갱신하는 봇이 두 값을 한 번에 보내고 싶어 할 수 있는데, 그렇다면 두 값을 한 번에 설정하는 함수가 있는 편이 낫습니다."
+      },
+      "expected": {
+        "summary_ko": "토큰 가격과 수수료를 관리하는 `TokensManager` 컨트랙트를 새로 추가합니다.",
+        "purpose_ko": "전투 시 네이티브 토큰으로 수수료를 부과하기 위해 토큰 가격 관리 컨트랙트를 도입합니다.",
+        "change_reason_ko": "PR 제목에 따르면 전투에 네이티브 토큰 수수료를 부과하는 것이 목적입니다.",
+        "before_ko": "해당 컨트랙트가 존재하지 않았습니다. 이 diff 는 파일 전체를 새로 추가합니다.",
+        "after_ko": "`TokensManager` 가 `Initializable` 과 `AccessControlUpgradeable` 을 상속하고 `SafeMath`, `ABDKMath64x64` 를 사용해 가격을 다룹니다.",
+        "related_features": [
+          "토큰 가격 관리",
+          "전투 수수료",
+          "가격 갱신 봇"
+        ],
+        "affected_roles": [
+          "backend",
+          "project_manager"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "가격을 값마다 따로 설정하면 갱신 봇이 트랜잭션을 두 번 보내야 합니다. 온체인에서는 트랜잭션 수가 곧 비용입니다."
+          },
+          {
+            "role": "project_manager",
+            "impact_ko": "가격 갱신 운영 비용에 영향을 주므로 봇 운영 방식과 함께 검토해야 합니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "네이티브 토큰과 skill 토큰 가격을 한 번에 설정하는 함수를 추가할지 검토합니다."
+          }
+        ],
+        "needs_confirmation": [
+          "리뷰어가 \"지금 바꿀 필요는 없다\" 고 명시했습니다. 즉시 수정해야 하는 결함이 아니라 향후 개선 제안입니다.",
+          "가격 설정 함수의 실제 시그니처는 diff 뒷부분에 있어 이 hunk 에서는 확인할 수 없습니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-perf-005-i1",
+            "category": "performance",
+            "severity": "low",
+            "confidence": 0.6,
+            "location": "post_change",
+            "line_reference": "`TokensManager` 컨트랙트의 가격 설정 인터페이스",
+            "evidence": "+contract TokensManager is Initializable, AccessControlUpgradeable {",
+            "problem_ko": "토큰 가격을 개별적으로만 설정할 수 있는 구조로 보입니다. 두 토큰 가격을 함께 갱신하는 운영 시나리오에서는 트랜잭션을 두 번 보내야 합니다.",
+            "impact_ko": "가격 갱신 봇이 매번 트랜잭션을 두 번 발행해 가스 비용이 두 배가 됩니다. 갱신 주기가 짧을수록 누적 비용이 커집니다.",
+            "recommendation_ko": "두 토큰 가격을 한 번에 설정하는 함수를 추가해 갱신 트랜잭션을 한 번으로 줄입니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "AvaloniaUI/Avalonia#1350",
+      "id": "ctx-bug-001",
+      "classification": {
+        "category": "functional_bug",
+        "subtype": "debug_code_left_in",
+        "difficulty": "easy",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "포커스 애드너 클리핑",
+        "review_comment_ko": "더 서술적인 이름을 고를 수 있을까요? 매직 문자열이 되지 않도록 상수로 저장하는 것도 좋겠습니다. 그리고 이것이 디버깅 외의 다른 용도로도 쓰입니까?"
+      },
+      "expected": {
+        "summary_ko": "`DeferredRenderer.Render()` 에서 리플렉션으로 시각 요소의 `Name` 속성을 읽어 `\"abcd\"` 와 비교하는 코드를 추가합니다.",
+        "purpose_ko": "포커스 애드너의 클리핑 동작을 다루기 위한 변경이지만, 이 부분은 특정 이름을 가진 요소를 골라내는 검사입니다.",
+        "change_reason_ko": "PR 제목은 포커스 애드너 클리핑이라고만 밝히고 있어, 이 검사가 왜 필요한지는 확인할 수 없습니다.",
+        "before_ko": "클립 영역을 계산하는 코드만 있었습니다.",
+        "after_ko": "`node.Visual.GetType().GetProperty(\"Name\")` 으로 이름을 읽어 `if (name == \"abcd\")` 를 검사하는 코드가 추가되었습니다.",
+        "related_features": [
+          "지연 렌더러",
+          "클립 영역 계산",
+          "포커스 애드너"
+        ],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "렌더 경로마다 리플렉션으로 속성을 조회하고 하드코딩된 문자열과 비교합니다. 디버깅용 코드가 그대로 남으면 렌더 성능과 동작 모두에 영향을 줍니다."
+          },
+          {
+            "role": "qa",
+            "impact_ko": "이름이 `abcd` 인 요소가 있는 화면에서만 다르게 동작하므로 일반 테스트로는 드러나지 않습니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "디버깅 목적이면 이 블록을 제거하고, 필요한 기능이면 의미 있는 이름의 상수로 정의한 뒤 리플렉션 대신 타입 검사를 사용합니다."
+          }
+        ],
+        "needs_confirmation": [
+          "리뷰어도 \"디버깅 외의 용도가 있는지\" 를 물었습니다. 이 검사의 의도는 diff 만으로 확정할 수 없습니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-bug-001-i1",
+            "category": "functional_bug",
+            "severity": "medium",
+            "confidence": 0.9,
+            "location": "post_change",
+            "line_reference": "`Render()` 안의 `Name` 속성 리플렉션 조회와 문자열 비교",
+            "evidence": "+                if (name == \"abcd\")",
+            "problem_ko": "렌더링 경로에 하드코딩된 문자열 `\"abcd\"` 와 비교하는 분기가 들어 있습니다. 이름만 보면 디버깅용 임시 코드로 보이며, 리플렉션으로 속성을 읽는 방식도 렌더 루프에 적합하지 않습니다.",
+            "impact_ko": "의도하지 않은 요소가 이 분기를 타면 렌더 결과가 달라집니다. 매 렌더마다 리플렉션 호출 비용도 발생합니다.",
+            "recommendation_ko": "디버깅 코드라면 제거하고, 실제로 필요한 분기라면 의미를 드러내는 상수로 정의한 뒤 리플렉션 대신 타입이나 명시적 속성으로 판단합니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "AvaloniaUI/Avalonia#1774",
+      "id": "ctx-bug-002",
+      "classification": {
+        "category": "functional_bug",
+        "subtype": "wrong_target_object",
+        "difficulty": "hard",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "코드 비하인드 애니메이션 트리거",
+        "review_comment_ko": "페이지 전환을 다시 구현하면서 테스트해 봤는데 여기서 버그를 찾았습니다. 사용자가 렌더 변환(render transformation)을 애니메이션하면 `_targetControl` 값이 Transform 객체가 됩니다."
+      },
+      "expected": {
+        "summary_ko": "`AnimatorStateMachine.InternalStep()` 에서 애니메이션 완료 시 `_targetAnimation.SetDone(_targetControl)` 을 호출하도록 추가합니다.",
+        "purpose_ko": "코드 비하인드에서 애니메이션을 트리거할 수 있도록 완료 처리를 보완하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 코드 비하인드 애니메이션 트리거 기능을 추가하는 작업입니다.",
+        "before_ko": "`_targetObserver.OnCompleted()` 만 호출했습니다.",
+        "after_ko": "`_targetObserver.OnCompleted()` 뒤에 `_targetAnimation.SetDone(_targetControl)` 호출이 추가되었습니다.",
+        "related_features": [
+          "애니메이션 상태 머신",
+          "렌더 변환 애니메이션",
+          "애니메이션 완료 처리"
+        ],
+        "affected_roles": [
+          "backend",
+          "frontend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "`_targetControl` 이 항상 컨트롤이라고 가정하고 완료 처리에 넘깁니다. 렌더 변환을 애니메이션하면 이 값이 Transform 객체가 되어 가정이 깨집니다."
+          },
+          {
+            "role": "frontend",
+            "impact_ko": "렌더 변환을 사용하는 페이지 전환 애니메이션이 완료 처리에서 잘못 동작할 수 있습니다."
+          },
+          {
+            "role": "qa",
+            "impact_ko": "일반 속성 애니메이션과 렌더 변환 애니메이션을 각각 검증해야 합니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "`_targetControl` 이 Transform 인 경우를 구분해, 완료 처리에 실제 대상 컨트롤을 넘기도록 수정합니다."
+          }
+        ],
+        "needs_confirmation": [
+          "`SetDone()` 이 인자로 무엇을 기대하는지는 이 hunk 밖의 정의를 확인해야 합니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-bug-002-i1",
+            "category": "functional_bug",
+            "severity": "high",
+            "confidence": 0.8,
+            "location": "post_change",
+            "line_reference": "`InternalStep()` 의 애니메이션 완료 처리",
+            "evidence": "+                        _targetAnimation.SetDone(_targetControl);",
+            "problem_ko": "`_targetControl` 을 완료 처리 대상으로 그대로 넘깁니다. 사용자가 렌더 변환을 애니메이션하면 이 필드에는 컨트롤이 아니라 Transform 객체가 들어가므로, 잘못된 대상에 완료 처리가 적용됩니다.",
+            "impact_ko": "렌더 변환을 사용하는 애니메이션에서 완료 상태가 실제 컨트롤에 반영되지 않습니다. 페이지 전환이 끝나도 상태가 정리되지 않아 이후 동작이 어긋납니다.",
+            "recommendation_ko": "`_targetControl` 이 Transform 인 경우를 판별해 실제 소유 컨트롤을 찾아 넘기거나, 완료 처리에 필요한 대상을 별도 필드로 보관합니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "Avaiga/taipy#1224",
+      "id": "ctx-bug-003",
+      "classification": {
+        "category": "functional_bug",
+        "subtype": "docstring_indentation",
+        "difficulty": "easy",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "<DataNode>.is_up_to_date 가 한 번도 기록되지 않은 경우 오류를 발생시키는 문제",
+        "review_comment_ko": "여기 들여쓰기가 잘못되어 있습니다."
+      },
+      "expected": {
+        "summary_ko": "`DataNode.is_up_to_date` 의 독스트링 들여쓰기를 수정합니다.",
+        "purpose_ko": "데이터 노드가 한 번도 기록되지 않은 상태에서 `is_up_to_date` 가 오류를 내던 문제를 고치는 과정의 일부입니다.",
+        "change_reason_ko": "PR 제목에 따르면 미기록 데이터 노드 처리 오류를 수정하는 작업입니다.",
+        "before_ko": "독스트링의 `Returns:` 블록이 함수 본문에 맞춰 8칸으로 들여쓰여 있었습니다.",
+        "after_ko": "해당 블록이 4칸으로 바뀌어 독스트링 안에서 들여쓰기가 어긋납니다.",
+        "related_features": [
+          "데이터 노드 최신 여부 판정",
+          "API 문서 생성"
+        ],
+        "affected_roles": [
+          "backend",
+          "planning"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "독스트링 들여쓰기가 어긋나면 문서 생성 도구가 `Returns:` 절을 제대로 인식하지 못합니다."
+          },
+          {
+            "role": "planning",
+            "impact_ko": "공개 API 문서에 반환값 설명이 누락되거나 깨져 보일 수 있습니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "독스트링 들여쓰기를 함수 본문 기준으로 되돌리고, 문서 빌드 결과를 확인합니다."
+          }
+        ],
+        "needs_confirmation": [],
+        "issues": [
+          {
+            "id": "ctx-bug-003-i1",
+            "category": "functional_bug",
+            "severity": "low",
+            "confidence": 0.9,
+            "location": "post_change",
+            "line_reference": "`is_up_to_date()` 독스트링의 `Returns:` 블록",
+            "evidence": "+    Returns:\n+        False if a preceding data node has been updated before the selected data node",
+            "problem_ko": "독스트링 안의 `Returns:` 절 들여쓰기가 주변 코드 기준과 어긋나게 4칸으로 바뀌었습니다. 함수 본문 안의 독스트링은 본문 들여쓰기를 따라야 합니다.",
+            "impact_ko": "문서 생성 도구가 반환값 설명을 인식하지 못해 공개 API 문서에서 해당 절이 누락되거나 잘못 렌더링됩니다.",
+            "recommendation_ko": "`Returns:` 블록의 들여쓰기를 함수 본문 기준(8칸)으로 되돌립니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "All-Hands-AI/OpenHands#9566",
+      "id": "ctx-bug-004",
+      "classification": {
+        "category": "functional_bug",
+        "subtype": "incomplete_error_message",
+        "difficulty": "easy",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "추가 네트워크 지원",
+        "review_comment_ko": "```suggestion\n                  f'Error: Failed to connect instance {self.container_name} to network {network_name}',\n```"
+      },
+      "expected": {
+        "summary_ko": "컨테이너를 추가 네트워크에 연결하는 반복문을 `connect()` 에 추가하고, 실패 시 오류 로그를 남깁니다.",
+        "purpose_ko": "샌드박스 컨테이너를 설정에 지정된 추가 네트워크에 연결하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 추가 네트워크 지원이 목적입니다.",
+        "before_ko": "런타임 초기화만 수행하고 추가 네트워크 연결 절차가 없었습니다.",
+        "after_ko": "`for network_name in self.config.sandbox.additional_networks:` 루프에서 네트워크를 조회해 연결하고, 예외가 발생하면 오류 로그를 남깁니다.",
+        "related_features": [
+          "Docker 런타임 초기화",
+          "샌드박스 네트워크 설정",
+          "오류 로깅"
+        ],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "네트워크 연결이 실패해도 예외를 잡아 로그만 남기고 진행합니다. 로그에 실패 원인이 빠지면 원인 추적이 어렵습니다."
+          },
+          {
+            "role": "qa",
+            "impact_ko": "존재하지 않는 네트워크 이름을 설정했을 때 어떤 로그가 남는지 확인해야 합니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "오류 로그 문자열의 형식을 정리하고, 잡은 예외 내용도 함께 기록합니다."
+          },
+          {
+            "role": "project_manager",
+            "task_ko": "네트워크 연결 실패를 무시해도 되는지, 아니면 초기화를 중단해야 하는지 정책을 정합니다."
+          }
+        ],
+        "needs_confirmation": [
+          "리뷰 댓글이 제안 블록만 담고 있어, 지적의 초점이 문자열 형식인지 예외 내용 누락인지는 명확하지 않습니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-bug-004-i1",
+            "category": "functional_bug",
+            "severity": "low",
+            "confidence": 0.7,
+            "location": "post_change",
+            "line_reference": "추가 네트워크 연결 실패 시의 오류 로그 문자열",
+            "evidence": "+                    f'Error: Failed to connect instance {self.container_name} to network {network_name}'",
+            "problem_ko": "예외를 `as e` 로 잡아 두고도 로그 메시지에 예외 내용을 포함하지 않습니다. 어떤 이유로 연결이 실패했는지 로그만 보고는 알 수 없습니다.",
+            "impact_ko": "네트워크 이름 오타, 권한 부족, Docker 데몬 문제 등 원인이 서로 다른 실패가 모두 같은 메시지로 기록되어 장애 대응이 어려워집니다.",
+            "recommendation_ko": "로그 메시지에 잡은 예외(`{e}`)를 함께 포함하고, 이 실패를 무시할지 초기화를 중단할지 정책을 정합니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "DiceDB/dice#458",
+      "id": "ctx-api-001",
+      "classification": {
+        "category": "api_contract",
+        "subtype": "protocol_parity",
+        "difficulty": "medium",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "COMMAND 명령 지원 추가",
+        "review_comment_ko": "redis 출력과 형식을 맞추는 것이 좋지 않을까요? 예를 들어 `COMMAND` 에서 `HELLO` 에 대한 우리 출력은 다음과 같습니다."
+      },
+      "expected": {
+        "summary_ko": "`KeySpecs` 를 응답용 슬라이스로 변환하는 `convertKeySpecsToSlice()` 를 추가해 `COMMAND` 명령의 출력을 구성합니다.",
+        "purpose_ko": "Redis 의 `COMMAND` 명령을 지원해 클라이언트가 명령 메타데이터를 조회할 수 있게 하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 `COMMAND` 명령 지원 추가가 목적입니다.",
+        "before_ko": "`COMMAND` 명령과 그 출력 변환 함수가 없었습니다.",
+        "after_ko": "`convertKeySpecsToSlice(keySpecs KeySpecs) []interface{}` 가 추가되어 명령 메타데이터를 응답 형태로 변환합니다.",
+        "related_features": [
+          "COMMAND 명령",
+          "Redis 프로토콜 호환",
+          "명령 메타데이터 응답"
+        ],
+        "affected_roles": [
+          "backend",
+          "qa",
+          "project_manager"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "응답 구조가 Redis 와 다르면 기존 Redis 클라이언트가 이 서버를 그대로 사용할 수 없습니다."
+          },
+          {
+            "role": "qa",
+            "impact_ko": "실제 Redis 의 `COMMAND` 출력과 필드 구조·순서를 대조해 검증해야 합니다."
+          },
+          {
+            "role": "project_manager",
+            "impact_ko": "Redis 호환을 표방하는 제품이라면 프로토콜 일치 여부가 제품 약속에 해당합니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "실제 Redis 의 `COMMAND` 응답 스펙과 필드 구조를 대조해 형식을 맞춥니다."
+          },
+          {
+            "role": "qa",
+            "task_ko": "대표 명령 몇 개에 대해 Redis 출력과 비교하는 테스트를 추가합니다."
+          }
+        ],
+        "needs_confirmation": [
+          "현재 구현이 실제로 어떤 구조를 만드는지는 함수 본문이 diff 뒷부분에 있어 확인할 수 없습니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-api-001-i1",
+            "category": "api_contract",
+            "severity": "medium",
+            "confidence": 0.75,
+            "location": "post_change",
+            "line_reference": "`convertKeySpecsToSlice()` 가 만드는 `COMMAND` 응답 구조",
+            "evidence": "+func convertKeySpecsToSlice(keySpecs KeySpecs) []interface{} {",
+            "problem_ko": "`COMMAND` 응답 구조를 자체 형식으로 구성합니다. Redis 호환을 지향하는 서버인데 응답 필드 구성과 중첩 구조가 Redis 스펙과 일치하는지 확인되지 않았습니다.",
+            "impact_ko": "Redis 클라이언트 라이브러리가 `COMMAND` 응답을 파싱하지 못하거나 잘못 해석합니다. 드롭인 대체를 기대한 사용자가 연동에 실패합니다.",
+            "recommendation_ko": "Redis 의 `COMMAND` 응답 스펙에 맞춰 필드 구성과 순서를 정렬하고, 대표 명령으로 출력 비교 테스트를 추가합니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "Avaiga/taipy#1042",
+      "id": "ctx-api-002",
+      "classification": {
+        "category": "api_contract",
+        "subtype": "undocumented_parameter_behavior",
+        "difficulty": "medium",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "Feature/#392 - get_primary_scenarios() 와 get_scenarios() 정렬 기능",
+        "review_comment_ko": "```suggestion\n  필터링 조건이 주어지지 않으면 이 메서드는 기존 시나리오를 모두 반환합니다.\n  is_sorted 가 true 로 설정되면 시나리오는 sort_key 로 정렬됩니다. 잘못된 sort_key 가 주어지거나 지정되지 않으면...\n```"
+      },
+      "expected": {
+        "summary_ko": "`get_scenarios()` 에 `is_sorted`, `descending`, `sort_key` 파라미터를 추가하고 독스트링에 설명을 넣습니다.",
+        "purpose_ko": "시나리오 조회 결과를 정렬할 수 있도록 공개 API 를 확장하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 이슈 #392 의 정렬 기능 추가 작업입니다.",
+        "before_ko": "`get_scenarios(cycle, tag)` 가 필터링만 지원했고 반환값 설명도 필터 기준만 언급했습니다.",
+        "after_ko": "정렬 관련 파라미터 세 개가 추가되고, 각 파라미터의 의미와 정렬 순서 규칙이 독스트링에 기술되었습니다.",
+        "related_features": [
+          "시나리오 조회 API",
+          "정렬 옵션",
+          "API 문서"
+        ],
+        "affected_roles": [
+          "backend",
+          "planning",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "공개 함수에 선택 파라미터가 세 개 늘어납니다. 잘못된 `sort_key` 가 들어왔을 때의 동작이 문서로 정의되어야 호출자가 대응할 수 있습니다."
+          },
+          {
+            "role": "planning",
+            "impact_ko": "정렬 기준과 기본값이 사용자에게 보이는 동작을 결정합니다."
+          },
+          {
+            "role": "qa",
+            "impact_ko": "잘못된 `sort_key` 를 넘겼을 때 예외인지 기본 정렬인지 확인해야 합니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "잘못되거나 누락된 `sort_key` 에 대한 동작을 독스트링에 명시하고, 그 동작을 검증하는 테스트를 추가합니다."
+          }
+        ],
+        "needs_confirmation": [
+          "독스트링에 오타(`optiononal`)가 보이며, 잘못된 `sort_key` 처리에 대한 서술이 잘려 있어 실제 동작을 확인할 수 없습니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-api-002-i1",
+            "category": "api_contract",
+            "severity": "low",
+            "confidence": 0.75,
+            "location": "post_change",
+            "line_reference": "`get_scenarios()` 독스트링의 `sort_key` 파라미터 설명",
+            "evidence": "+         sort_key (Optional[Literal[\"name\", \"id\", \"creation_date\", \"tags\"]]): The optiononal sort_key to de",
+            "problem_ko": "공개 API 에 정렬 파라미터를 추가하면서 잘못된 `sort_key` 가 주어졌을 때의 동작을 문서에 정의하지 않았습니다. 설명에 오타(`optiononal`)도 있습니다.",
+            "impact_ko": "호출자가 예외를 기대해야 할지 기본 정렬을 기대해야 할지 알 수 없습니다. 구현이 바뀌면 조용히 동작이 달라집니다.",
+            "recommendation_ko": "잘못되거나 누락된 `sort_key` 일 때의 동작(기본 키로 정렬)을 독스트링에 명시하고 오타를 수정합니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "Automattic/pocket-casts-ios#1602",
+      "id": "ctx-api-003",
+      "classification": {
+        "category": "api_contract",
+        "subtype": "ambiguous_public_name",
+        "difficulty": "easy",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "카테고리 재설계: Pills",
+        "review_comment_ko": "이것을 `DiscoverItemObservable` 로 이름을 바꿀 수 있을까요? `Observable` 은 너무 일반적인 이름이라 왜 이것을 쓰는지 이해하는 데 시간이 걸렸습니다. `Categ...` 에도 같은 의견입니다."
+      },
+      "expected": {
+        "summary_ko": "카테고리 선택 화면을 담당하는 `CategoriesSelectorViewController` 와 그 안의 `Observable` 클래스를 새로 추가합니다.",
+        "purpose_ko": "카테고리 UI 를 Pills 형태로 재설계하기 위해 전용 뷰 컨트롤러를 도입합니다.",
+        "change_reason_ko": "PR 제목에 따르면 카테고리 재설계 작업입니다.",
+        "before_ko": "해당 파일이 존재하지 않았습니다. 이 diff 는 파일 전체를 새로 추가합니다.",
+        "after_ko": "`CategoriesSelectorViewController` 안에 `class Observable: ObservableObject` 가 중첩 정의되었습니다.",
+        "related_features": [
+          "카테고리 선택 화면",
+          "Discover 화면 구성",
+          "상태 관찰 객체"
+        ],
+        "affected_roles": [
+          "frontend",
+          "backend",
+          "design"
+        ],
+        "role_impacts": [
+          {
+            "role": "frontend",
+            "impact_ko": "`Observable` 이라는 이름은 SwiftUI 의 일반 개념과 겹쳐 어떤 데이터를 담는지 알기 어렵습니다."
+          },
+          {
+            "role": "backend",
+            "impact_ko": "다른 화면에서 이 타입을 참조할 때 이름만으로 용도를 알 수 없습니다."
+          },
+          {
+            "role": "design",
+            "impact_ko": "카테고리 선택 UI 구성 요소가 새로 도입됩니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "frontend",
+            "task_ko": "`Observable` 을 `DiscoverItemObservable` 처럼 담고 있는 데이터를 드러내는 이름으로 바꿉니다."
+          }
+        ],
+        "needs_confirmation": [
+          "리뷰어가 함께 언급한 다른 타입(`Categ...`)이 무엇인지는 댓글이 잘려 있어 확인할 수 없습니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-api-003-i1",
+            "category": "api_contract",
+            "severity": "low",
+            "confidence": 0.85,
+            "location": "post_change",
+            "line_reference": "`CategoriesSelectorViewController` 안의 중첩 `Observable` 클래스 선언",
+            "evidence": "+    class Observable: ObservableObject {",
+            "problem_ko": "타입 이름이 `Observable` 로, SwiftUI 의 일반 개념과 이름이 겹칩니다. 무엇을 관찰하고 어떤 데이터를 담는지 이름에서 드러나지 않습니다.",
+            "impact_ko": "코드를 읽는 사람이 타입의 역할을 파악하는 데 시간이 걸리고, 다른 화면에서 참조할 때 혼동이 생깁니다.",
+            "recommendation_ko": "`DiscoverItemObservable` 처럼 담고 있는 데이터가 드러나는 이름으로 바꿉니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "Alamofire/Alamofire#24",
+      "id": "ctx-err-001",
+      "classification": {
+        "category": "error_handling",
+        "subtype": "optional_handling",
+        "difficulty": "medium",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "Swift 의 Xcode 6 Beta5 변경 사항 지원",
+        "review_comment_ko": "이렇게 하면 조금 더 간결해 보입니다.\n\n``` swift\ndispatch_async(queue ?? dispatch_get_main_queue(), {\n  completionHandler(self.request, self.response, responseObject, error)\n})\n```"
+      },
+      "expected": {
+        "summary_ko": "응답 처리 큐를 고를 때 쓰던 삼항 연산자 조건을 `queue ? ...` 에서 `(queue != nil) ? ...` 으로 바꿉니다.",
+        "purpose_ko": "옵셔널 값을 조건식에 직접 쓰던 코드를 명시적인 nil 비교로 고치기 위해서입니다.",
+        "change_reason_ko": "PR 제목과 설명을 확인할 수 없어 변경 배경을 단정할 수 없습니다.",
+        "before_ko": "`dispatch_async(queue ? queue : dispatch_get_main_queue(), {` 처럼 옵셔널을 조건식에 그대로 사용했습니다.",
+        "after_ko": "`dispatch_async((queue != nil) ? queue : dispatch_get_main_queue(), {` 로 nil 비교를 명시합니다.",
+        "related_features": [
+          "응답 처리 큐 선택",
+          "완료 핸들러 디스패치"
+        ],
+        "affected_roles": [
+          "backend"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "옵셔널 처리 방식이 명시적으로 바뀌었지만, 삼항 연산자는 여전히 옵셔널을 그대로 반환해 언래핑 문제가 남습니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "nil 병합 연산자 `??` 를 사용해 기본값 선택과 언래핑을 한 번에 처리합니다."
+          }
+        ],
+        "needs_confirmation": [
+          "이 코드가 대상으로 하는 Swift 버전에서 삼항 연산자의 결과 타입이 어떻게 추론되는지는 diff 만으로 확정할 수 없습니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-err-001-i1",
+            "category": "error_handling",
+            "severity": "medium",
+            "confidence": 0.8,
+            "location": "post_change",
+            "line_reference": "응답 처리 큐를 고르는 삼항 연산자",
+            "evidence": "+                    dispatch_async((queue != nil) ? queue : dispatch_get_main_queue(), {",
+            "problem_ko": "nil 비교를 명시했지만 삼항 연산자의 참 분기가 여전히 옵셔널 `queue` 를 그대로 돌려줍니다. 기본값을 고르는 의도가 코드에 직접 드러나지 않고, 언래핑도 이루어지지 않습니다.",
+            "impact_ko": "옵셔널이 언래핑되지 않은 채 API 로 전달되어 타입 불일치나 예상치 못한 동작이 생길 수 있습니다.",
+            "recommendation_ko": "nil 병합 연산자를 사용해 `queue ?? dispatch_get_main_queue()` 로 기본값 선택과 언래핑을 한 번에 처리합니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "Automattic/pocket-casts-android#4002",
+      "id": "ctx-err-002",
+      "classification": {
+        "category": "error_handling",
+        "subtype": "fragile_argument_validation",
+        "difficulty": "medium",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "[Tooling] 관련 코드 변경이 없으면 작업을 건너뛰기",
+        "review_comment_ko": "각 경우에 대해 변수를 정의하면 \"must be either\" 부분을 좀 더 견고하게 만들 수 있을 것 같습니다.\n\n```bash\nVALIDATION=\"validation\"\nBUILD=\"build\"\nLINT=\"lint\"\n\njob_type=\"$2\"\ncase \"$job_type\"\n```"
+      },
+      "expected": {
+        "summary_ko": "변경 내용에 따라 CI 작업을 건너뛸지 판단하는 `should-skip-job.sh` 스크립트를 새로 추가합니다.",
+        "purpose_ko": "문서나 도구 설정만 바뀐 경우 불필요한 CI 작업을 건너뛰어 파이프라인 시간을 줄이기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 관련 코드 변경이 없을 때 작업을 건너뛰는 도구를 만드는 작업입니다.",
+        "before_ko": "해당 스크립트가 존재하지 않았습니다. 이 diff 는 파일 전체를 새로 추가합니다.",
+        "after_ko": "`--job-type [validation|build|lint]` 인자를 받아 작업 종류별로 건너뛸 조건을 판단하는 스크립트가 추가되었습니다.",
+        "related_features": [
+          "CI 작업 건너뛰기",
+          "인자 검증",
+          "빌드 파이프라인"
+        ],
+        "affected_roles": [
+          "backend",
+          "qa",
+          "project_manager"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "작업 종류 문자열이 여러 곳에 반복되면 오타가 나도 인자 검증을 통과해 잘못된 분기를 탈 수 있습니다."
+          },
+          {
+            "role": "qa",
+            "impact_ko": "잘못된 작업 종류를 넘겼을 때 스크립트가 명확히 실패하는지 확인해야 합니다."
+          },
+          {
+            "role": "project_manager",
+            "impact_ko": "CI 작업을 잘못 건너뛰면 검증 없이 병합될 수 있어 위험이 큽니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "작업 종류 문자열을 변수로 정의하고 검증과 `case` 분기에서 같은 변수를 참조하도록 정리합니다."
+          }
+        ],
+        "needs_confirmation": [
+          "인자 검증과 `case` 분기의 실제 코드는 diff 뒷부분에 있어 이 hunk 에서는 사용법 주석만 확인됩니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-err-002-i1",
+            "category": "error_handling",
+            "severity": "medium",
+            "confidence": 0.7,
+            "location": "post_change",
+            "line_reference": "`should-skip-job.sh` 의 `--job-type` 인자 검증과 분기 처리",
+            "evidence": "+# Usage: should-skip-job.sh --job-type [validation|build|lint]",
+            "problem_ko": "허용되는 작업 종류 문자열이 검증 메시지와 분기 조건에 각각 하드코딩되어 있습니다. 한쪽만 수정하면 두 곳이 어긋나고, 오타가 나도 검증을 통과할 수 있습니다.",
+            "impact_ko": "잘못된 작업 종류가 통과하면 CI 작업을 건너뛰지 말아야 할 상황에서 건너뛰게 됩니다. 검증되지 않은 변경이 병합될 수 있습니다.",
+            "recommendation_ko": "작업 종류를 변수로 한 번만 정의하고, 인자 검증과 `case` 분기가 모두 그 변수를 참조하도록 바꿉니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "4ian/GDevelop#6970",
+      "id": "ctx-err-003",
+      "classification": {
+        "category": "error_handling",
+        "subtype": "unconditional_recompute",
+        "difficulty": "medium",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "객체에 사용자 지정 원점이 있을 때 앵커 동작 수정",
+        "review_comment_ko": "`if (this.owner.getX() === this.owner.getDrawableX())` 를 추가해서, `if` 문 비용을 치르는 대신 90% 의 경우에 불필요한 계산을 피하는 것은 어떨까요?"
+      },
+      "expected": {
+        "summary_ko": "앵커 동작에서 좌우 앵커가 모두 설정된 경우, 객체의 원점과 그리기 좌표 차이를 반영해 위치를 계산하도록 수정합니다.",
+        "purpose_ko": "객체에 사용자 지정 원점이 설정되어 있을 때 앵커 위치가 어긋나던 문제를 고치기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 사용자 지정 원점이 있는 객체의 앵커 동작 수정이 목적입니다.",
+        "before_ko": "`this.owner.setWidth(right - left);` 와 `this.owner.setX(left);` 로 단순히 값을 설정했습니다.",
+        "after_ko": "`(this.owner.getX() - this.owner.getDrawableX()) * width` 를 계산해 원점 차이를 반영한 위치를 설정합니다.",
+        "related_features": [
+          "앵커 동작",
+          "사용자 지정 원점",
+          "객체 위치 계산"
+        ],
+        "affected_roles": [
+          "backend",
+          "frontend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "매 프레임 실행되는 앵커 갱신 경로에 좌표 조회와 곱셈·나눗셈이 추가됩니다. 원점을 쓰지 않는 대다수 객체도 이 비용을 치릅니다."
+          },
+          {
+            "role": "frontend",
+            "impact_ko": "사용자 지정 원점을 쓰는 객체의 앵커 위치가 올바르게 표시됩니다."
+          },
+          {
+            "role": "qa",
+            "impact_ko": "원점을 설정한 객체와 기본 원점 객체 모두에서 앵커 위치를 확인해야 합니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "원점과 그리기 좌표가 같은 경우를 먼저 검사해 추가 계산을 건너뛰도록 최적화합니다."
+          }
+        ],
+        "needs_confirmation": [
+          "리뷰어가 언급한 \"90%\" 는 경험적 추정이며 diff 로 검증할 수 없습니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-err-003-i1",
+            "category": "performance",
+            "severity": "low",
+            "confidence": 0.8,
+            "location": "post_change",
+            "line_reference": "좌우 앵커가 모두 설정된 분기의 위치 계산",
+            "evidence": "+            this.owner.setX(\n+              left +\n+                ((this.owner.getX() - this.owner.getDrawableX()) * width) /",
+            "problem_ko": "원점과 그리기 좌표가 같은지 확인하지 않고 매번 좌표를 조회해 곱셈과 나눗셈을 수행합니다. 대부분의 객체는 두 값이 같아 계산 결과가 0 이 됩니다.",
+            "impact_ko": "매 프레임 실행되는 앵커 갱신 경로에서 대다수 객체가 불필요한 계산을 반복합니다. 객체 수가 많은 장면에서 프레임 처리 시간이 늘어납니다.",
+            "recommendation_ko": "`this.owner.getX() === this.owner.getDrawableX()` 를 먼저 검사해, 원점 보정이 필요 없는 경우에는 기존의 단순 계산 경로를 사용합니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "AvaloniaUI/Avalonia#1450",
+      "id": "ctx-ref-001",
+      "classification": {
+        "category": "refactoring",
+        "subtype": "misplaced_responsibility",
+        "difficulty": "medium",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "바인딩 변경 시 TextBox 실행 취소 스택 비우기",
+        "review_comment_ko": "핵(hack)처럼 보입니다. 이 검사를 TextBox 자체로 옮길 수 있을까요?"
+      },
+      "expected": {
+        "summary_ko": "`UndoRedoHelper` 에 실행 취소 상태를 비우는 `Clear()` 메서드를 추가합니다.",
+        "purpose_ko": "바인딩이 바뀌었을 때 TextBox 의 실행 취소 스택을 초기화하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 바인딩 변경 시 실행 취소 스택을 비우는 것이 목적입니다.",
+        "before_ko": "`UndoRedoHelper` 에 상태를 비우는 공개 메서드가 없었습니다.",
+        "after_ko": "`public void Clear()` 가 추가되어 `if (!_undoRedoing) _states.Clear();` 로 실행 취소 중이 아닐 때만 상태를 비웁니다.",
+        "related_features": [
+          "실행 취소/다시 실행",
+          "TextBox 바인딩",
+          "상태 초기화"
+        ],
+        "affected_roles": [
+          "backend",
+          "frontend"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "범용 헬퍼가 특정 호출 상황을 가정한 조건을 내부에 갖게 됩니다. 다른 사용처에서 이 조건이 예상과 다르게 동작할 수 있습니다."
+          },
+          {
+            "role": "frontend",
+            "impact_ko": "바인딩이 바뀔 때 실행 취소 이력이 초기화됩니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "`_undoRedoing` 검사를 호출하는 쪽(TextBox)으로 옮기고, 헬퍼의 `Clear()` 는 조건 없이 상태만 비우도록 정리합니다."
+          }
+        ],
+        "needs_confirmation": [
+          "`_undoRedoing` 이 참인 동안 `Clear()` 가 호출되는 경로가 실제로 있는지는 이 hunk 밖에서 확인해야 합니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-ref-001-i1",
+            "category": "refactoring",
+            "severity": "low",
+            "confidence": 0.8,
+            "location": "post_change",
+            "line_reference": "`UndoRedoHelper.Clear()` 안의 `_undoRedoing` 검사",
+            "evidence": "+            if (!_undoRedoing) _states.Clear();",
+            "problem_ko": "범용 헬퍼의 `Clear()` 안에 특정 호출 시점을 가정한 조건이 들어 있습니다. 호출자가 언제 호출해도 안전하게 만들려는 방어 코드가 헬퍼 내부에 숨어 있어, 실제로 지워지지 않는 경우가 조용히 생깁니다.",
+            "impact_ko": "호출자는 `Clear()` 를 불렀는데 상태가 남아 있을 수 있고, 그 이유가 코드에 드러나지 않습니다. 다른 사용처에서 예상과 다른 동작을 하게 됩니다.",
+            "recommendation_ko": "조건 검사를 호출하는 쪽(TextBox)으로 옮기고, 헬퍼는 요청받은 대로 상태를 비우도록 단순하게 유지합니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "Chia-Network/chia-blockchain#19713",
+      "id": "ctx-ref-002",
+      "classification": {
+        "category": "refactoring",
+        "subtype": "mixed_refactor_and_logic_change",
+        "difficulty": "hard",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "CHIA-2900 멤풀 fast forward 최적화",
+        "review_comment_ko": "같은 시점에 이 코드를 리팩터링해서 이 로직의 변경 사항을 알아보기가 매우 어렵습니다. 이 함수를 제거해야 한다고 생각한다면, 로직 변경 없이 그 작업만 별도로 하는 편이 좋겠습니다."
+      },
+      "expected": {
+        "summary_ko": "`include_spends()` 에서 지출 정보를 지역 변수로 추출하고 fast forward 대상 여부 판정을 추가합니다.",
+        "purpose_ko": "멤풀의 fast forward 처리를 최적화하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 CHIA-2900 멤풀 fast forward 최적화 작업입니다.",
+        "before_ko": "`self.removals_since_fork[bytes32(spend.coin_id)] = ForkRem(bytes32(spend.puzzle_hash), he...` 처럼 값을 인라인으로 변환해 대입했습니다.",
+        "after_ko": "`spend_coin_id`, `spend_ph`, `spend_maybe_ff_singleton` 을 지역 변수로 추출하고, 그 값들로 대입과 판정을 수행합니다.",
+        "related_features": [
+          "멤풀 fast forward",
+          "포크 이후 제거 목록",
+          "블록 본문 검증"
+        ],
+        "affected_roles": [
+          "backend",
+          "qa",
+          "project_manager"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "변수 추출과 동작 변경이 한 커밋에 섞여 있어 어떤 부분이 실제 로직 변화인지 구분하기 어렵습니다."
+          },
+          {
+            "role": "qa",
+            "impact_ko": "합의 규칙에 관여하는 코드이므로 동작 변화 여부를 정확히 가려내야 합니다."
+          },
+          {
+            "role": "project_manager",
+            "impact_ko": "블록체인 합의 경로의 변경이라 리뷰 난이도가 곧 위험도로 이어집니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "backend",
+            "task_ko": "순수 리팩터링(변수 추출)과 실제 로직 변경을 별도 커밋으로 분리해 다시 제출합니다."
+          }
+        ],
+        "needs_confirmation": [
+          "`spend_maybe_ff_singleton` 추가가 순수 리팩터링인지 동작 변경인지는 이 hunk 뒷부분을 함께 봐야 판단할 수 있습니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-ref-002-i1",
+            "category": "refactoring",
+            "severity": "medium",
+            "confidence": 0.85,
+            "location": "post_change",
+            "line_reference": "`include_spends()` 의 지출 처리 루프",
+            "evidence": "+                spend_coin_id = bytes32(spend.coin_id)\n+                spend_ph = bytes32(spend.puzzle_hash)",
+            "problem_ko": "변수 추출 같은 형태 변경과 fast forward 판정 추가 같은 동작 변경이 한 diff 에 섞여 있습니다. 어느 줄이 동작을 바꾸는지 리뷰어가 가려내기 어렵습니다.",
+            "impact_ko": "합의 규칙에 관여하는 코드에서 의도하지 않은 동작 변화가 리뷰를 통과할 위험이 커집니다. 문제가 생겼을 때 원인 커밋을 특정하기도 어렵습니다.",
+            "recommendation_ko": "동작을 바꾸지 않는 리팩터링을 먼저 별도 커밋으로 분리하고, 로직 변경은 그 위에 따로 올립니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "CodeEditApp/CodeEdit#334",
+      "id": "ctx-ref-003",
+      "classification": {
+        "category": "refactoring",
+        "subtype": "locale_dependent_behavior",
+        "difficulty": "medium",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "코드 에디터용 사용자 지정 컨텍스트 메뉴",
+        "review_comment_ko": "비영어 시스템에서는 이것이 어떻게 동작하고 성능은 어떻습니까? `super.menu(for: event)` 를 사용하지 않고 이를 제거하는 편이 나을 수도 있습니다. 그러면 `cut`, `copy`, `paste` 를 직접 구현해야 합니다."
+      },
+      "expected": {
+        "summary_ko": "`CodeEditorTextView` 에 백슬래시 입력 등 사용자 지정 컨텍스트 메뉴 동작을 추가합니다.",
+        "purpose_ko": "코드 에디터에 맞는 컨텍스트 메뉴를 제공하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 코드 에디터용 사용자 지정 컨텍스트 메뉴 추가가 목적입니다.",
+        "before_ko": "기본 텍스트 뷰의 컨텍스트 메뉴를 그대로 사용했습니다.",
+        "after_ko": "`@IBAction func inputBackSlash(_ sender: Any?)` 등 사용자 지정 액션이 추가되고, 기본 메뉴를 가공하는 코드가 함께 들어갔습니다.",
+        "related_features": [
+          "코드 에디터 컨텍스트 메뉴",
+          "텍스트 입력 액션",
+          "다국어 환경"
+        ],
+        "affected_roles": [
+          "frontend",
+          "qa",
+          "design"
+        ],
+        "role_impacts": [
+          {
+            "role": "frontend",
+            "impact_ko": "시스템 언어에 따라 기본 메뉴 항목 이름이 달라지므로, 이름을 기준으로 항목을 다루면 비영어 환경에서 동작하지 않습니다."
+          },
+          {
+            "role": "qa",
+            "impact_ko": "영어 외 시스템 언어에서 컨텍스트 메뉴가 올바르게 구성되는지 확인해야 합니다."
+          },
+          {
+            "role": "design",
+            "impact_ko": "컨텍스트 메뉴 구성이 언어에 따라 달라 보일 수 있습니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "frontend",
+            "task_ko": "기본 메뉴를 가공하는 대신 필요한 항목을 직접 구성하고, `cut`/`copy`/`paste` 는 표준 셀렉터로 연결합니다."
+          },
+          {
+            "role": "qa",
+            "task_ko": "비영어 시스템 언어 환경에서 메뉴 동작을 검증합니다."
+          }
+        ],
+        "needs_confirmation": [
+          "메뉴 항목을 이름으로 찾는지 셀렉터로 찾는지는 diff 뒷부분을 봐야 확인할 수 있습니다. 리뷰어도 질문 형태로 지적했습니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-ref-003-i1",
+            "category": "refactoring",
+            "severity": "medium",
+            "confidence": 0.7,
+            "location": "post_change",
+            "line_reference": "`CodeEditorTextView` 의 사용자 지정 컨텍스트 메뉴 구성 코드",
+            "evidence": "+    /// input a backslash (\\\\)\n+    @IBAction func inputBackSlash(_ sender: Any?) {",
+            "problem_ko": "시스템이 제공하는 기본 메뉴(`super.menu(for:)`)를 가져다 가공하는 방식은 항목 이름이 시스템 언어에 따라 달라지는 문제에 노출됩니다. 영어 환경을 전제로 만들면 다른 언어에서 동작하지 않습니다.",
+            "impact_ko": "영어가 아닌 시스템 언어를 쓰는 사용자에게 컨텍스트 메뉴가 잘못 구성되거나 일부 항목이 사라집니다.",
+            "recommendation_ko": "기본 메뉴를 가공하지 말고 필요한 항목만 직접 구성하며, 표준 동작은 시스템 셀렉터에 연결해 언어에 의존하지 않게 합니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "CodeEditApp/CodeEdit#232",
+      "id": "ctx-ref-004",
+      "classification": {
+        "category": "refactoring",
+        "subtype": "unnecessary_mutability",
+        "difficulty": "easy",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "환영 화면에서 git clone 기능 추가",
+        "review_comment_ko": "nit: 이것은 private _let_ 으로 할 수 있습니다."
+      },
+      "expected": {
+        "summary_ko": "환영 화면에서 저장소를 복제할 수 있는 `GitCloneView` 를 새로 추가합니다.",
+        "purpose_ko": "환영 화면에서 바로 git 저장소를 복제할 수 있게 하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 환영 화면의 git clone 기능 추가가 목적입니다.",
+        "before_ko": "해당 파일이 존재하지 않았습니다. 이 diff 는 파일 전체를 새로 추가합니다.",
+        "after_ko": "`GitCloneView` 가 추가되어 SwiftUI 와 `GitClient` 를 사용해 복제 화면을 구성합니다.",
+        "related_features": [
+          "환영 화면",
+          "git 저장소 복제"
+        ],
+        "affected_roles": [
+          "frontend"
+        ],
+        "role_impacts": [
+          {
+            "role": "frontend",
+            "impact_ko": "변경되지 않는 값을 `var` 로 선언하면 의도가 드러나지 않고, 접근 수준도 필요 이상으로 열려 있습니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "frontend",
+            "task_ko": "변경되지 않는 프로퍼티를 `private let` 으로 바꿉니다."
+          }
+        ],
+        "needs_confirmation": [
+          "리뷰어가 지목한 정확한 프로퍼티는 댓글이 짧아 특정할 수 없습니다. 파일 앞부분만으로는 대상을 확정하기 어렵습니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-ref-004-i1",
+            "category": "refactoring",
+            "severity": "low",
+            "confidence": 0.6,
+            "location": "post_change",
+            "line_reference": "`GitCloneView` 의 프로퍼티 선언부",
+            "evidence": "+import SwiftUI\n+import GitClient",
+            "problem_ko": "값이 바뀌지 않는 프로퍼티가 `var` 로, 그리고 외부에 열린 접근 수준으로 선언되어 있습니다.",
+            "impact_ko": "불변임이 드러나지 않아 읽는 사람이 변경 가능성을 고려하게 되고, 필요 없는 접근 범위가 유지보수 부담으로 남습니다.",
+            "recommendation_ko": "변경되지 않는 프로퍼티를 `private let` 으로 선언해 불변성과 접근 범위를 함께 좁힙니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "CodeEditApp/CodeEdit#608",
+      "id": "ctx-ref-005",
+      "classification": {
+        "category": "refactoring",
+        "subtype": "redundant_return",
+        "difficulty": "easy",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "StatusBar: 정리 및 테스트",
+        "review_comment_ko": "nit: `return` 문을 제거할 수 있습니다."
+      },
+      "expected": {
+        "summary_ko": "상태 표시줄 탭 종류를 나타내는 `StatusBarTabType` 을 새로 추가합니다.",
+        "purpose_ko": "상태 표시줄 코드를 정리하고 테스트를 추가하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 StatusBar 정리와 테스트 추가가 목적입니다.",
+        "before_ko": "해당 파일이 존재하지 않았습니다. 이 diff 는 파일 전체를 새로 추가합니다.",
+        "after_ko": "`StatusBarTabType` 정의가 추가되었습니다.",
+        "related_features": [
+          "상태 표시줄 탭"
+        ],
+        "affected_roles": [
+          "frontend"
+        ],
+        "role_impacts": [
+          {
+            "role": "frontend",
+            "impact_ko": "단일 표현식 프로퍼티나 함수에서 `return` 을 생략할 수 있는데 명시해 두면 코드 스타일이 주변과 어긋납니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "frontend",
+            "task_ko": "단일 표현식으로 끝나는 프로퍼티나 함수에서 `return` 을 생략합니다."
+          }
+        ],
+        "needs_confirmation": [
+          "리뷰어가 지목한 정확한 위치는 댓글이 짧고 diff 앞부분만 제공되어 특정할 수 없습니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-ref-005-i1",
+            "category": "refactoring",
+            "severity": "low",
+            "confidence": 0.55,
+            "location": "post_change",
+            "line_reference": "`StatusBarTabType` 의 단일 표현식 반환부",
+            "evidence": "+import Foundation",
+            "problem_ko": "단일 표현식으로 끝나는 프로퍼티나 함수에 `return` 을 명시했습니다. Swift 에서는 생략할 수 있어 주변 코드 스타일과 어긋납니다.",
+            "impact_ko": "동작에는 영향이 없지만 스타일 일관성이 떨어집니다.",
+            "recommendation_ko": "단일 표현식인 경우 `return` 을 생략해 주변 코드와 스타일을 맞춥니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "Automattic/pocket-casts-android#3998",
+      "id": "ctx-ref-006",
+      "classification": {
+        "category": "refactoring",
+        "subtype": "idiomatic_api_choice",
+        "difficulty": "easy",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "추천: Podroll 이 있을 때 유사 프로그램 섹션 헤더 추가",
+        "review_comment_ko": "여기서는 `let` 보다 `then` 이 더 관용적이라고 생각합니다.\n\n```\n.then(\n    if (onClick != null) {\n        Modifier.clickable(role = Role.Button, onClick = onClick)\n    } else {\n        Modifier\n```"
+      },
+      "expected": {
+        "summary_ko": "`DividerSubTitle` 컴포저블에 클릭 처리와 아이콘 리소스를 추가하고 import 를 정리합니다.",
+        "purpose_ko": "Podroll 이 있을 때 유사 프로그램 섹션 헤더를 표시하기 위해서입니다.",
+        "change_reason_ko": "PR 제목에 따르면 추천 섹션 헤더 추가가 목적입니다.",
+        "before_ko": "지역화 리소스(`localization.R as LR`)를 참조했습니다.",
+        "after_ko": "이미지 리소스(`images.R as IR`)를 참조하도록 바뀌고, 조건부 `Modifier` 구성이 추가되었습니다.",
+        "related_features": [
+          "추천 섹션 헤더",
+          "Compose Modifier 구성"
+        ],
+        "affected_roles": [
+          "frontend",
+          "design"
+        ],
+        "role_impacts": [
+          {
+            "role": "frontend",
+            "impact_ko": "조건부 `Modifier` 를 `let` 으로 구성하면 Compose 에서 관용적으로 쓰이는 `then` 체이닝과 형태가 달라 읽기 어렵습니다."
+          },
+          {
+            "role": "design",
+            "impact_ko": "Podroll 이 있을 때 섹션 헤더가 표시됩니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "frontend",
+            "task_ko": "조건부 `Modifier` 구성을 `Modifier.then(...)` 형태로 바꿉니다."
+          }
+        ],
+        "needs_confirmation": [
+          "리뷰어가 지목한 `let` 사용부는 diff 뒷부분에 있어 이 hunk 에서는 import 변경만 확인됩니다."
+        ],
+        "issues": [
+          {
+            "id": "ctx-ref-006-i1",
+            "category": "refactoring",
+            "severity": "low",
+            "confidence": 0.65,
+            "location": "post_change",
+            "line_reference": "`DividerSubTitle` 의 조건부 `Modifier` 구성",
+            "evidence": "+import au.com.shiftyjelly.pocketcasts.images.R as IR",
+            "problem_ko": "조건에 따라 `Modifier` 를 덧붙이는 데 `let` 을 사용했습니다. Compose 에서는 `then` 으로 체이닝하는 방식이 관용적이며, 다른 코드와 형태가 어긋납니다.",
+            "impact_ko": "동작은 같지만 Compose 코드베이스의 관용 표현과 달라 읽고 수정하는 데 부담이 됩니다.",
+            "recommendation_ko": "`Modifier.then(if (onClick != null) Modifier.clickable(...) else Modifier)` 형태로 바꿔 체이닝 방식을 통일합니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "Alamofire/Alamofire#494",
+      "id": "ctx-ref-007",
+      "classification": {
+        "category": "refactoring",
+        "subtype": "non_descriptive_test_name",
+        "difficulty": "easy",
+        "has_actual_issue": true,
+        "expected_review_result": "issues_found",
+        "expected_issue_count": 1
+      },
+      "translation": {
+        "title_ko": "데이터·업로드·다운로드 진행률 테스트를 더 견고하게 작성",
+        "review_comment_ko": "이름을 좀 더 서술적으로 짓는 편이 좋겠습니다."
+      },
+      "expected": {
+        "summary_ko": "다운로드 진행률 테스트 함수의 이름을 `testDownloadRequestWithProgress` 에서 `testDownloadRequestWithProgress2` 로 바꿉니다.",
+        "purpose_ko": "다운로드 응답 테스트를 보강하는 과정에서 기존 테스트와 이름이 겹치지 않게 하려는 것으로 보입니다.",
+        "change_reason_ko": "PR 제목과 설명을 확인할 수 없어 변경 배경을 단정할 수 없습니다.",
+        "before_ko": "`func testDownloadRequestWithProgress()` 였습니다.",
+        "after_ko": "`func testDownloadRequestWithProgress2()` 로 숫자를 덧붙였습니다.",
+        "related_features": [
+          "다운로드 요청 테스트"
+        ],
+        "affected_roles": [
+          "qa",
+          "backend"
+        ],
+        "role_impacts": [
+          {
+            "role": "qa",
+            "impact_ko": "테스트 이름만으로는 무엇을 검증하는지 알 수 없어, 실패했을 때 원인 파악이 늦어집니다."
+          },
+          {
+            "role": "backend",
+            "impact_ko": "테스트 이름이 검증 대상을 설명하지 못하면 회귀 원인을 좁히기 어렵습니다."
+          }
+        ],
+        "follow_up_tasks": [
+          {
+            "role": "qa",
+            "task_ko": "숫자 접미사 대신 검증 대상을 드러내는 이름으로 바꿉니다."
+          }
+        ],
+        "needs_confirmation": [],
+        "issues": [
+          {
+            "id": "ctx-ref-007-i1",
+            "category": "refactoring",
+            "severity": "low",
+            "confidence": 0.85,
+            "location": "post_change",
+            "line_reference": "다운로드 진행률 테스트 함수 이름",
+            "evidence": "+    func testDownloadRequestWithProgress2() {",
+            "problem_ko": "이름 뒤에 숫자 `2` 를 붙여 기존 테스트와 구분했습니다. 이름이 무엇을 다르게 검증하는지 전혀 설명하지 못합니다.",
+            "impact_ko": "테스트가 실패했을 때 어떤 시나리오가 깨졌는지 이름만으로 알 수 없어 원인 추적이 느려집니다.",
+            "recommendation_ko": "검증 대상을 드러내는 이름(예: 진행률 보고 주기나 대상 조건을 담은 이름)으로 바꿉니다."
+          }
+        ]
+      }
+    },
+    {
+      "ref": "AykutSarac/jsoncrack.com#62",
+      "id": "ctx-ctl-001",
+      "classification": {
+        "category": "control",
+        "subtype": "passed_review",
+        "difficulty": "easy",
+        "has_actual_issue": false,
+        "expected_review_result": "no_issues",
+        "expected_issue_count": 0
+      },
+      "translation": {
+        "title_ko": "ImportModal 에 `useKeyPress` 훅과 단축키 추가",
+        "review_comment_ko": "지적 사항 없음."
+      },
+      "expected": {
+        "summary_ko": "모달 컴포넌트에 `useKeyPress` 훅을 import 하고 관련 처리를 추가합니다.",
+        "purpose_ko": "모달에서 키 입력을 처리하기 위한 것으로 보입니다.",
+        "change_reason_ko": "PR 제목과 설명을 확인할 수 없어 변경 배경을 단정할 수 없습니다.",
+        "before_ko": "모달 컴포넌트가 키 입력 훅을 사용하지 않았습니다.",
+        "after_ko": "`import useKeyPress from \"src/hooks/useKeyPress\";` 가 추가되고 관련 코드가 들어갔습니다.",
+        "related_features": [
+          "모달 컴포넌트",
+          "키 입력 처리"
+        ],
+        "affected_roles": [
+          "frontend"
+        ],
+        "role_impacts": [
+          {
+            "role": "frontend",
+            "impact_ko": "모달에서 키 입력에 반응하는 동작이 추가됩니다."
+          }
+        ],
+        "follow_up_tasks": [],
+        "needs_confirmation": [],
+        "issues": []
+      }
+    },
+    {
+      "ref": "AykutSarac/jsoncrack.com#469",
+      "id": "ctx-ctl-002",
+      "classification": {
+        "category": "control",
+        "subtype": "passed_review",
+        "difficulty": "easy",
+        "has_actual_issue": false,
+        "expected_review_result": "no_issues",
+        "expected_issue_count": 0
+      },
+      "translation": {
+        "title_ko": "fix: 푸터를 페이지 하단에 고정",
+        "review_comment_ko": "지적 사항 없음."
+      },
+      "expected": {
+        "summary_ko": "푸터의 `Container` 에 `w=\"100%\"` 속성을 추가합니다.",
+        "purpose_ko": "푸터가 화면 너비를 가득 채우도록 하기 위한 것으로 보입니다.",
+        "change_reason_ko": "PR 제목과 설명을 확인할 수 없어 변경 배경을 단정할 수 없습니다.",
+        "before_ko": "`<Container mt={60} px={60} pb=\"xl\" bg=\"black\" fluid>` 였습니다.",
+        "after_ko": "`<Container w=\"100%\" mt={60} px={60} pb=\"xl\" bg=\"black\" fluid>` 로 너비 속성이 추가되었습니다.",
+        "related_features": [
+          "푸터 레이아웃"
+        ],
+        "affected_roles": [
+          "frontend",
+          "design"
+        ],
+        "role_impacts": [
+          {
+            "role": "frontend",
+            "impact_ko": "푸터 컨테이너의 너비 계산 방식이 바뀝니다."
+          },
+          {
+            "role": "design",
+            "impact_ko": "푸터가 화면 너비를 가득 채웁니다."
+          }
+        ],
+        "follow_up_tasks": [],
+        "needs_confirmation": [],
+        "issues": []
+      }
+    },
+    {
+      "ref": "Azure/azure-rest-api-specs#40154",
+      "id": "ctx-ctl-003",
+      "classification": {
+        "category": "control",
+        "subtype": "passed_review",
+        "difficulty": "easy",
+        "has_actual_issue": false,
+        "expected_review_result": "no_issues",
+        "expected_issue_count": 0
+      },
+      "translation": {
+        "title_ko": "tsmv 명령의 일부 문제 수정",
+        "review_comment_ko": "지적 사항 없음."
+      },
+      "expected": {
+        "summary_ko": "문서 전처리 함수에서 `tags` 속성도 제거하도록 조건을 추가합니다.",
+        "purpose_ko": "TypeSpec 마이그레이션 검증 시 비교 대상에서 제외할 속성을 늘리기 위한 것으로 보입니다.",
+        "change_reason_ko": "PR 제목과 설명을 확인할 수 없어 변경 배경을 단정할 수 없습니다.",
+        "before_ko": "`securityDefinitions` 만 제거했습니다.",
+        "after_ko": "`if (document.tags) { delete newDocument.tags; }` 가 추가되어 `tags` 도 제거합니다.",
+        "related_features": [
+          "TypeSpec 마이그레이션 검증",
+          "OpenAPI 문서 전처리"
+        ],
+        "affected_roles": [
+          "backend"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "검증 시 비교 대상에서 `tags` 가 빠집니다."
+          }
+        ],
+        "follow_up_tasks": [],
+        "needs_confirmation": [],
+        "issues": []
+      }
+    },
+    {
+      "ref": "Azure/azure-rest-api-specs#40303",
+      "id": "ctx-ctl-004",
+      "classification": {
+        "category": "control",
+        "subtype": "passed_review",
+        "difficulty": "easy",
+        "has_actual_issue": false,
+        "expected_review_result": "no_issues",
+        "expected_issue_count": 0
+      },
+      "translation": {
+        "title_ko": "[openapi-diff-runner] 동일 버전 검사에서 rename 을 올바르게 처리",
+        "review_comment_ko": "지적 사항 없음."
+      },
+      "expected": {
+        "summary_ko": "테스트의 기대값에서 rename 항목을 additions 에 합치던 부분을 제거하고 `mockResult.additions` 를 그대로 사용합니다.",
+        "purpose_ko": "rename 처리 방식 변경에 맞춰 테스트 기대값을 조정하기 위한 것으로 보입니다.",
+        "change_reason_ko": "PR 제목과 설명을 확인할 수 없어 변경 배경을 단정할 수 없습니다.",
+        "before_ko": "`additions: [...mockResult.additions, ...mockResult.renames.map((rename) => rename.to)]` 였습니다.",
+        "after_ko": "`additions: mockResult.additions` 로 단순화되고 관련 주석이 제거되었습니다.",
+        "related_features": [
+          "openapi-diff 실행기 테스트",
+          "변경 목록 계산"
+        ],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "rename 을 additions 로 합치지 않는 동작이 기대값에 반영됩니다."
+          },
+          {
+            "role": "qa",
+            "impact_ko": "rename 이 포함된 입력에 대한 기대 결과가 바뀝니다."
+          }
+        ],
+        "follow_up_tasks": [],
+        "needs_confirmation": [],
+        "issues": []
+      }
+    },
+    {
+      "ref": "Azure/azure-rest-api-specs#40396",
+      "id": "ctx-ctl-005",
+      "classification": {
+        "category": "control",
+        "subtype": "passed_review",
+        "difficulty": "easy",
+        "has_actual_issue": false,
+        "expected_review_result": "no_issues",
+        "expected_issue_count": 0
+      },
+      "translation": {
+        "title_ko": "ARM 자동 승인에서 .tsp 파일을 사소한/비기능 변경으로 포함",
+        "review_comment_ko": "지적 사항 없음."
+      },
+      "expected": {
+        "summary_ko": "사소한 변경 판정 테스트의 기대 객체에 `rmTypeSpec: false` 항목을 추가합니다.",
+        "purpose_ko": "판정 결과에 TypeSpec 관련 항목이 추가되면서 테스트 기대값을 맞추기 위한 것으로 보입니다.",
+        "change_reason_ko": "PR 제목과 설명을 확인할 수 없어 변경 배경을 단정할 수 없습니다.",
+        "before_ko": "기대 객체에 `rmDocumentation`, `rmExamples`, `rmFunctional`, `rmOther`, `other` 만 있었습니다.",
+        "after_ko": "`rmTypeSpec: false` 가 추가되었습니다.",
+        "related_features": [
+          "사소한 변경 판정",
+          "자동 승인 워크플로 테스트"
+        ],
+        "affected_roles": [
+          "backend",
+          "qa"
+        ],
+        "role_impacts": [
+          {
+            "role": "backend",
+            "impact_ko": "판정 결과 객체에 항목이 하나 늘어납니다."
+          },
+          {
+            "role": "qa",
+            "impact_ko": "테스트 기대값이 새 항목을 포함하도록 갱신됩니다."
+          }
+        ],
+        "follow_up_tasks": [],
+        "needs_confirmation": [],
+        "issues": []
+      }
+    }
+  ],
+  "extra_annotations": [
+    {
+      "ref": "DrewThomasson/ebook2audiobook#1290",
+      "pr_title_ko": "v25.12.13",
+      "review_comment_ko": "새로 추가된 Unraid/`un-get` 흐름이 `https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg` 에서 `curl` 로 플러그인을 곧바로 내려받아 `installplg` 로 실행합니다. 커밋 해시 고정이나 무결성 검증이 전혀 없습니다.",
+      "change_summary_ko": "`install_programs` 함수의 `apk` 분기에 `un-get` 플러그인을 내려받아 설치하는 절차를 추가합니다.",
+      "change_purpose_ko": "",
+      "problem_ko": "원격 저장소의 `master` 브랜치에서 실행 파일을 내려받아 검증 없이 바로 실행합니다. 커밋 고정도 체크섬 확인도 없습니다.",
+      "impact_ko": "해당 저장소나 브랜치가 변조되면 이 스크립트를 실행한 시스템에서 공격자의 코드가 실행됩니다. 공급망 원격 코드 실행 경로입니다.",
+      "recommendation_ko": "다운로드 URL 을 변경 불가능한 커밋 해시로 고정하고, 체크섬이나 서명 검증을 통과한 경우에만 `installplg` 를 실행합니다.",
+      "needs_confirmation": [
+        "`installplg` 가 어떤 권한으로 실행되는지는 diff 에 나타나지 않아 영향 범위를 확정할 수 없습니다."
+      ]
+    },
+    {
+      "ref": "Avaiga/taipy#1304",
+      "pr_title_ko": "Feature/#405 - 알림 메커니즘을 사용자에게 공개",
+      "review_comment_ko": "```suggestion\n        토픽은 선택적인 entity type, entity id, operation, attribute name 의 조합으로 정의됩니다. 목적은 가능한 한 유연하게 만드는 것입니다. 예를 들어 다음과 같이 등록할 수 있습니다.\n```",
+      "change_summary_ko": "`register()` 의 독스트링에서 토픽 정의 설명을 보완합니다.",
+      "change_purpose_ko": "알림 메커니즘을 사용자에게 공개하면서 토픽 구성 방식을 문서로 설명하기 위해서입니다.",
+      "problem_ko": "독스트링이 토픽을 \"entity type, entity id, operation, attribute name 의 조합\" 이라고만 설명해, 각 요소가 선택 사항이라는 점과 어떤 조합이 가능한지가 드러나지 않습니다.",
+      "impact_ko": "사용자가 일부 요소만 지정해 등록할 수 있다는 사실을 알기 어려워, 공개된 알림 API 를 제한적으로만 사용하게 됩니다.",
+      "recommendation_ko": "각 요소가 선택 사항임을 명시하고, 시나리오 생성 전체 구독처럼 실제 사용 예를 함께 적습니다.",
+      "needs_confirmation": []
+    },
+    {
+      "ref": "4ian/GDevelop#7077",
+      "pr_title_ko": "지원 중단된 액션을 대체하는 액션에 튜토리얼 말풍선 추가",
+      "review_comment_ko": "```suggestion\n      return ['intermediate-toggle-states-with-variable'];\n```",
+      "change_summary_ko": "`getInstructionTutorialIds()` 의 분기에 `SetBooleanObjectVariable` 과 `SetBooleanVariable` 케이스를 추가합니다.",
+      "change_purpose_ko": "지원 중단된 액션을 대체하는 새 액션에도 튜토리얼 말풍선이 표시되도록 하기 위해서입니다.",
+      "problem_ko": "반환하는 튜토리얼 ID 문자열이 `'iIntermediate-toggle-states-with-variable'` 로, 앞에 `i` 가 하나 더 붙어 있습니다.",
+      "impact_ko": "존재하지 않는 ID 를 반환하므로 새로 추가한 액션에서 튜토리얼 말풍선이 표시되지 않습니다. 이 변경의 목적이 달성되지 않습니다.",
+      "recommendation_ko": "문자열을 `'intermediate-toggle-states-with-variable'` 로 고칩니다.",
+      "needs_confirmation": []
+    },
+    {
+      "ref": "All-Hands-AI/OpenHands#10208",
+      "pr_title_ko": "fix(backend): 대화 목록에 생성된 브랜치 이름 표시",
+      "review_comment_ko": "에이전트가 브랜치를 전환하는 명령을 실행한 것을 감지한 뒤에는, 런타임을 사용하는 대신 명령어 자체에서 브랜치 이름을 알아낼 수 있지 않을까요?",
+      "change_summary_ko": "이벤트가 브랜치를 바꿀 수 있는 git 작업과 관련되는지 판정하는 `_is_git_related_event()` 등을 추가합니다.",
+      "change_purpose_ko": "대화 목록에 에이전트가 생성한 브랜치 이름을 표시하기 위해서입니다.",
+      "problem_ko": "",
+      "impact_ko": "",
+      "recommendation_ko": "",
+      "needs_confirmation": [
+        "리뷰 댓글은 브랜치 이름을 얻는 방식에 대한 질문이며 문제를 단정하지 않았습니다. 런타임 조회 대신 명령어 파싱이 가능한지는 구현을 확인해야 합니다."
+      ]
+    },
+    {
+      "ref": "4ian/GDevelop#7052",
+      "pr_title_ko": "이벤트 함수의 마우스·키 파라미터 수정",
+      "review_comment_ko": "이 변경은 동작을 바꾸지 않습니다. 지원 중단된 함수를 거치지 않고 더 쉽게 따라가기 위한 것뿐입니다.",
+      "change_summary_ko": "`GetType()` 이 호출하는 함수를 `gd::ParameterMetadata::GetExpressionValueType` 에서 `gd::ValueTypeMetadata::GetExpressionPrimitiveValueType` 로 바꿉니다.",
+      "change_purpose_ko": "지원 중단된 함수를 거치지 않도록 호출 경로를 정리하기 위해서입니다.",
+      "problem_ko": "",
+      "impact_ko": "",
+      "recommendation_ko": "",
+      "needs_confirmation": [
+        "리뷰 댓글은 작성자가 변경 의도를 설명한 내용이며 문제를 지적하지 않았습니다."
+      ]
+    },
+    {
+      "ref": "Alamofire/Alamofire#504",
+      "pr_title_ko": "파라미터 인코딩 문자와 추가 문서 보강",
+      "review_comment_ko": "여기에 제외에 대한 주석을 두는 것이 의미가 있을까요? 릴리스 노트에 적는 편이 나을 수도 있습니다.",
+      "change_summary_ko": "`escape()` 에서 이스케이프 대상 문자 목록을 `generalDelimiters` 등으로 나누고, RFC 3986 근거를 주석으로 남깁니다.",
+      "change_purpose_ko": "파라미터 인코딩 시 이스케이프할 문자 집합을 RFC 3986 기준으로 정리하기 위해서입니다.",
+      "problem_ko": "",
+      "impact_ko": "",
+      "recommendation_ko": "",
+      "needs_confirmation": [
+        "리뷰 댓글은 주석을 코드에 둘지 릴리스 노트로 옮길지에 대한 의견이며 코드 결함을 지적하지 않았습니다."
+      ]
+    },
+    {
+      "ref": "All-Hands-AI/OpenHands#9666",
+      "pr_title_ko": "이슈 #9655 수정: CodeActAgent 가 하드코딩된 stop 파라미터 때문에 xAI Grok-4 와 호환되지 않는 문제",
+      "review_comment_ko": "```suggestion\n    'xai/grok-4-0709',\n```",
+      "change_summary_ko": "stop 파라미터를 지원하지 않는 모델 목록에 `'xai/grok-4-0709'` 를 추가합니다.",
+      "change_purpose_ko": "Grok-4 가 stop 파라미터를 지원하지 않아 CodeActAgent 와 호환되지 않던 문제를 해결하기 위해서입니다.",
+      "problem_ko": "",
+      "impact_ko": "",
+      "recommendation_ko": "",
+      "needs_confirmation": [
+        "리뷰 댓글이 제안 블록만 담고 있어, 항목 추가 자체에 대한 확인인지 뒤에 붙은 주석을 빼자는 의견인지 확정할 수 없습니다."
+      ]
+    },
+    {
+      "ref": "Automattic/pocket-casts-android#4010",
+      "pr_title_ko": "툴팁 컴포넌트 추가",
+      "review_comment_ko": "💡 표현식을 `(if (elevation > 0.dp) Modifier.shadow(elevation, tooltipShape) else Modifier).clip(...)` 처럼 시작해도 됩니다.",
+      "change_summary_ko": "Compose 로 구현한 툴팁 컴포넌트 `Tooltip2` 를 새로 추가합니다.",
+      "change_purpose_ko": "툴팁 UI 컴포넌트를 제공하기 위해서입니다.",
+      "problem_ko": "",
+      "impact_ko": "",
+      "recommendation_ko": "",
+      "needs_confirmation": [
+        "리뷰 댓글은 조건부 `Modifier` 를 작성하는 방식에 대한 제안이며 결함을 지적하지 않았습니다."
+      ]
+    },
+    {
+      "ref": "Automattic/pocket-casts-ios#1614",
+      "pr_title_ko": "카테고리: 스폰서 게시물",
+      "review_comment_ko": "이 구현이 마음에 들지는 않지만, 조만간 `UICollectionView` 같은 것으로 바꿔야 한다고 생각합니다. 그쪽을 살펴보기 시작했고 진전이 있어서 다음 주쯤 제출해 보려고 합니다.",
+      "change_summary_ko": "`populateFrom(discoverLayout:)` 에 포함 여부와 초기화 여부를 제어하는 파라미터를 추가하고 문서 주석을 붙입니다.",
+      "change_purpose_ko": "스폰서 게시물을 카테고리 화면에 표시하기 위해 레이아웃 구성 함수를 확장합니다.",
+      "problem_ko": "",
+      "impact_ko": "",
+      "recommendation_ko": "",
+      "needs_confirmation": [
+        "리뷰 댓글은 향후 `UICollectionView` 로 전환하자는 장기 개선 의견이며 이 변경의 결함을 지적하지 않았습니다."
+      ]
+    }
+  ]
+}
