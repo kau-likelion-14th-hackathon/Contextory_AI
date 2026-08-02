@@ -1,0 +1,19 @@
+[project]
+name = "contextory-ai"
+version = "0.1.0"
+description = "Contextory AI service"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic>=2",
+    "sqlalchemy>=2",
+    "psycopg[binary]",
+    "llama-index-core",
+    "llama-index-vector-stores-postgres",
+    "firebase-admin",
+    "celery[redis]",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

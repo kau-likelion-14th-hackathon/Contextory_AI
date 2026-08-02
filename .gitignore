@@ -54,3 +54,11 @@ Thumbs.db
 *.log
 *.sqlite
 *.db
+
+# ==========================================
+# Local evaluation / test-run code & outputs (커밋 대상 아님)
+# ==========================================
+# 이 저장소는 루트 자체가 AI 파트이므로 AI_service/ 접두사 없이 등록합니다.
+eval_local/
+evaluation/results/
+*.result.jsonl

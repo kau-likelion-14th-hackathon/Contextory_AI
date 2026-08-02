@@ -1,0 +1,29 @@
+# 로컬 개발용. 스키마 소유는 Spring Boot 백엔드이므로 이 구성은 AI 파트 개발 편의를 위한 것입니다.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: contextory
+      POSTGRES_PASSWORD: contextory
+      POSTGRES_DB: contextory
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  api:
+    build: .
+    env_file: .env
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "8000:8000"
+
+volumes:
+  pgdata:
