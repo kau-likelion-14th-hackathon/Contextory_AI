@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+pydantic>=2
+sqlalchemy>=2
+psycopg[binary]
+llama-index-core
+llama-index-vector-stores-postgres
+firebase-admin
+celery[redis]
+
+# HF 데이터셋 수집 (평가 데이터 구축용)
+datasets
+huggingface_hub

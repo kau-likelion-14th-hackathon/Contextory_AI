@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "contextory/korean_code_review_output_schema.json",
+  "title": "Contextory 한국어 코드 변경 분석 출력 스키마",
+  "description": "세 개의 System Prompt(v1/v2/v3)가 공유하는 출력 형식입니다. 필드명은 평가 기준 데이터셋(data/test_samples.json)의 expected 블록과 일치시켜, 별도 매핑 없이 바로 비교할 수 있게 했습니다.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "change_summary_ko",
+    "change_purpose_ko",
+    "change_reason_ko",
+    "before_ko",
+    "after_ko",
+    "review_result",
+    "issues",
+    "affected_roles",
+    "role_impacts",
+    "follow_up_tasks",
+    "needs_confirmation"
+  ],
+  "properties": {
+    "change_summary_ko": {
+      "type": "string",
+      "description": "변경 내용을 한국어 한두 문장으로 요약합니다. diff 에서 확인 가능한 내용만 씁니다."
+    },
+    "change_purpose_ko": {
+      "type": "string",
+      "description": "이 변경이 무엇을 하려는지 서술합니다. PR 제목이나 설명에 근거가 없으면 빈 문자열로 두고 needs_confirmation 에 적습니다."
+    },
+    "change_reason_ko": {
+      "type": "string",
+      "description": "왜 이 변경이 필요했는지 서술합니다. 근거가 없으면 빈 문자열로 둡니다."
+    },
+    "before_ko": {
+      "type": "string",
+      "description": "변경 전 동작이나 구현을 서술합니다. diff 의 '-' 라인과 문맥에 근거합니다."
+    },
+    "after_ko": {
+      "type": "string",
+      "description": "변경 후 동작이나 구현을 서술합니다. diff 의 '+' 라인에 근거합니다."
+    },
+    "review_result": {
+      "type": "string",
+      "enum": ["approve", "request_changes", "needs_confirmation"],
+      "description": "approve = 문제 없음, request_changes = 고쳐야 할 문제가 있음, needs_confirmation = 근거가 부족해 판단을 보류함."
+    },
+    "issues": {
+      "type": "array",
+      "description": "코드 변경에서 발견한 문제입니다. 문제가 없으면 빈 배열로 둡니다.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "category",
+          "subtype",
+          "severity",
+          "file_path",
+          "line_reference",
+          "evidence",
+          "problem_ko",
+          "impact_ko",
+          "recommendation_ko",
+          "confidence"
+        ],
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "security",
+              "performance",
+              "n_plus_one",
+              "functional_bug",
+              "api_contract",
+              "exception_handling",
+              "refactoring"
+            ]
+          },
+          "subtype": {
+            "type": "string",
+            "description": "문제 유형을 더 좁게 나타내는 짧은 식별자입니다. 예: sql-injection, missing-null-check."
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["critical", "high", "medium", "low"],
+            "description": "실제 영향 범위 기준입니다. 단순 스타일 문제를 high 이상으로 올리지 않습니다."
+          },
+          "file_path": {
+            "type": "string",
+            "description": "입력으로 주어진 변경 파일 경로를 그대로 씁니다. 경로를 지어내지 않습니다."
+          },
+          "line_reference": {
+            "type": "string",
+            "description": "문제가 있는 위치를 함수명이나 블록명으로 지목합니다."
+          },
+          "evidence": {
+            "type": "string",
+            "description": "diff 에서 그대로 인용한 코드 라인입니다. 추상적인 설명은 근거가 아닙니다."
+          },
+          "problem_ko": {
+            "type": "string",
+            "description": "무엇이 왜 문제인지 한 문장 이상으로 구체적으로 서술합니다."
+          },
+          "impact_ko": {
+            "type": "string",
+            "description": "운영·사용자·데이터 관점에서 어떤 결과로 이어지는지 서술합니다."
+          },
+          "recommendation_ko": {
+            "type": "string",
+            "description": "무엇을 어떻게 고칠지 실행 가능한 수준으로 서술합니다."
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "description": "근거의 강도입니다. diff 밖의 추측에 의존할수록 낮춥니다."
+          }
+        }
+      }
+    },
+    "affected_roles": {
+      "type": "array",
+      "description": "실제로 영향을 받는 역할만 넣습니다. 근거 없이 확장하지 않습니다.",
+      "items": {
+        "type": "string",
+        "enum": ["frontend", "backend", "ai", "planning", "design", "qa", "project_manager"]
+      },
+      "uniqueItems": true
+    },
+    "role_impacts": {
+      "type": "array",
+      "description": "역할별 구체적인 영향입니다. affected_roles 에 없는 역할을 넣지 않습니다.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "impact_ko", "evidence"],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["frontend", "backend", "ai", "planning", "design", "qa", "project_manager"]
+          },
+          "impact_ko": {
+            "type": "string",
+            "description": "해당 역할이 실제로 무엇을 확인해야 하는지, 무엇이 달라지는지 서술합니다."
+          },
+          "evidence": {
+            "type": "string",
+            "description": "그렇게 판단한 근거가 되는 diff 라인이나 입력 값입니다."
+          }
+        }
+      }
+    },
+    "follow_up_tasks": {
+      "type": "array",
+      "description": "이 변경 이후 실제로 수행 가능한 후속 작업입니다. 막연한 권고는 넣지 않습니다.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "task_ko", "evidence"],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["frontend", "backend", "ai", "planning", "design", "qa", "project_manager"]
+          },
+          "task_ko": {
+            "type": "string",
+            "description": "누가 무엇을 해야 하는지 알 수 있게 씁니다."
+          },
+          "evidence": {
+            "type": "string",
+            "description": "이 작업이 필요한 근거가 되는 diff 라인이나 입력 값입니다."
+          }
+        }
+      }
+    },
+    "needs_confirmation": {
+      "type": "array",
+      "description": "주어진 diff 와 PR 정보만으로는 확정할 수 없어 사람 확인이 필요한 항목입니다.",
+      "items": { "type": "string" }
+    }
+  }
+}
