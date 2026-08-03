@@ -1,9 +1,7 @@
 """pgvector(PGVectorStore) 접속 지점.
 
-파일 기반 저장소(Chroma/FAISS 등)는 쓰지 않습니다. 벡터 저장소는 pgvector 하나입니다.
-
-비밀번호와 접속 문자열은 로그로 출력하지 않습니다. 표시가 필요하면
-`describe_target()` 이 돌려주는 마스킹된 값을 씁니다.
+파일 기반 저장소(Chroma/FAISS 등)는 쓰지 않으며, 벡터 저장소는 pgvector를 사용합니다.
+비밀번호와 접속 문자열은 로그 출력 시 마스킹 처리(`describe_target()`)를 거칩니다.
 """
 
 from __future__ import annotations
@@ -12,8 +10,12 @@ import os
 from dataclasses import dataclass
 from typing import Any
 from urllib.parse import quote_plus, unquote, urlparse
+from dotenv import load_dotenv
 
-DEFAULT_TABLE_NAME = os.getenv("VECTOR_TABLE_NAME", "contextory_embeddings")
+load_dotenv()
+
+# 기본 테이블명을 'code_embeddings'로 유지합니다.
+DEFAULT_TABLE_NAME = os.getenv("VECTOR_TABLE_NAME", "code_embeddings")
 
 
 def _default_embed_dim() -> int:
@@ -24,7 +26,7 @@ def _default_embed_dim() -> int:
 
 @dataclass(frozen=True)
 class PgParams:
-    """pgvector 접속 파라미터. 어디서 읽었는지(source)도 함께 들고 다닙니다."""
+    """pgvector 접속 파라미터. 어디서 읽었는지(source)도 함께 유지합니다."""
 
     host: str
     port: int
@@ -38,9 +40,10 @@ class PgParams:
         return f"postgresql://{self.host}:{self.port}/{self.database}"
 
     def sqlalchemy_url(self, driver: str = "psycopg2") -> str:
+        """특수문자 패스워드 인코딩 및 UTF-8 클라이언트 인코딩이 반영된 접속 URL을 생성합니다."""
         return (
             f"postgresql+{driver}://{quote_plus(self.user)}:{quote_plus(self.password)}"
-            f"@{self.host}:{self.port}/{self.database}"
+            f"@{self.host}:{self.port}/{self.database}?client_encoding=utf8"
         )
 
 
@@ -56,7 +59,6 @@ def resolve_pg_params() -> PgParams:
             host=parsed.hostname or "localhost",
             port=parsed.port or 5432,
             database=database,
-            # urlparse 결과는 percent-encoding 이 남아 있으므로 되돌립니다.
             user=unquote(parsed.username or ""),
             password=unquote(parsed.password or ""),
             source="DATABASE_URL",
@@ -90,17 +92,19 @@ def get_vector_store(
     perform_setup: bool = True,
     hybrid_search: bool = False,
 ) -> Any:
-    """PGVectorStore 를 만들어 돌려줍니다.
+    """PGVectorStore 를 생성하여 반환합니다.
 
-    `perform_setup=True` 면 테이블이 없을 때 생성합니다(CREATE TABLE IF NOT EXISTS).
-    기존 테이블을 지우지 않습니다.
+    `perform_setup=True` 옵션으로 테이블이 없을 때 자동 생성합니다(CREATE TABLE IF NOT EXISTS).
+    connection_string을 명시하여 UTF-8 인코딩 및 특수문자 패스워드 방지를 보장합니다.
     """
     from llama_index.vector_stores.postgres import PGVectorStore
 
     params = resolve_pg_params()
     dim = embed_dim if embed_dim is not None else _default_embed_dim()
+    connection_string = params.sqlalchemy_url("psycopg2")
 
     return PGVectorStore.from_params(
+        connection_string=connection_string,
         host=params.host,
         port=str(params.port),
         database=params.database,
@@ -128,15 +132,15 @@ def healthcheck() -> tuple[bool, str]:
             with engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
             return True, f"{params.masked()} 에 접속했습니다 (드라이버 {driver})."
-        except Exception as exc:  # 드라이버 미설치/접속 실패 모두 여기로 옵니다.
+        except Exception as exc:
             last = f"{type(exc).__name__}: {exc}"
     return False, f"pgvector 접속 실패 ({params.masked()}): {last}"
 
 
 def count_vectors(table_name: str = DEFAULT_TABLE_NAME) -> int | None:
-    """테이블에 적재된 벡터 개수. 조회에 실패하면 None 을 돌려줍니다.
+    """테이블에 적재된 벡터 개수를 조회합니다. 조회 실패 시 None 을 반환합니다.
 
-    PGVectorStore 는 `table_name` 앞에 `data_` 접두사를 붙여 실제 테이블을 만듭니다.
+    PGVectorStore 는 `table_name` 앞에 `data_` 접두사를 붙여 실제 테이블을 생성합니다.
     """
     params = resolve_pg_params()
     try:

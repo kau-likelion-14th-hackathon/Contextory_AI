@@ -1,13 +1,30 @@
-fastapi
-uvicorn[standard]
-pydantic>=2
-sqlalchemy>=2
+# FastAPI Base Framework
+fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
+pydantic>=2.6.0
+pydantic-settings>=2.2.0
+python-dotenv>=1.0.1
+
+# Database & Vector DB (PostgreSQL + pgvector)
+sqlalchemy>=2.0.28
+psycopg2-binary>=2.9.9
 psycopg[binary]
-llama-index-core
-llama-index-vector-stores-postgres
+pgvector>=0.2.5
+
+# AI / LLM Providers
+openai>=1.14.0
+google-generativeai>=0.4.1
+
+# LlamaIndex Framework & Integrations
+llama-index-core>=0.10.0
+llama-index-llms-openai>=0.1.0
+llama-index-embeddings-openai>=0.1.0
+llama-index-vector-stores-postgres>=0.1.0
+
+# Async Queue & Cloud Services
 firebase-admin
 celery[redis]
 
-# HF 데이터셋 수집 (평가 데이터 구축용)
+# Hugging Face Dataset & Evaluation
 datasets
 huggingface_hub
