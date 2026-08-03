@@ -1,20 +1,25 @@
-# core/db.py
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import declarative_base, sessionmaker
+
 from core.config import settings
 
-# SQLAlchemy Engine 생성
 engine = create_engine(
     settings.database_url,
-    pool_pre_ping=True,  # 연결 유효성 자동 체크
+    pool_pre_ping=True,
 )
 
-# DB 세션 팩토리 생성
 SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
-    bind=engine
+    bind=engine,
 )
 
-# ORM 모델 Base 클래스
 Base = declarative_base()
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
