@@ -14,7 +14,7 @@ FastAPI 기반으로 구축되어 있으며, GitHub PR 분석 및 LlamaIndex / P
 - **Database / Vector Store:** PostgreSQL 18 + `pgvector`
 - **ORM / DB Driver:** SQLAlchemy 2.0, `psycopg2-binary`
 - **Settings Management:** `pydantic-settings`
-- **AI / RAG Framework:** LlamaIndex, OpenAI GPT-4o
+- **AI / RAG Framework:** LlamaIndex, OpenRouter (GPT-4o), OpenAI (`text-embedding-3-small`)
 
 ## 📁 Directory Structure
 
@@ -28,8 +28,10 @@ AI_service/
 ├── core/                       # 환경설정, DB 커넥션, 공통 인프라 모듈
 │   ├── config.py               # pydantic-settings 기반 환경변수 관리
 │   └── db.py                   # SQLAlchemy Engine & SessionLocal 관리
-├── routers/                    # API 엔드포인트 계층 (Health, PR 분석, RAG 검색 등)
-│   └── health.py               # DB 연동 상태 검증 헬스체크 API
+├── routers/                    # API 엔드포인트 계층
+│   ├── health.py               # DB 연동 상태 검증 헬스체크 API
+│   ├── repo.py                 # RAG 소스코드 인덱싱 API (/api/v1/repos/index)
+│   └── analyze.py              # RAG 기반 PR Diff 분석 API (/api/v1/analyze/pr)
 ├── services/                   # 비즈니스 로직 및 전처리 모듈
 ├── models/                     # Pydantic 스키마 및 DB ORM 모델
 ├── llamaindex/                 # LlamaIndex VectorStore, Retriever, Ingestion 파이프라인
