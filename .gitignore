@@ -67,8 +67,9 @@ evaluation/results/
 # Large local datasets & pipeline outputs (커밋 대상 아님)
 # ==========================================
 # Hugging Face Hub 에서 내려받은 원본(수백 MB~GB). 재현은 --dataset-id 로 합니다.
-data/hf_source/
+data/*
 # 축소 데이터셋과 인덱싱/평가 산출물.
-data/subset_5gb/
+
 results/
 logs/
+
