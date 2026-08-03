@@ -9,7 +9,6 @@ setup_logging()
 
 app = FastAPI(title="Contextory AI Service")
 
-# 라우터 연결
 app.include_router(health.router)
 app.include_router(users.router)
 app.include_router(pr.router)

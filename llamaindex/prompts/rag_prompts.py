@@ -1,6 +1,4 @@
-"""RAG 프롬프트.
-
-"""
+"""RAG 프롬프트."""
 
 from __future__ import annotations
 

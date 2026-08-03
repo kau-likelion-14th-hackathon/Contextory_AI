@@ -1,0 +1,2195 @@
+{
+  "generated_by": "scripts/create_5gb_subset.py",
+  "input_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data",
+  "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb",
+  "seed": 42,
+  "detected_mode": "record",
+  "formats": {
+    "json": 4,
+    "csv": 1,
+    "jsonl": 2
+  },
+  "target_bytes": 4800000000,
+  "max_bytes": 5000000000,
+  "actual_output_bytes": 817072,
+  "source_total_bytes": 817401,
+  "source_records": 206,
+  "selected_records": 206,
+  "source_media_files": 0,
+  "selected_media_files": 0,
+  "aux_files_copied": 1,
+  "split_records_source": {
+    "all": 174,
+    "test": 32
+  },
+  "split_records_subset": {
+    "all": 174,
+    "test": 32
+  },
+  "label_distribution_source": {
+    "security": 14,
+    "n_plus_one": 2,
+    "performance": 15,
+    "functional_bug": 8,
+    "api_contract": 6,
+    "error_handling": 3,
+    "refactoring": 14,
+    "control": 15,
+    "<all>": 98,
+    "question": 4,
+    "suggestion": 10,
+    "bug": 6,
+    "refactor": 4,
+    "style": 2,
+    "nitpick": 2,
+    "exception_handling": 3
+  },
+  "label_distribution_subset": {
+    "security": 14,
+    "n_plus_one": 2,
+    "performance": 15,
+    "functional_bug": 8,
+    "api_contract": 6,
+    "error_handling": 3,
+    "refactoring": 14,
+    "control": 15,
+    "bug": 6,
+    "refactor": 4,
+    "style": 2,
+    "nitpick": 2,
+    "question": 4,
+    "suggestion": 10,
+    "<all>": 98,
+    "exception_handling": 3
+  },
+  "verification": {
+    "reloadable": true,
+    "schema_match": true,
+    "checked_files": 7,
+    "issues": [],
+    "output_counts": {
+      "annotations.json": 32,
+      "hf_selection.tsv": 57,
+      "localized/reviews_ko.json": 41,
+      "raw/hf_demo_sample.jsonl": 3,
+      "raw/hf_github_codereview_raw.jsonl": 41,
+      "raw/hf_github_codereview_raw.meta.json": 0,
+      "test_samples.json": 32
+    }
+  },
+  "files": [
+    {
+      "source_rel": "annotations.json",
+      "format": "json",
+      "split": "all",
+      "source_records": 32,
+      "selected_records": 32,
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json"
+    },
+    {
+      "source_rel": "hf_selection.tsv",
+      "format": "csv",
+      "split": "all",
+      "source_records": 57,
+      "selected_records": 57,
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv"
+    },
+    {
+      "source_rel": "localized/reviews_ko.json",
+      "format": "json",
+      "split": "all",
+      "source_records": 41,
+      "selected_records": 41,
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json"
+    },
+    {
+      "source_rel": "raw/hf_demo_sample.jsonl",
+      "format": "jsonl",
+      "split": "all",
+      "source_records": 3,
+      "selected_records": 3,
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_demo_sample.jsonl"
+    },
+    {
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "format": "jsonl",
+      "split": "all",
+      "source_records": 41,
+      "selected_records": 41,
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl"
+    },
+    {
+      "source_rel": "test_samples.json",
+      "format": "json",
+      "split": "test",
+      "source_records": 32,
+      "selected_records": 32,
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json"
+    }
+  ],
+  "records_truncated": false,
+  "manifest_max_records": 200000,
+  "records": [
+    {
+      "identifier": "ctx-sec-001",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 0,
+      "approx_bytes": 3492,
+      "split": "all",
+      "label": "security"
+    },
+    {
+      "identifier": "ctx-sec-002",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 1,
+      "approx_bytes": 3118,
+      "split": "all",
+      "label": "security"
+    },
+    {
+      "identifier": "ctx-sec-003",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 2,
+      "approx_bytes": 3482,
+      "split": "all",
+      "label": "security"
+    },
+    {
+      "identifier": "ctx-sec-004",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 3,
+      "approx_bytes": 3032,
+      "split": "all",
+      "label": "security"
+    },
+    {
+      "identifier": "ctx-npo-001",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 4,
+      "approx_bytes": 3172,
+      "split": "all",
+      "label": "n_plus_one"
+    },
+    {
+      "identifier": "ctx-perf-001",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 5,
+      "approx_bytes": 3256,
+      "split": "all",
+      "label": "performance"
+    },
+    {
+      "identifier": "ctx-perf-002",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 6,
+      "approx_bytes": 2532,
+      "split": "all",
+      "label": "performance"
+    },
+    {
+      "identifier": "ctx-perf-003",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 7,
+      "approx_bytes": 2933,
+      "split": "all",
+      "label": "performance"
+    },
+    {
+      "identifier": "ctx-perf-004",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 8,
+      "approx_bytes": 2735,
+      "split": "all",
+      "label": "performance"
+    },
+    {
+      "identifier": "ctx-perf-005",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 9,
+      "approx_bytes": 3146,
+      "split": "all",
+      "label": "performance"
+    },
+    {
+      "identifier": "ctx-bug-001",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 10,
+      "approx_bytes": 3176,
+      "split": "all",
+      "label": "functional_bug"
+    },
+    {
+      "identifier": "ctx-bug-002",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 11,
+      "approx_bytes": 3257,
+      "split": "all",
+      "label": "functional_bug"
+    },
+    {
+      "identifier": "ctx-bug-003",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 12,
+      "approx_bytes": 2513,
+      "split": "all",
+      "label": "functional_bug"
+    },
+    {
+      "identifier": "ctx-bug-004",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 13,
+      "approx_bytes": 3052,
+      "split": "all",
+      "label": "functional_bug"
+    },
+    {
+      "identifier": "ctx-api-001",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 14,
+      "approx_bytes": 3078,
+      "split": "all",
+      "label": "api_contract"
+    },
+    {
+      "identifier": "ctx-api-002",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 15,
+      "approx_bytes": 3247,
+      "split": "all",
+      "label": "api_contract"
+    },
+    {
+      "identifier": "ctx-api-003",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 16,
+      "approx_bytes": 2875,
+      "split": "all",
+      "label": "api_contract"
+    },
+    {
+      "identifier": "ctx-err-001",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 17,
+      "approx_bytes": 2768,
+      "split": "all",
+      "label": "error_handling"
+    },
+    {
+      "identifier": "ctx-err-002",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 18,
+      "approx_bytes": 3235,
+      "split": "all",
+      "label": "error_handling"
+    },
+    {
+      "identifier": "ctx-err-003",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 19,
+      "approx_bytes": 3207,
+      "split": "all",
+      "label": "error_handling"
+    },
+    {
+      "identifier": "ctx-ref-001",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 20,
+      "approx_bytes": 2857,
+      "split": "all",
+      "label": "refactoring"
+    },
+    {
+      "identifier": "ctx-ref-002",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 21,
+      "approx_bytes": 3191,
+      "split": "all",
+      "label": "refactoring"
+    },
+    {
+      "identifier": "ctx-ref-003",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 22,
+      "approx_bytes": 3378,
+      "split": "all",
+      "label": "refactoring"
+    },
+    {
+      "identifier": "ctx-ref-004",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 23,
+      "approx_bytes": 2310,
+      "split": "all",
+      "label": "refactoring"
+    },
+    {
+      "identifier": "ctx-ref-005",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 24,
+      "approx_bytes": 2111,
+      "split": "all",
+      "label": "refactoring"
+    },
+    {
+      "identifier": "ctx-ref-006",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 25,
+      "approx_bytes": 2660,
+      "split": "all",
+      "label": "refactoring"
+    },
+    {
+      "identifier": "ctx-ref-007",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 26,
+      "approx_bytes": 2362,
+      "split": "all",
+      "label": "refactoring"
+    },
+    {
+      "identifier": "ctx-ctl-001",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 27,
+      "approx_bytes": 1195,
+      "split": "all",
+      "label": "control"
+    },
+    {
+      "identifier": "ctx-ctl-002",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 28,
+      "approx_bytes": 1248,
+      "split": "all",
+      "label": "control"
+    },
+    {
+      "identifier": "ctx-ctl-003",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 29,
+      "approx_bytes": 1201,
+      "split": "all",
+      "label": "control"
+    },
+    {
+      "identifier": "ctx-ctl-004",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 30,
+      "approx_bytes": 1470,
+      "split": "all",
+      "label": "control"
+    },
+    {
+      "identifier": "ctx-ctl-005",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/annotations.json",
+      "source_rel": "annotations.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/annotations.json",
+      "record_index": 31,
+      "approx_bytes": 1381,
+      "split": "all",
+      "label": "control"
+    },
+    {
+      "identifier": "hf_selection.tsv#0",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 0,
+      "approx_bytes": 3,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#1",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 1,
+      "approx_bytes": 37,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#2",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 2,
+      "approx_bytes": 3,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#3",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 3,
+      "approx_bytes": 58,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#4",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 4,
+      "approx_bytes": 41,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#5",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 5,
+      "approx_bytes": 57,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#6",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 6,
+      "approx_bytes": 3,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#7",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 7,
+      "approx_bytes": 15,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#8",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 8,
+      "approx_bytes": 66,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#9",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 9,
+      "approx_bytes": 60,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#10",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 10,
+      "approx_bytes": 65,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#11",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 11,
+      "approx_bytes": 57,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#12",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 12,
+      "approx_bytes": 69,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#13",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 13,
+      "approx_bytes": 58,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#14",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 14,
+      "approx_bytes": 62,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#15",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 15,
+      "approx_bytes": 58,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#16",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 16,
+      "approx_bytes": 68,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#17",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 17,
+      "approx_bytes": 18,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#18",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 18,
+      "approx_bytes": 49,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#19",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 19,
+      "approx_bytes": 49,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#20",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 20,
+      "approx_bytes": 44,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#21",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 21,
+      "approx_bytes": 36,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#22",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 22,
+      "approx_bytes": 27,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#23",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 23,
+      "approx_bytes": 51,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#24",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 24,
+      "approx_bytes": 18,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#25",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 25,
+      "approx_bytes": 52,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#26",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 26,
+      "approx_bytes": 33,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#27",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 27,
+      "approx_bytes": 50,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#28",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 28,
+      "approx_bytes": 33,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#29",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 29,
+      "approx_bytes": 48,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#30",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 30,
+      "approx_bytes": 21,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#31",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 31,
+      "approx_bytes": 45,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#32",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 32,
+      "approx_bytes": 45,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#33",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 33,
+      "approx_bytes": 38,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#34",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 34,
+      "approx_bytes": 48,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#35",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 35,
+      "approx_bytes": 22,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#36",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 36,
+      "approx_bytes": 34,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#37",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 37,
+      "approx_bytes": 36,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#38",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 38,
+      "approx_bytes": 51,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#39",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 39,
+      "approx_bytes": 25,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#40",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 40,
+      "approx_bytes": 47,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#41",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 41,
+      "approx_bytes": 61,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#42",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 42,
+      "approx_bytes": 43,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#43",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 43,
+      "approx_bytes": 20,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#44",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 44,
+      "approx_bytes": 42,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#45",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 45,
+      "approx_bytes": 52,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#46",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 46,
+      "approx_bytes": 42,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#47",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 47,
+      "approx_bytes": 42,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#48",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 48,
+      "approx_bytes": 42,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#49",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 49,
+      "approx_bytes": 54,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#50",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 50,
+      "approx_bytes": 41,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#51",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 51,
+      "approx_bytes": 66,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#52",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 52,
+      "approx_bytes": 41,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#53",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 53,
+      "approx_bytes": 42,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#54",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 54,
+      "approx_bytes": 46,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#55",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 55,
+      "approx_bytes": 46,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "hf_selection.tsv#56",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/hf_selection.tsv",
+      "source_rel": "hf_selection.tsv",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/hf_selection.tsv",
+      "record_index": 56,
+      "approx_bytes": 46,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0001",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 0,
+      "approx_bytes": 3157,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0002",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 1,
+      "approx_bytes": 3522,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0003",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 2,
+      "approx_bytes": 3147,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0004",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 3,
+      "approx_bytes": 3031,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0005",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 4,
+      "approx_bytes": 3245,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0006",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 5,
+      "approx_bytes": 4431,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0007",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 6,
+      "approx_bytes": 2701,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0008",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 7,
+      "approx_bytes": 3103,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0009",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 8,
+      "approx_bytes": 4643,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0010",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 9,
+      "approx_bytes": 2249,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0011",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 10,
+      "approx_bytes": 7431,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0012",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 11,
+      "approx_bytes": 2623,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0013",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 12,
+      "approx_bytes": 3857,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0014",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 13,
+      "approx_bytes": 2493,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0015",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 14,
+      "approx_bytes": 2514,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0016",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 15,
+      "approx_bytes": 2660,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0017",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 16,
+      "approx_bytes": 2870,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0018",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 17,
+      "approx_bytes": 2202,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0019",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 18,
+      "approx_bytes": 3607,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0020",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 19,
+      "approx_bytes": 3608,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0021",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 20,
+      "approx_bytes": 5386,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0022",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 21,
+      "approx_bytes": 3376,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0023",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 22,
+      "approx_bytes": 5940,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0024",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 23,
+      "approx_bytes": 2070,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0025",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 24,
+      "approx_bytes": 2064,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0026",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 25,
+      "approx_bytes": 2724,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0027",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 26,
+      "approx_bytes": 3240,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0028",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 27,
+      "approx_bytes": 2406,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0029",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 28,
+      "approx_bytes": 1863,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0030",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 29,
+      "approx_bytes": 2141,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0031",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 30,
+      "approx_bytes": 2661,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0032",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 31,
+      "approx_bytes": 1946,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0033",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 32,
+      "approx_bytes": 1888,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0034",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 33,
+      "approx_bytes": 1681,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0035",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 34,
+      "approx_bytes": 3645,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0036",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 35,
+      "approx_bytes": 2738,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0037",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 36,
+      "approx_bytes": 1914,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0038",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 37,
+      "approx_bytes": 1505,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0039",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 38,
+      "approx_bytes": 1569,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0040",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 39,
+      "approx_bytes": 3366,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "cr-0041",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/localized/reviews_ko.json",
+      "source_rel": "localized/reviews_ko.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/localized/reviews_ko.json",
+      "record_index": 40,
+      "approx_bytes": 3374,
+      "split": "all",
+      "label": "<all>"
+    },
+    {
+      "identifier": "raw/hf_demo_sample.jsonl#0",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_demo_sample.jsonl",
+      "source_rel": "raw/hf_demo_sample.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_demo_sample.jsonl",
+      "record_index": 0,
+      "approx_bytes": 4960,
+      "split": "all",
+      "label": "question"
+    },
+    {
+      "identifier": "raw/hf_demo_sample.jsonl#1",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_demo_sample.jsonl",
+      "source_rel": "raw/hf_demo_sample.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_demo_sample.jsonl",
+      "record_index": 1,
+      "approx_bytes": 2437,
+      "split": "all",
+      "label": "suggestion"
+    },
+    {
+      "identifier": "raw/hf_demo_sample.jsonl#2",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_demo_sample.jsonl",
+      "source_rel": "raw/hf_demo_sample.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_demo_sample.jsonl",
+      "record_index": 2,
+      "approx_bytes": 4566,
+      "split": "all",
+      "label": "suggestion"
+    },
+    {
+      "identifier": "4426",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 0,
+      "approx_bytes": 6032,
+      "split": "all",
+      "label": "security"
+    },
+    {
+      "identifier": "4828",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 1,
+      "approx_bytes": 5242,
+      "split": "all",
+      "label": "security"
+    },
+    {
+      "identifier": "5312",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 2,
+      "approx_bytes": 5808,
+      "split": "all",
+      "label": "security"
+    },
+    {
+      "identifier": "5316",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 3,
+      "approx_bytes": 5768,
+      "split": "all",
+      "label": "security"
+    },
+    {
+      "identifier": "5320",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 4,
+      "approx_bytes": 5962,
+      "split": "all",
+      "label": "security"
+    },
+    {
+      "identifier": "5887",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 5,
+      "approx_bytes": 6595,
+      "split": "all",
+      "label": "security"
+    },
+    {
+      "identifier": "1945",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 6,
+      "approx_bytes": 5805,
+      "split": "all",
+      "label": "performance"
+    },
+    {
+      "identifier": "3601",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 7,
+      "approx_bytes": 5979,
+      "split": "all",
+      "label": "performance"
+    },
+    {
+      "identifier": "4522",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 8,
+      "approx_bytes": 5184,
+      "split": "all",
+      "label": "performance"
+    },
+    {
+      "identifier": "4674",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 9,
+      "approx_bytes": 3602,
+      "split": "all",
+      "label": "performance"
+    },
+    {
+      "identifier": "4690",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 10,
+      "approx_bytes": 10869,
+      "split": "all",
+      "label": "performance"
+    },
+    {
+      "identifier": "635",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 11,
+      "approx_bytes": 5598,
+      "split": "all",
+      "label": "bug"
+    },
+    {
+      "identifier": "2249",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 12,
+      "approx_bytes": 7784,
+      "split": "all",
+      "label": "bug"
+    },
+    {
+      "identifier": "2274",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 13,
+      "approx_bytes": 5260,
+      "split": "all",
+      "label": "bug"
+    },
+    {
+      "identifier": "2305",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 14,
+      "approx_bytes": 5005,
+      "split": "all",
+      "label": "bug"
+    },
+    {
+      "identifier": "3141",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 15,
+      "approx_bytes": 4960,
+      "split": "all",
+      "label": "bug"
+    },
+    {
+      "identifier": "3148",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 16,
+      "approx_bytes": 4775,
+      "split": "all",
+      "label": "bug"
+    },
+    {
+      "identifier": "3142",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 17,
+      "approx_bytes": 4634,
+      "split": "all",
+      "label": "refactor"
+    },
+    {
+      "identifier": "3595",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 18,
+      "approx_bytes": 6327,
+      "split": "all",
+      "label": "refactor"
+    },
+    {
+      "identifier": "3614",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 19,
+      "approx_bytes": 7593,
+      "split": "all",
+      "label": "refactor"
+    },
+    {
+      "identifier": "4006",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 20,
+      "approx_bytes": 7273,
+      "split": "all",
+      "label": "refactor"
+    },
+    {
+      "identifier": "1214",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 21,
+      "approx_bytes": 5691,
+      "split": "all",
+      "label": "style"
+    },
+    {
+      "identifier": "1215",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 22,
+      "approx_bytes": 6688,
+      "split": "all",
+      "label": "style"
+    },
+    {
+      "identifier": "3985",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 23,
+      "approx_bytes": 3752,
+      "split": "all",
+      "label": "nitpick"
+    },
+    {
+      "identifier": "4043",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 24,
+      "approx_bytes": 2190,
+      "split": "all",
+      "label": "nitpick"
+    },
+    {
+      "identifier": "0",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 25,
+      "approx_bytes": 5110,
+      "split": "all",
+      "label": "question"
+    },
+    {
+      "identifier": "637",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 26,
+      "approx_bytes": 6170,
+      "split": "all",
+      "label": "question"
+    },
+    {
+      "identifier": "1925",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 27,
+      "approx_bytes": 3131,
+      "split": "all",
+      "label": "question"
+    },
+    {
+      "identifier": "2",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 28,
+      "approx_bytes": 4716,
+      "split": "all",
+      "label": "suggestion"
+    },
+    {
+      "identifier": "3",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 29,
+      "approx_bytes": 4469,
+      "split": "all",
+      "label": "suggestion"
+    },
+    {
+      "identifier": "373",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 30,
+      "approx_bytes": 91654,
+      "split": "all",
+      "label": "suggestion"
+    },
+    {
+      "identifier": "374",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 31,
+      "approx_bytes": 17297,
+      "split": "all",
+      "label": "suggestion"
+    },
+    {
+      "identifier": "380",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 32,
+      "approx_bytes": 18168,
+      "split": "all",
+      "label": "suggestion"
+    },
+    {
+      "identifier": "636",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 33,
+      "approx_bytes": 3358,
+      "split": "all",
+      "label": "suggestion"
+    },
+    {
+      "identifier": "1218",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 34,
+      "approx_bytes": 6638,
+      "split": "all",
+      "label": "suggestion"
+    },
+    {
+      "identifier": "1928",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 35,
+      "approx_bytes": 7108,
+      "split": "all",
+      "label": "suggestion"
+    },
+    {
+      "identifier": "3556",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 36,
+      "approx_bytes": 4014,
+      "split": "all",
+      "label": "control"
+    },
+    {
+      "identifier": "3557",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 37,
+      "approx_bytes": 4811,
+      "split": "all",
+      "label": "control"
+    },
+    {
+      "identifier": "3574",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 38,
+      "approx_bytes": 5367,
+      "split": "all",
+      "label": "control"
+    },
+    {
+      "identifier": "3575",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 39,
+      "approx_bytes": 6542,
+      "split": "all",
+      "label": "control"
+    },
+    {
+      "identifier": "3576",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/raw/hf_github_codereview_raw.jsonl",
+      "source_rel": "raw/hf_github_codereview_raw.jsonl",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/raw/hf_github_codereview_raw.jsonl",
+      "record_index": 40,
+      "approx_bytes": 5627,
+      "split": "all",
+      "label": "control"
+    },
+    {
+      "identifier": "security-001",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 0,
+      "approx_bytes": 6602,
+      "split": "test",
+      "label": "security"
+    },
+    {
+      "identifier": "security-002",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 1,
+      "approx_bytes": 5823,
+      "split": "test",
+      "label": "security"
+    },
+    {
+      "identifier": "security-003",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 2,
+      "approx_bytes": 6518,
+      "split": "test",
+      "label": "security"
+    },
+    {
+      "identifier": "security-004",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 3,
+      "approx_bytes": 6702,
+      "split": "test",
+      "label": "security"
+    },
+    {
+      "identifier": "performance-001",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 4,
+      "approx_bytes": 5943,
+      "split": "test",
+      "label": "performance"
+    },
+    {
+      "identifier": "performance-002",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 5,
+      "approx_bytes": 4429,
+      "split": "test",
+      "label": "performance"
+    },
+    {
+      "identifier": "performance-003",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 6,
+      "approx_bytes": 5275,
+      "split": "test",
+      "label": "performance"
+    },
+    {
+      "identifier": "performance-004",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 7,
+      "approx_bytes": 9966,
+      "split": "test",
+      "label": "performance"
+    },
+    {
+      "identifier": "performance-005",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 8,
+      "approx_bytes": 7150,
+      "split": "test",
+      "label": "performance"
+    },
+    {
+      "identifier": "n_plus_one-001",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 9,
+      "approx_bytes": 6304,
+      "split": "test",
+      "label": "n_plus_one"
+    },
+    {
+      "identifier": "functional_bug-001",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 10,
+      "approx_bytes": 5185,
+      "split": "test",
+      "label": "functional_bug"
+    },
+    {
+      "identifier": "functional_bug-002",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 11,
+      "approx_bytes": 5588,
+      "split": "test",
+      "label": "functional_bug"
+    },
+    {
+      "identifier": "functional_bug-003",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 12,
+      "approx_bytes": 5011,
+      "split": "test",
+      "label": "functional_bug"
+    },
+    {
+      "identifier": "functional_bug-004",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 13,
+      "approx_bytes": 5555,
+      "split": "test",
+      "label": "functional_bug"
+    },
+    {
+      "identifier": "api_contract-001",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 14,
+      "approx_bytes": 6295,
+      "split": "test",
+      "label": "api_contract"
+    },
+    {
+      "identifier": "api_contract-002",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 15,
+      "approx_bytes": 6857,
+      "split": "test",
+      "label": "api_contract"
+    },
+    {
+      "identifier": "api_contract-003",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 16,
+      "approx_bytes": 4899,
+      "split": "test",
+      "label": "api_contract"
+    },
+    {
+      "identifier": "exception_handling-001",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 17,
+      "approx_bytes": 4936,
+      "split": "test",
+      "label": "exception_handling"
+    },
+    {
+      "identifier": "exception_handling-002",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 18,
+      "approx_bytes": 8714,
+      "split": "test",
+      "label": "exception_handling"
+    },
+    {
+      "identifier": "exception_handling-003",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 19,
+      "approx_bytes": 5794,
+      "split": "test",
+      "label": "exception_handling"
+    },
+    {
+      "identifier": "refactoring-001",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 20,
+      "approx_bytes": 4618,
+      "split": "test",
+      "label": "refactoring"
+    },
+    {
+      "identifier": "refactoring-002",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 21,
+      "approx_bytes": 6577,
+      "split": "test",
+      "label": "refactoring"
+    },
+    {
+      "identifier": "refactoring-003",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 22,
+      "approx_bytes": 8490,
+      "split": "test",
+      "label": "refactoring"
+    },
+    {
+      "identifier": "refactoring-004",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 23,
+      "approx_bytes": 4116,
+      "split": "test",
+      "label": "refactoring"
+    },
+    {
+      "identifier": "refactoring-005",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 24,
+      "approx_bytes": 4043,
+      "split": "test",
+      "label": "refactoring"
+    },
+    {
+      "identifier": "refactoring-006",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 25,
+      "approx_bytes": 5705,
+      "split": "test",
+      "label": "refactoring"
+    },
+    {
+      "identifier": "refactoring-007",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 26,
+      "approx_bytes": 4131,
+      "split": "test",
+      "label": "refactoring"
+    },
+    {
+      "identifier": "control-001",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 27,
+      "approx_bytes": 3333,
+      "split": "test",
+      "label": "control"
+    },
+    {
+      "identifier": "control-002",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 28,
+      "approx_bytes": 3130,
+      "split": "test",
+      "label": "control"
+    },
+    {
+      "identifier": "control-003",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 29,
+      "approx_bytes": 2910,
+      "split": "test",
+      "label": "control"
+    },
+    {
+      "identifier": "control-004",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 30,
+      "approx_bytes": 4971,
+      "split": "test",
+      "label": "control"
+    },
+    {
+      "identifier": "control-005",
+      "source_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/test_samples.json",
+      "source_rel": "test_samples.json",
+      "output_path": "/Users/a1/Desktop/Hackton/Contextory_AI/data/subset_5gb/test_samples.json",
+      "record_index": 31,
+      "approx_bytes": 4880,
+      "split": "test",
+      "label": "control"
+    }
+  ],
+  "media": []
+}

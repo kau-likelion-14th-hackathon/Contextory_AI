@@ -1,6 +1,4 @@
-"""벡터 스토어 추상화.
-
-"""
+"""벡터 스토어 추상화."""
 
 from __future__ import annotations
 
