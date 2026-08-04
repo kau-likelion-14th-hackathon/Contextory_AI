@@ -19,3 +19,5 @@ llama-index-core>=0.10.0
 llama-index-llms-openai>=0.1.0
 llama-index-embeddings-openai>=0.1.0
 llama-index-vector-stores-postgres>=0.1.0
+
+huggingface_hub>=1.26.0
