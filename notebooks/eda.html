@@ -7515,7 +7515,7 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -7561,7 +7561,7 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [18]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">importlib</span>
@@ -7625,7 +7625,7 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [19]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
@@ -7660,7 +7660,7 @@ dtype: int64
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[19]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[3]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -7723,77 +7723,12 @@ dtype: int64
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=be4a0d36">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [22]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># 정제 및 변환이 완료된 *_adapted 데이터셋 분석</span>
-<span class="n">inspect_dataset</span><span class="p">(</span><span class="s2">"code_review_gh (정제후)"</span><span class="p">,</span> <span class="n">df_gh_adapted</span><span class="p">,</span> <span class="n">comment_col</span><span class="o">=</span><span class="s2">"review_comment"</span><span class="p">,</span> <span class="n">code_col</span><span class="o">=</span><span class="s2">"source_code"</span><span class="p">)</span>
-
-<span class="n">inspect_dataset</span><span class="p">(</span><span class="s2">"contextual_code_review (정제후)"</span><span class="p">,</span> <span class="n">df_context_adapted</span><span class="p">,</span> <span class="n">comment_col</span><span class="o">=</span><span class="s2">"review_comment"</span><span class="p">,</span> <span class="n">code_col</span><span class="o">=</span><span class="s2">"source_code"</span><span class="p">)</span>
-
-<span class="n">inspect_dataset</span><span class="p">(</span><span class="s2">"codereviewer (정제후)"</span><span class="p">,</span> <span class="n">df_reviewer_adapted</span><span class="p">,</span> <span class="n">comment_col</span><span class="o">=</span><span class="s2">"review_comment"</span><span class="p">,</span> <span class="n">code_col</span><span class="o">=</span><span class="s2">"source_code"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>==================================================
-📊 [code_review_gh (정제후)] 데이터셋 분석 결과
-==================================================
-• 전체 레코드 수: 630,637개
-• 결측치(Null) -&gt; 코멘트: 0개 / 코드: 0개
-• 코멘트 길이 -&gt; 평균: 207.7자 / 중앙값: 102자 / 최소: 15자 / 최대: 53234자
-• 15자 미만 짧은 코멘트: 0개 (0.00%)
-
-
-==================================================
-📊 [contextual_code_review (정제후)] 데이터셋 분석 결과
-==================================================
-• 전체 레코드 수: 55,276개
-• 결측치(Null) -&gt; 코멘트: 0개 / 코드: 0개
-• 코멘트 길이 -&gt; 평균: 164.9자 / 중앙값: 95자 / 최소: 15자 / 최대: 44962자
-• 15자 미만 짧은 코멘트: 0개 (0.00%)
-
-
-==================================================
-📊 [codereviewer (정제후)] 데이터셋 분석 결과
-==================================================
-• 전체 레코드 수: 117,739개
-• 결측치(Null) -&gt; 코멘트: 0개 / 코드: 0개
-• 코멘트 길이 -&gt; 평균: 115.4자 / 중앙값: 86자 / 최소: 6자 / 최대: 3421자
-• 15자 미만 짧은 코멘트: 308개 (0.26%)
-
-  [자주 나오는 짧은 코멘트 Top 5]
-    - 'Is this used?': 14회
-    - 'rm empty line': 4회
-    - 'Why remove it?': 4회
-    - 'why remove it?': 4회
-    - 'he -&gt; The': 4회
-
-
-</pre>
-</div>
-</div>
-</div>
-</div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=20e34c95">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [23]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -7867,7 +7802,7 @@ max        14065259.0    214629.0            53234.0
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [26]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -7909,7 +7844,7 @@ max        14065259.0    214629.0            53234.0
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [29]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -7943,11 +7878,8 @@ max        14065259.0    214629.0            53234.0
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"🎯 임베딩 및 DB 인덱싱 테스트용 </span><span class="si">{</span><span class="n">sample_size</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">건 준비 완료!"</span><span class="p">)</span>
 
 <span class="c1"># 6. DB 자동 생성, HNSW 인덱싱 &amp; OpenAI 임베딩 저장 실행</span>
-<span class="c1"># scripts 모듈 새로고침 후 재실행</span>
-<span class="n">importlib</span><span class="o">.</span><span class="n">reload</span><span class="p">(</span><span class="n">indexer</span><span class="p">)</span>
-
-<span class="c1"># batch_size=30, delay_seconds=1.5 로 안전하게 재실행</span>
-<span class="n">indexer</span><span class="o">.</span><span class="n">embed_and_insert</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">engine</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">delay_seconds</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+<span class="c1"># ⚡ 429 Rate Limit 방지를 위해 batch_size=10, delay_seconds=2.5로 안정성 강화</span>
+<span class="n">indexer</span><span class="o">.</span><span class="n">embed_and_insert</span><span class="p">(</span><span class="n">sample_df</span><span class="p">,</span> <span class="n">engine</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">delay_seconds</span><span class="o">=</span><span class="mf">2.5</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7962,418 +7894,1006 @@ max        14065259.0    214629.0            53234.0
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>⏳ 정제된 파켓 데이터 로딩 중...
 🎯 임베딩 및 DB 인덱싱 테스트용 10,000건 준비 완료!
-✅ PostgreSQL 테이블 및 HNSW vector 인덱스 준비 완료!
-🚀 총 10,000건 데이터 임베딩 및 DB 저장 시작 (Batch Size: 30)...
+✅ pgvector 확장 및 DB 테이블(code_review_vectors) 준비 완료!
+🚀 총 10,000건 데이터 임베딩 및 DB 저장 시작 (Batch Size: 10, Interval: 2.5s)...
+  - [10/10,000] 건 저장 완료
+  - [20/10,000] 건 저장 완료
   - [30/10,000] 건 저장 완료
+  - [40/10,000] 건 저장 완료
+  - [50/10,000] 건 저장 완료
   - [60/10,000] 건 저장 완료
+  - [70/10,000] 건 저장 완료
+  - [80/10,000] 건 저장 완료
   - [90/10,000] 건 저장 완료
+  - [100/10,000] 건 저장 완료
+  - [110/10,000] 건 저장 완료
   - [120/10,000] 건 저장 완료
+  - [130/10,000] 건 저장 완료
+  - [140/10,000] 건 저장 완료
   - [150/10,000] 건 저장 완료
+  - [160/10,000] 건 저장 완료
+  - [170/10,000] 건 저장 완료
   - [180/10,000] 건 저장 완료
+  - [190/10,000] 건 저장 완료
+  - [200/10,000] 건 저장 완료
   - [210/10,000] 건 저장 완료
+  - [220/10,000] 건 저장 완료
+  - [230/10,000] 건 저장 완료
   - [240/10,000] 건 저장 완료
+  - [250/10,000] 건 저장 완료
+  - [260/10,000] 건 저장 완료
   - [270/10,000] 건 저장 완료
+  - [280/10,000] 건 저장 완료
+  - [290/10,000] 건 저장 완료
   - [300/10,000] 건 저장 완료
+  - [310/10,000] 건 저장 완료
+  - [320/10,000] 건 저장 완료
   - [330/10,000] 건 저장 완료
+  - [340/10,000] 건 저장 완료
+  - [350/10,000] 건 저장 완료
   - [360/10,000] 건 저장 완료
+  - [370/10,000] 건 저장 완료
+  - [380/10,000] 건 저장 완료
   - [390/10,000] 건 저장 완료
+  - [400/10,000] 건 저장 완료
+  - [410/10,000] 건 저장 완료
   - [420/10,000] 건 저장 완료
+  - [430/10,000] 건 저장 완료
+  - [440/10,000] 건 저장 완료
   - [450/10,000] 건 저장 완료
+  - [460/10,000] 건 저장 완료
+  - [470/10,000] 건 저장 완료
   - [480/10,000] 건 저장 완료
+  - [490/10,000] 건 저장 완료
+  - [500/10,000] 건 저장 완료
   - [510/10,000] 건 저장 완료
+  - [520/10,000] 건 저장 완료
+  - [530/10,000] 건 저장 완료
   - [540/10,000] 건 저장 완료
+  - [550/10,000] 건 저장 완료
+  - [560/10,000] 건 저장 완료
   - [570/10,000] 건 저장 완료
+  - [580/10,000] 건 저장 완료
+  - [590/10,000] 건 저장 완료
   - [600/10,000] 건 저장 완료
+  - [610/10,000] 건 저장 완료
+  - [620/10,000] 건 저장 완료
   - [630/10,000] 건 저장 완료
+  - [640/10,000] 건 저장 완료
+  - [650/10,000] 건 저장 완료
   - [660/10,000] 건 저장 완료
+  - [670/10,000] 건 저장 완료
+  - [680/10,000] 건 저장 완료
   - [690/10,000] 건 저장 완료
+  - [700/10,000] 건 저장 완료
+  - [710/10,000] 건 저장 완료
   - [720/10,000] 건 저장 완료
+  - [730/10,000] 건 저장 완료
+  - [740/10,000] 건 저장 완료
   - [750/10,000] 건 저장 완료
+  - [760/10,000] 건 저장 완료
+  - [770/10,000] 건 저장 완료
   - [780/10,000] 건 저장 완료
+  - [790/10,000] 건 저장 완료
+  - [800/10,000] 건 저장 완료
   - [810/10,000] 건 저장 완료
+  - [820/10,000] 건 저장 완료
+  - [830/10,000] 건 저장 완료
   - [840/10,000] 건 저장 완료
+  - [850/10,000] 건 저장 완료
+  - [860/10,000] 건 저장 완료
   - [870/10,000] 건 저장 완료
+  - [880/10,000] 건 저장 완료
+  - [890/10,000] 건 저장 완료
   - [900/10,000] 건 저장 완료
+  - [910/10,000] 건 저장 완료
+  - [920/10,000] 건 저장 완료
   - [930/10,000] 건 저장 완료
+  - [940/10,000] 건 저장 완료
+  - [950/10,000] 건 저장 완료
   - [960/10,000] 건 저장 완료
+  - [970/10,000] 건 저장 완료
+  - [980/10,000] 건 저장 완료
   - [990/10,000] 건 저장 완료
+  - [1,000/10,000] 건 저장 완료
+  - [1,010/10,000] 건 저장 완료
   - [1,020/10,000] 건 저장 완료
+  - [1,030/10,000] 건 저장 완료
+  - [1,040/10,000] 건 저장 완료
   - [1,050/10,000] 건 저장 완료
+  - [1,060/10,000] 건 저장 완료
+  - [1,070/10,000] 건 저장 완료
   - [1,080/10,000] 건 저장 완료
+  - [1,090/10,000] 건 저장 완료
+  - [1,100/10,000] 건 저장 완료
   - [1,110/10,000] 건 저장 완료
+  - [1,120/10,000] 건 저장 완료
+  - [1,130/10,000] 건 저장 완료
   - [1,140/10,000] 건 저장 완료
+  - [1,150/10,000] 건 저장 완료
+  - [1,160/10,000] 건 저장 완료
   - [1,170/10,000] 건 저장 완료
+  - [1,180/10,000] 건 저장 완료
+  - [1,190/10,000] 건 저장 완료
   - [1,200/10,000] 건 저장 완료
+  - [1,210/10,000] 건 저장 완료
+  - [1,220/10,000] 건 저장 완료
   - [1,230/10,000] 건 저장 완료
+  - [1,240/10,000] 건 저장 완료
+  - [1,250/10,000] 건 저장 완료
   - [1,260/10,000] 건 저장 완료
+  - [1,270/10,000] 건 저장 완료
+  - [1,280/10,000] 건 저장 완료
   - [1,290/10,000] 건 저장 완료
+  - [1,300/10,000] 건 저장 완료
+  - [1,310/10,000] 건 저장 완료
   - [1,320/10,000] 건 저장 완료
+  - [1,330/10,000] 건 저장 완료
+  - [1,340/10,000] 건 저장 완료
   - [1,350/10,000] 건 저장 완료
+  - [1,360/10,000] 건 저장 완료
+  - [1,370/10,000] 건 저장 완료
   - [1,380/10,000] 건 저장 완료
+  - [1,390/10,000] 건 저장 완료
+  - [1,400/10,000] 건 저장 완료
   - [1,410/10,000] 건 저장 완료
+  - [1,420/10,000] 건 저장 완료
+  - [1,430/10,000] 건 저장 완료
   - [1,440/10,000] 건 저장 완료
+  - [1,450/10,000] 건 저장 완료
+  - [1,460/10,000] 건 저장 완료
   - [1,470/10,000] 건 저장 완료
+  - [1,480/10,000] 건 저장 완료
+  - [1,490/10,000] 건 저장 완료
   - [1,500/10,000] 건 저장 완료
+  - [1,510/10,000] 건 저장 완료
+  - [1,520/10,000] 건 저장 완료
   - [1,530/10,000] 건 저장 완료
+  - [1,540/10,000] 건 저장 완료
+  - [1,550/10,000] 건 저장 완료
   - [1,560/10,000] 건 저장 완료
+  - [1,570/10,000] 건 저장 완료
+  - [1,580/10,000] 건 저장 완료
   - [1,590/10,000] 건 저장 완료
+  - [1,600/10,000] 건 저장 완료
+  - [1,610/10,000] 건 저장 완료
   - [1,620/10,000] 건 저장 완료
+  - [1,630/10,000] 건 저장 완료
+  - [1,640/10,000] 건 저장 완료
   - [1,650/10,000] 건 저장 완료
+  - [1,660/10,000] 건 저장 완료
+  - [1,670/10,000] 건 저장 완료
   - [1,680/10,000] 건 저장 완료
+  - [1,690/10,000] 건 저장 완료
+  - [1,700/10,000] 건 저장 완료
   - [1,710/10,000] 건 저장 완료
+  - [1,720/10,000] 건 저장 완료
+  - [1,730/10,000] 건 저장 완료
   - [1,740/10,000] 건 저장 완료
+  - [1,750/10,000] 건 저장 완료
+  - [1,760/10,000] 건 저장 완료
   - [1,770/10,000] 건 저장 완료
+  - [1,780/10,000] 건 저장 완료
+  - [1,790/10,000] 건 저장 완료
   - [1,800/10,000] 건 저장 완료
+  - [1,810/10,000] 건 저장 완료
+  - [1,820/10,000] 건 저장 완료
   - [1,830/10,000] 건 저장 완료
+  - [1,840/10,000] 건 저장 완료
+  - [1,850/10,000] 건 저장 완료
   - [1,860/10,000] 건 저장 완료
+  - [1,870/10,000] 건 저장 완료
+  - [1,880/10,000] 건 저장 완료
   - [1,890/10,000] 건 저장 완료
+  - [1,900/10,000] 건 저장 완료
+  - [1,910/10,000] 건 저장 완료
   - [1,920/10,000] 건 저장 완료
+  - [1,930/10,000] 건 저장 완료
+  - [1,940/10,000] 건 저장 완료
   - [1,950/10,000] 건 저장 완료
+  - [1,960/10,000] 건 저장 완료
+  - [1,970/10,000] 건 저장 완료
   - [1,980/10,000] 건 저장 완료
+  - [1,990/10,000] 건 저장 완료
+  - [2,000/10,000] 건 저장 완료
   - [2,010/10,000] 건 저장 완료
+  - [2,020/10,000] 건 저장 완료
+  - [2,030/10,000] 건 저장 완료
   - [2,040/10,000] 건 저장 완료
+  - [2,050/10,000] 건 저장 완료
+  - [2,060/10,000] 건 저장 완료
   - [2,070/10,000] 건 저장 완료
+  - [2,080/10,000] 건 저장 완료
+  - [2,090/10,000] 건 저장 완료
   - [2,100/10,000] 건 저장 완료
+  - [2,110/10,000] 건 저장 완료
+  - [2,120/10,000] 건 저장 완료
   - [2,130/10,000] 건 저장 완료
+  - [2,140/10,000] 건 저장 완료
+  - [2,150/10,000] 건 저장 완료
   - [2,160/10,000] 건 저장 완료
+  - [2,170/10,000] 건 저장 완료
+  - [2,180/10,000] 건 저장 완료
   - [2,190/10,000] 건 저장 완료
+  - [2,200/10,000] 건 저장 완료
+  - [2,210/10,000] 건 저장 완료
   - [2,220/10,000] 건 저장 완료
+  - [2,230/10,000] 건 저장 완료
+  - [2,240/10,000] 건 저장 완료
   - [2,250/10,000] 건 저장 완료
+  - [2,260/10,000] 건 저장 완료
+  - [2,270/10,000] 건 저장 완료
   - [2,280/10,000] 건 저장 완료
+  - [2,290/10,000] 건 저장 완료
+  - [2,300/10,000] 건 저장 완료
   - [2,310/10,000] 건 저장 완료
+  - [2,320/10,000] 건 저장 완료
+  - [2,330/10,000] 건 저장 완료
   - [2,340/10,000] 건 저장 완료
+  - [2,350/10,000] 건 저장 완료
+  - [2,360/10,000] 건 저장 완료
   - [2,370/10,000] 건 저장 완료
+  - [2,380/10,000] 건 저장 완료
+  - [2,390/10,000] 건 저장 완료
   - [2,400/10,000] 건 저장 완료
+  - [2,410/10,000] 건 저장 완료
+  - [2,420/10,000] 건 저장 완료
   - [2,430/10,000] 건 저장 완료
+  - [2,440/10,000] 건 저장 완료
+  - [2,450/10,000] 건 저장 완료
   - [2,460/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 400 - {'error': {'message': "Invalid 'input[29]': maximum input length is 8192 tokens.", 'type': 'invalid_request_error', 'param': None, 'code': None}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
-
-⚠️ API 호출 중 에러 발생 (시도 2/5): Error code: 400 - {'error': {'message': "Invalid 'input[29]': maximum input length is 8192 tokens.", 'type': 'invalid_request_error', 'param': None, 'code': None}}
-⏳ Rate Limit 리셋을 위해 40초 동안 대기합니다...
-
-⚠️ API 호출 중 에러 발생 (시도 3/5): Error code: 400 - {'error': {'message': "Invalid 'input[29]': maximum input length is 8192 tokens.", 'type': 'invalid_request_error', 'param': None, 'code': None}}
-⏳ Rate Limit 리셋을 위해 60초 동안 대기합니다...
-
-⚠️ API 호출 중 에러 발생 (시도 4/5): Error code: 400 - {'error': {'message': "Invalid 'input[29]': maximum input length is 8192 tokens.", 'type': 'invalid_request_error', 'param': None, 'code': None}}
-⏳ Rate Limit 리셋을 위해 80초 동안 대기합니다...
-
-⚠️ API 호출 중 에러 발생 (시도 5/5): Error code: 400 - {'error': {'message': "Invalid 'input[29]': maximum input length is 8192 tokens.", 'type': 'invalid_request_error', 'param': None, 'code': None}}
-⏳ Rate Limit 리셋을 위해 100초 동안 대기합니다...
-❌ [2460~2490] 구간 저장 실패. 다음 배치로 넘어갑니다.
+  - [2,470/10,000] 건 저장 완료
+  - [2,480/10,000] 건 저장 완료
+  - [2,490/10,000] 건 저장 완료
+  - [2,500/10,000] 건 저장 완료
+  - [2,510/10,000] 건 저장 완료
   - [2,520/10,000] 건 저장 완료
+  - [2,530/10,000] 건 저장 완료
+  - [2,540/10,000] 건 저장 완료
   - [2,550/10,000] 건 저장 완료
+  - [2,560/10,000] 건 저장 완료
+  - [2,570/10,000] 건 저장 완료
   - [2,580/10,000] 건 저장 완료
+  - [2,590/10,000] 건 저장 완료
+  - [2,600/10,000] 건 저장 완료
   - [2,610/10,000] 건 저장 완료
+  - [2,620/10,000] 건 저장 완료
+  - [2,630/10,000] 건 저장 완료
   - [2,640/10,000] 건 저장 완료
+  - [2,650/10,000] 건 저장 완료
+  - [2,660/10,000] 건 저장 완료
   - [2,670/10,000] 건 저장 완료
+  - [2,680/10,000] 건 저장 완료
+  - [2,690/10,000] 건 저장 완료
   - [2,700/10,000] 건 저장 완료
+  - [2,710/10,000] 건 저장 완료
+  - [2,720/10,000] 건 저장 완료
   - [2,730/10,000] 건 저장 완료
+  - [2,740/10,000] 건 저장 완료
+  - [2,750/10,000] 건 저장 완료
   - [2,760/10,000] 건 저장 완료
+  - [2,770/10,000] 건 저장 완료
+  - [2,780/10,000] 건 저장 완료
   - [2,790/10,000] 건 저장 완료
+  - [2,800/10,000] 건 저장 완료
+  - [2,810/10,000] 건 저장 완료
   - [2,820/10,000] 건 저장 완료
+  - [2,830/10,000] 건 저장 완료
+  - [2,840/10,000] 건 저장 완료
   - [2,850/10,000] 건 저장 완료
+  - [2,860/10,000] 건 저장 완료
+  - [2,870/10,000] 건 저장 완료
   - [2,880/10,000] 건 저장 완료
+  - [2,890/10,000] 건 저장 완료
+  - [2,900/10,000] 건 저장 완료
   - [2,910/10,000] 건 저장 완료
+  - [2,920/10,000] 건 저장 완료
+  - [2,930/10,000] 건 저장 완료
   - [2,940/10,000] 건 저장 완료
+  - [2,950/10,000] 건 저장 완료
+  - [2,960/10,000] 건 저장 완료
   - [2,970/10,000] 건 저장 완료
+  - [2,980/10,000] 건 저장 완료
+  - [2,990/10,000] 건 저장 완료
   - [3,000/10,000] 건 저장 완료
+  - [3,010/10,000] 건 저장 완료
+  - [3,020/10,000] 건 저장 완료
   - [3,030/10,000] 건 저장 완료
+  - [3,040/10,000] 건 저장 완료
+  - [3,050/10,000] 건 저장 완료
   - [3,060/10,000] 건 저장 완료
+  - [3,070/10,000] 건 저장 완료
+  - [3,080/10,000] 건 저장 완료
   - [3,090/10,000] 건 저장 완료
+  - [3,100/10,000] 건 저장 완료
+  - [3,110/10,000] 건 저장 완료
   - [3,120/10,000] 건 저장 완료
+  - [3,130/10,000] 건 저장 완료
+  - [3,140/10,000] 건 저장 완료
   - [3,150/10,000] 건 저장 완료
+  - [3,160/10,000] 건 저장 완료
+  - [3,170/10,000] 건 저장 완료
   - [3,180/10,000] 건 저장 완료
+  - [3,190/10,000] 건 저장 완료
+  - [3,200/10,000] 건 저장 완료
   - [3,210/10,000] 건 저장 완료
+  - [3,220/10,000] 건 저장 완료
+  - [3,230/10,000] 건 저장 완료
   - [3,240/10,000] 건 저장 완료
+  - [3,250/10,000] 건 저장 완료
+  - [3,260/10,000] 건 저장 완료
   - [3,270/10,000] 건 저장 완료
+  - [3,280/10,000] 건 저장 완료
+  - [3,290/10,000] 건 저장 완료
   - [3,300/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 35437, Requested 7880. Please try again in 4.975s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [3,310/10,000] 건 저장 완료
+  - [3,320/10,000] 건 저장 완료
   - [3,330/10,000] 건 저장 완료
+  - [3,340/10,000] 건 저장 완료
+  - [3,350/10,000] 건 저장 완료
   - [3,360/10,000] 건 저장 완료
+  - [3,370/10,000] 건 저장 완료
+  - [3,380/10,000] 건 저장 완료
   - [3,390/10,000] 건 저장 완료
+  - [3,400/10,000] 건 저장 완료
+  - [3,410/10,000] 건 저장 완료
   - [3,420/10,000] 건 저장 완료
+  - [3,430/10,000] 건 저장 완료
+  - [3,440/10,000] 건 저장 완료
   - [3,450/10,000] 건 저장 완료
+  - [3,460/10,000] 건 저장 완료
+  - [3,470/10,000] 건 저장 완료
   - [3,480/10,000] 건 저장 완료
+  - [3,490/10,000] 건 저장 완료
+  - [3,500/10,000] 건 저장 완료
   - [3,510/10,000] 건 저장 완료
+  - [3,520/10,000] 건 저장 완료
+  - [3,530/10,000] 건 저장 완료
   - [3,540/10,000] 건 저장 완료
+  - [3,550/10,000] 건 저장 완료
+  - [3,560/10,000] 건 저장 완료
   - [3,570/10,000] 건 저장 완료
+  - [3,580/10,000] 건 저장 완료
+  - [3,590/10,000] 건 저장 완료
   - [3,600/10,000] 건 저장 완료
+  - [3,610/10,000] 건 저장 완료
+  - [3,620/10,000] 건 저장 완료
   - [3,630/10,000] 건 저장 완료
+  - [3,640/10,000] 건 저장 완료
+  - [3,650/10,000] 건 저장 완료
   - [3,660/10,000] 건 저장 완료
+  - [3,670/10,000] 건 저장 완료
+  - [3,680/10,000] 건 저장 완료
   - [3,690/10,000] 건 저장 완료
+  - [3,700/10,000] 건 저장 완료
+  - [3,710/10,000] 건 저장 완료
   - [3,720/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 40000, Requested 6277. Please try again in 9.415s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [3,730/10,000] 건 저장 완료
+  - [3,740/10,000] 건 저장 완료
   - [3,750/10,000] 건 저장 완료
+  - [3,760/10,000] 건 저장 완료
+  - [3,770/10,000] 건 저장 완료
   - [3,780/10,000] 건 저장 완료
+  - [3,790/10,000] 건 저장 완료
+  - [3,800/10,000] 건 저장 완료
   - [3,810/10,000] 건 저장 완료
+  - [3,820/10,000] 건 저장 완료
+  - [3,830/10,000] 건 저장 완료
   - [3,840/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 40000, Requested 9065. Please try again in 13.597s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [3,850/10,000] 건 저장 완료
+  - [3,860/10,000] 건 저장 완료
   - [3,870/10,000] 건 저장 완료
+  - [3,880/10,000] 건 저장 완료
+  - [3,890/10,000] 건 저장 완료
   - [3,900/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 40000, Requested 7506. Please try again in 11.259s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [3,910/10,000] 건 저장 완료
+  - [3,920/10,000] 건 저장 완료
   - [3,930/10,000] 건 저장 완료
+  - [3,940/10,000] 건 저장 완료
+  - [3,950/10,000] 건 저장 완료
   - [3,960/10,000] 건 저장 완료
+  - [3,970/10,000] 건 저장 완료
+  - [3,980/10,000] 건 저장 완료
   - [3,990/10,000] 건 저장 완료
+  - [4,000/10,000] 건 저장 완료
+  - [4,010/10,000] 건 저장 완료
   - [4,020/10,000] 건 저장 완료
+  - [4,030/10,000] 건 저장 완료
+  - [4,040/10,000] 건 저장 완료
   - [4,050/10,000] 건 저장 완료
+  - [4,060/10,000] 건 저장 완료
+  - [4,070/10,000] 건 저장 완료
   - [4,080/10,000] 건 저장 완료
+  - [4,090/10,000] 건 저장 완료
+  - [4,100/10,000] 건 저장 완료
   - [4,110/10,000] 건 저장 완료
+  - [4,120/10,000] 건 저장 완료
+  - [4,130/10,000] 건 저장 완료
   - [4,140/10,000] 건 저장 완료
+  - [4,150/10,000] 건 저장 완료
+  - [4,160/10,000] 건 저장 완료
   - [4,170/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 40000, Requested 7049. Please try again in 10.573s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [4,180/10,000] 건 저장 완료
+  - [4,190/10,000] 건 저장 완료
   - [4,200/10,000] 건 저장 완료
+  - [4,210/10,000] 건 저장 완료
+  - [4,220/10,000] 건 저장 완료
   - [4,230/10,000] 건 저장 완료
+  - [4,240/10,000] 건 저장 완료
+  - [4,250/10,000] 건 저장 완료
   - [4,260/10,000] 건 저장 완료
+  - [4,270/10,000] 건 저장 완료
+  - [4,280/10,000] 건 저장 완료
   - [4,290/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 40000, Requested 5835. Please try again in 8.752s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [4,300/10,000] 건 저장 완료
+  - [4,310/10,000] 건 저장 완료
   - [4,320/10,000] 건 저장 완료
+  - [4,330/10,000] 건 저장 완료
+  - [4,340/10,000] 건 저장 완료
   - [4,350/10,000] 건 저장 완료
+  - [4,360/10,000] 건 저장 완료
+  - [4,370/10,000] 건 저장 완료
   - [4,380/10,000] 건 저장 완료
+  - [4,390/10,000] 건 저장 완료
+  - [4,400/10,000] 건 저장 완료
   - [4,410/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 34905, Requested 8268. Please try again in 4.759s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [4,420/10,000] 건 저장 완료
+  - [4,430/10,000] 건 저장 완료
   - [4,440/10,000] 건 저장 완료
+  - [4,450/10,000] 건 저장 완료
+  - [4,460/10,000] 건 저장 완료
   - [4,470/10,000] 건 저장 완료
+  - [4,480/10,000] 건 저장 완료
+  - [4,490/10,000] 건 저장 완료
   - [4,500/10,000] 건 저장 완료
+  - [4,510/10,000] 건 저장 완료
+  - [4,520/10,000] 건 저장 완료
   - [4,530/10,000] 건 저장 완료
+  - [4,540/10,000] 건 저장 완료
+  - [4,550/10,000] 건 저장 완료
   - [4,560/10,000] 건 저장 완료
+  - [4,570/10,000] 건 저장 완료
+  - [4,580/10,000] 건 저장 완료
   - [4,590/10,000] 건 저장 완료
+  - [4,600/10,000] 건 저장 완료
+  - [4,610/10,000] 건 저장 완료
   - [4,620/10,000] 건 저장 완료
+  - [4,630/10,000] 건 저장 완료
+  - [4,640/10,000] 건 저장 완료
   - [4,650/10,000] 건 저장 완료
+  - [4,660/10,000] 건 저장 완료
+  - [4,670/10,000] 건 저장 완료
   - [4,680/10,000] 건 저장 완료
+  - [4,690/10,000] 건 저장 완료
+  - [4,700/10,000] 건 저장 완료
   - [4,710/10,000] 건 저장 완료
+  - [4,720/10,000] 건 저장 완료
+  - [4,730/10,000] 건 저장 완료
   - [4,740/10,000] 건 저장 완료
+  - [4,750/10,000] 건 저장 완료
+  - [4,760/10,000] 건 저장 완료
   - [4,770/10,000] 건 저장 완료
+  - [4,780/10,000] 건 저장 완료
+  - [4,790/10,000] 건 저장 완료
   - [4,800/10,000] 건 저장 완료
+  - [4,810/10,000] 건 저장 완료
+  - [4,820/10,000] 건 저장 완료
   - [4,830/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 40000, Requested 7551. Please try again in 11.326s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [4,840/10,000] 건 저장 완료
+  - [4,850/10,000] 건 저장 완료
   - [4,860/10,000] 건 저장 완료
+  - [4,870/10,000] 건 저장 완료
+  - [4,880/10,000] 건 저장 완료
   - [4,890/10,000] 건 저장 완료
+  - [4,900/10,000] 건 저장 완료
+  - [4,910/10,000] 건 저장 완료
   - [4,920/10,000] 건 저장 완료
+  - [4,930/10,000] 건 저장 완료
+  - [4,940/10,000] 건 저장 완료
   - [4,950/10,000] 건 저장 완료
+  - [4,960/10,000] 건 저장 완료
+  - [4,970/10,000] 건 저장 완료
   - [4,980/10,000] 건 저장 완료
+  - [4,990/10,000] 건 저장 완료
+  - [5,000/10,000] 건 저장 완료
   - [5,010/10,000] 건 저장 완료
+  - [5,020/10,000] 건 저장 완료
+  - [5,030/10,000] 건 저장 완료
   - [5,040/10,000] 건 저장 완료
+  - [5,050/10,000] 건 저장 완료
+  - [5,060/10,000] 건 저장 완료
   - [5,070/10,000] 건 저장 완료
+  - [5,080/10,000] 건 저장 완료
+  - [5,090/10,000] 건 저장 완료
   - [5,100/10,000] 건 저장 완료
+  - [5,110/10,000] 건 저장 완료
+  - [5,120/10,000] 건 저장 완료
   - [5,130/10,000] 건 저장 완료
+  - [5,140/10,000] 건 저장 완료
+  - [5,150/10,000] 건 저장 완료
   - [5,160/10,000] 건 저장 완료
+  - [5,170/10,000] 건 저장 완료
+  - [5,180/10,000] 건 저장 완료
   - [5,190/10,000] 건 저장 완료
+  - [5,200/10,000] 건 저장 완료
+  - [5,210/10,000] 건 저장 완료
   - [5,220/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 40000, Requested 7700. Please try again in 11.55s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [5,230/10,000] 건 저장 완료
+  - [5,240/10,000] 건 저장 완료
   - [5,250/10,000] 건 저장 완료
+  - [5,260/10,000] 건 저장 완료
+  - [5,270/10,000] 건 저장 완료
   - [5,280/10,000] 건 저장 완료
+  - [5,290/10,000] 건 저장 완료
+  - [5,300/10,000] 건 저장 완료
   - [5,310/10,000] 건 저장 완료
+  - [5,320/10,000] 건 저장 완료
+  - [5,330/10,000] 건 저장 완료
   - [5,340/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 37075, Requested 6346. Please try again in 5.131s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [5,350/10,000] 건 저장 완료
+  - [5,360/10,000] 건 저장 완료
   - [5,370/10,000] 건 저장 완료
+  - [5,380/10,000] 건 저장 완료
+  - [5,390/10,000] 건 저장 완료
   - [5,400/10,000] 건 저장 완료
+  - [5,410/10,000] 건 저장 완료
+  - [5,420/10,000] 건 저장 완료
   - [5,430/10,000] 건 저장 완료
+  - [5,440/10,000] 건 저장 완료
+  - [5,450/10,000] 건 저장 완료
   - [5,460/10,000] 건 저장 완료
+  - [5,470/10,000] 건 저장 완료
+  - [5,480/10,000] 건 저장 완료
   - [5,490/10,000] 건 저장 완료
+  - [5,500/10,000] 건 저장 완료
+  - [5,510/10,000] 건 저장 완료
   - [5,520/10,000] 건 저장 완료
+  - [5,530/10,000] 건 저장 완료
+  - [5,540/10,000] 건 저장 완료
   - [5,550/10,000] 건 저장 완료
+  - [5,560/10,000] 건 저장 완료
+  - [5,570/10,000] 건 저장 완료
   - [5,580/10,000] 건 저장 완료
+  - [5,590/10,000] 건 저장 완료
+  - [5,600/10,000] 건 저장 완료
   - [5,610/10,000] 건 저장 완료
+  - [5,620/10,000] 건 저장 완료
+  - [5,630/10,000] 건 저장 완료
   - [5,640/10,000] 건 저장 완료
+  - [5,650/10,000] 건 저장 완료
+  - [5,660/10,000] 건 저장 완료
   - [5,670/10,000] 건 저장 완료
+  - [5,680/10,000] 건 저장 완료
+  - [5,690/10,000] 건 저장 완료
   - [5,700/10,000] 건 저장 완료
+  - [5,710/10,000] 건 저장 완료
+  - [5,720/10,000] 건 저장 완료
   - [5,730/10,000] 건 저장 완료
+  - [5,740/10,000] 건 저장 완료
+  - [5,750/10,000] 건 저장 완료
   - [5,760/10,000] 건 저장 완료
+  - [5,770/10,000] 건 저장 완료
+  - [5,780/10,000] 건 저장 완료
   - [5,790/10,000] 건 저장 완료
+  - [5,800/10,000] 건 저장 완료
+  - [5,810/10,000] 건 저장 완료
   - [5,820/10,000] 건 저장 완료
+  - [5,830/10,000] 건 저장 완료
+  - [5,840/10,000] 건 저장 완료
   - [5,850/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 37846, Requested 7483. Please try again in 7.993s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [5,860/10,000] 건 저장 완료
+  - [5,870/10,000] 건 저장 완료
   - [5,880/10,000] 건 저장 완료
+  - [5,890/10,000] 건 저장 완료
+  - [5,900/10,000] 건 저장 완료
   - [5,910/10,000] 건 저장 완료
+  - [5,920/10,000] 건 저장 완료
+  - [5,930/10,000] 건 저장 완료
   - [5,940/10,000] 건 저장 완료
+  - [5,950/10,000] 건 저장 완료
+  - [5,960/10,000] 건 저장 완료
   - [5,970/10,000] 건 저장 완료
+  - [5,980/10,000] 건 저장 완료
+  - [5,990/10,000] 건 저장 완료
   - [6,000/10,000] 건 저장 완료
+  - [6,010/10,000] 건 저장 완료
+  - [6,020/10,000] 건 저장 완료
   - [6,030/10,000] 건 저장 완료
+  - [6,040/10,000] 건 저장 완료
+  - [6,050/10,000] 건 저장 완료
   - [6,060/10,000] 건 저장 완료
+  - [6,070/10,000] 건 저장 완료
+  - [6,080/10,000] 건 저장 완료
   - [6,090/10,000] 건 저장 완료
+  - [6,100/10,000] 건 저장 완료
+  - [6,110/10,000] 건 저장 완료
   - [6,120/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 40000, Requested 5904. Please try again in 8.856s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [6,130/10,000] 건 저장 완료
+  - [6,140/10,000] 건 저장 완료
   - [6,150/10,000] 건 저장 완료
+  - [6,160/10,000] 건 저장 완료
+  - [6,170/10,000] 건 저장 완료
   - [6,180/10,000] 건 저장 완료
+  - [6,190/10,000] 건 저장 완료
+  - [6,200/10,000] 건 저장 완료
   - [6,210/10,000] 건 저장 완료
+  - [6,220/10,000] 건 저장 완료
+  - [6,230/10,000] 건 저장 완료
   - [6,240/10,000] 건 저장 완료
+  - [6,250/10,000] 건 저장 완료
+  - [6,260/10,000] 건 저장 완료
   - [6,270/10,000] 건 저장 완료
+  - [6,280/10,000] 건 저장 완료
+  - [6,290/10,000] 건 저장 완료
   - [6,300/10,000] 건 저장 완료
+  - [6,310/10,000] 건 저장 완료
+  - [6,320/10,000] 건 저장 완료
   - [6,330/10,000] 건 저장 완료
+  - [6,340/10,000] 건 저장 완료
+  - [6,350/10,000] 건 저장 완료
   - [6,360/10,000] 건 저장 완료
+  - [6,370/10,000] 건 저장 완료
+  - [6,380/10,000] 건 저장 완료
   - [6,390/10,000] 건 저장 완료
+  - [6,400/10,000] 건 저장 완료
+  - [6,410/10,000] 건 저장 완료
   - [6,420/10,000] 건 저장 완료
+  - [6,430/10,000] 건 저장 완료
+  - [6,440/10,000] 건 저장 완료
   - [6,450/10,000] 건 저장 완료
+  - [6,460/10,000] 건 저장 완료
+  - [6,470/10,000] 건 저장 완료
   - [6,480/10,000] 건 저장 완료
+  - [6,490/10,000] 건 저장 완료
+  - [6,500/10,000] 건 저장 완료
   - [6,510/10,000] 건 저장 완료
+  - [6,520/10,000] 건 저장 완료
+  - [6,530/10,000] 건 저장 완료
   - [6,540/10,000] 건 저장 완료
+  - [6,550/10,000] 건 저장 완료
+  - [6,560/10,000] 건 저장 완료
   - [6,570/10,000] 건 저장 완료
+  - [6,580/10,000] 건 저장 완료
+  - [6,590/10,000] 건 저장 완료
   - [6,600/10,000] 건 저장 완료
+  - [6,610/10,000] 건 저장 완료
+  - [6,620/10,000] 건 저장 완료
   - [6,630/10,000] 건 저장 완료
+  - [6,640/10,000] 건 저장 완료
+  - [6,650/10,000] 건 저장 완료
   - [6,660/10,000] 건 저장 완료
+  - [6,670/10,000] 건 저장 완료
+  - [6,680/10,000] 건 저장 완료
   - [6,690/10,000] 건 저장 완료
+  - [6,700/10,000] 건 저장 완료
+  - [6,710/10,000] 건 저장 완료
   - [6,720/10,000] 건 저장 완료
+  - [6,730/10,000] 건 저장 완료
+  - [6,740/10,000] 건 저장 완료
   - [6,750/10,000] 건 저장 완료
+  - [6,760/10,000] 건 저장 완료
+  - [6,770/10,000] 건 저장 완료
   - [6,780/10,000] 건 저장 완료
+  - [6,790/10,000] 건 저장 완료
+  - [6,800/10,000] 건 저장 완료
   - [6,810/10,000] 건 저장 완료
+  - [6,820/10,000] 건 저장 완료
+  - [6,830/10,000] 건 저장 완료
   - [6,840/10,000] 건 저장 완료
+  - [6,850/10,000] 건 저장 완료
+  - [6,860/10,000] 건 저장 완료
   - [6,870/10,000] 건 저장 완료
+  - [6,880/10,000] 건 저장 완료
+  - [6,890/10,000] 건 저장 완료
   - [6,900/10,000] 건 저장 완료
+  - [6,910/10,000] 건 저장 완료
+  - [6,920/10,000] 건 저장 완료
   - [6,930/10,000] 건 저장 완료
+  - [6,940/10,000] 건 저장 완료
+  - [6,950/10,000] 건 저장 완료
   - [6,960/10,000] 건 저장 완료
+  - [6,970/10,000] 건 저장 완료
+  - [6,980/10,000] 건 저장 완료
   - [6,990/10,000] 건 저장 완료
+  - [7,000/10,000] 건 저장 완료
+  - [7,010/10,000] 건 저장 완료
   - [7,020/10,000] 건 저장 완료
+  - [7,030/10,000] 건 저장 완료
+  - [7,040/10,000] 건 저장 완료
   - [7,050/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 35752, Requested 7392. Please try again in 4.716s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [7,060/10,000] 건 저장 완료
+  - [7,070/10,000] 건 저장 완료
   - [7,080/10,000] 건 저장 완료
+  - [7,090/10,000] 건 저장 완료
+  - [7,100/10,000] 건 저장 완료
   - [7,110/10,000] 건 저장 완료
+  - [7,120/10,000] 건 저장 완료
+  - [7,130/10,000] 건 저장 완료
   - [7,140/10,000] 건 저장 완료
+  - [7,150/10,000] 건 저장 완료
+  - [7,160/10,000] 건 저장 완료
   - [7,170/10,000] 건 저장 완료
+  - [7,180/10,000] 건 저장 완료
+  - [7,190/10,000] 건 저장 완료
   - [7,200/10,000] 건 저장 완료
+  - [7,210/10,000] 건 저장 완료
+  - [7,220/10,000] 건 저장 완료
   - [7,230/10,000] 건 저장 완료
+  - [7,240/10,000] 건 저장 완료
+  - [7,250/10,000] 건 저장 완료
   - [7,260/10,000] 건 저장 완료
+  - [7,270/10,000] 건 저장 완료
+  - [7,280/10,000] 건 저장 완료
   - [7,290/10,000] 건 저장 완료
+  - [7,300/10,000] 건 저장 완료
+  - [7,310/10,000] 건 저장 완료
   - [7,320/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 40000, Requested 8395. Please try again in 12.592s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [7,330/10,000] 건 저장 완료
+  - [7,340/10,000] 건 저장 완료
   - [7,350/10,000] 건 저장 완료
+  - [7,360/10,000] 건 저장 완료
+  - [7,370/10,000] 건 저장 완료
   - [7,380/10,000] 건 저장 완료
+  - [7,390/10,000] 건 저장 완료
+  - [7,400/10,000] 건 저장 완료
   - [7,410/10,000] 건 저장 완료
+  - [7,420/10,000] 건 저장 완료
+  - [7,430/10,000] 건 저장 완료
   - [7,440/10,000] 건 저장 완료
+  - [7,450/10,000] 건 저장 완료
+  - [7,460/10,000] 건 저장 완료
   - [7,470/10,000] 건 저장 완료
+  - [7,480/10,000] 건 저장 완료
+  - [7,490/10,000] 건 저장 완료
   - [7,500/10,000] 건 저장 완료
+  - [7,510/10,000] 건 저장 완료
+  - [7,520/10,000] 건 저장 완료
   - [7,530/10,000] 건 저장 완료
+  - [7,540/10,000] 건 저장 완료
+  - [7,550/10,000] 건 저장 완료
   - [7,560/10,000] 건 저장 완료
+  - [7,570/10,000] 건 저장 완료
+  - [7,580/10,000] 건 저장 완료
   - [7,590/10,000] 건 저장 완료
+  - [7,600/10,000] 건 저장 완료
+  - [7,610/10,000] 건 저장 완료
   - [7,620/10,000] 건 저장 완료
+  - [7,630/10,000] 건 저장 완료
+  - [7,640/10,000] 건 저장 완료
   - [7,650/10,000] 건 저장 완료
+  - [7,660/10,000] 건 저장 완료
+  - [7,670/10,000] 건 저장 완료
   - [7,680/10,000] 건 저장 완료
+  - [7,690/10,000] 건 저장 완료
+  - [7,700/10,000] 건 저장 완료
   - [7,710/10,000] 건 저장 완료
+  - [7,720/10,000] 건 저장 완료
+  - [7,730/10,000] 건 저장 완료
   - [7,740/10,000] 건 저장 완료
+  - [7,750/10,000] 건 저장 완료
+  - [7,760/10,000] 건 저장 완료
   - [7,770/10,000] 건 저장 완료
+  - [7,780/10,000] 건 저장 완료
+  - [7,790/10,000] 건 저장 완료
   - [7,800/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 40000, Requested 9369. Please try again in 14.053s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [7,810/10,000] 건 저장 완료
+  - [7,820/10,000] 건 저장 완료
   - [7,830/10,000] 건 저장 완료
+  - [7,840/10,000] 건 저장 완료
+  - [7,850/10,000] 건 저장 완료
   - [7,860/10,000] 건 저장 완료
+  - [7,870/10,000] 건 저장 완료
+  - [7,880/10,000] 건 저장 완료
   - [7,890/10,000] 건 저장 완료
+  - [7,900/10,000] 건 저장 완료
+  - [7,910/10,000] 건 저장 완료
   - [7,920/10,000] 건 저장 완료
+  - [7,930/10,000] 건 저장 완료
+  - [7,940/10,000] 건 저장 완료
   - [7,950/10,000] 건 저장 완료
+  - [7,960/10,000] 건 저장 완료
+  - [7,970/10,000] 건 저장 완료
   - [7,980/10,000] 건 저장 완료
+  - [7,990/10,000] 건 저장 완료
+  - [8,000/10,000] 건 저장 완료
   - [8,010/10,000] 건 저장 완료
+  - [8,020/10,000] 건 저장 완료
+  - [8,030/10,000] 건 저장 완료
   - [8,040/10,000] 건 저장 완료
+  - [8,050/10,000] 건 저장 완료
+  - [8,060/10,000] 건 저장 완료
   - [8,070/10,000] 건 저장 완료
+  - [8,080/10,000] 건 저장 완료
+  - [8,090/10,000] 건 저장 완료
   - [8,100/10,000] 건 저장 완료
+  - [8,110/10,000] 건 저장 완료
+  - [8,120/10,000] 건 저장 완료
   - [8,130/10,000] 건 저장 완료
+  - [8,140/10,000] 건 저장 완료
+  - [8,150/10,000] 건 저장 완료
   - [8,160/10,000] 건 저장 완료
+  - [8,170/10,000] 건 저장 완료
+  - [8,180/10,000] 건 저장 완료
   - [8,190/10,000] 건 저장 완료
+  - [8,200/10,000] 건 저장 완료
+  - [8,210/10,000] 건 저장 완료
   - [8,220/10,000] 건 저장 완료
+  - [8,230/10,000] 건 저장 완료
+  - [8,240/10,000] 건 저장 완료
   - [8,250/10,000] 건 저장 완료
+  - [8,260/10,000] 건 저장 완료
+  - [8,270/10,000] 건 저장 완료
   - [8,280/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 40000, Requested 9822. Please try again in 14.733s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [8,290/10,000] 건 저장 완료
+  - [8,300/10,000] 건 저장 완료
   - [8,310/10,000] 건 저장 완료
+  - [8,320/10,000] 건 저장 완료
+  - [8,330/10,000] 건 저장 완료
   - [8,340/10,000] 건 저장 완료
+  - [8,350/10,000] 건 저장 완료
+  - [8,360/10,000] 건 저장 완료
   - [8,370/10,000] 건 저장 완료
+  - [8,380/10,000] 건 저장 완료
+  - [8,390/10,000] 건 저장 완료
   - [8,400/10,000] 건 저장 완료
+  - [8,410/10,000] 건 저장 완료
+  - [8,420/10,000] 건 저장 완료
   - [8,430/10,000] 건 저장 완료
+  - [8,440/10,000] 건 저장 완료
+  - [8,450/10,000] 건 저장 완료
   - [8,460/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 39613, Requested 8979. Please try again in 12.888s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [8,470/10,000] 건 저장 완료
+  - [8,480/10,000] 건 저장 완료
   - [8,490/10,000] 건 저장 완료
+  - [8,500/10,000] 건 저장 완료
+  - [8,510/10,000] 건 저장 완료
   - [8,520/10,000] 건 저장 완료
+  - [8,530/10,000] 건 저장 완료
+  - [8,540/10,000] 건 저장 완료
   - [8,550/10,000] 건 저장 완료
+  - [8,560/10,000] 건 저장 완료
+  - [8,570/10,000] 건 저장 완료
   - [8,580/10,000] 건 저장 완료
+  - [8,590/10,000] 건 저장 완료
+  - [8,600/10,000] 건 저장 완료
   - [8,610/10,000] 건 저장 완료
+  - [8,620/10,000] 건 저장 완료
+  - [8,630/10,000] 건 저장 완료
   - [8,640/10,000] 건 저장 완료
+  - [8,650/10,000] 건 저장 완료
+  - [8,660/10,000] 건 저장 완료
   - [8,670/10,000] 건 저장 완료
+  - [8,680/10,000] 건 저장 완료
+  - [8,690/10,000] 건 저장 완료
   - [8,700/10,000] 건 저장 완료
+  - [8,710/10,000] 건 저장 완료
+  - [8,720/10,000] 건 저장 완료
   - [8,730/10,000] 건 저장 완료
+  - [8,740/10,000] 건 저장 완료
+  - [8,750/10,000] 건 저장 완료
   - [8,760/10,000] 건 저장 완료
+  - [8,770/10,000] 건 저장 완료
+  - [8,780/10,000] 건 저장 완료
   - [8,790/10,000] 건 저장 완료
+  - [8,800/10,000] 건 저장 완료
+  - [8,810/10,000] 건 저장 완료
   - [8,820/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 40000, Requested 8062. Please try again in 12.093s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [8,830/10,000] 건 저장 완료
+  - [8,840/10,000] 건 저장 완료
   - [8,850/10,000] 건 저장 완료
+  - [8,860/10,000] 건 저장 완료
+  - [8,870/10,000] 건 저장 완료
   - [8,880/10,000] 건 저장 완료
+  - [8,890/10,000] 건 저장 완료
+  - [8,900/10,000] 건 저장 완료
   - [8,910/10,000] 건 저장 완료
+  - [8,920/10,000] 건 저장 완료
+  - [8,930/10,000] 건 저장 완료
   - [8,940/10,000] 건 저장 완료
+  - [8,950/10,000] 건 저장 완료
+  - [8,960/10,000] 건 저장 완료
   - [8,970/10,000] 건 저장 완료
+  - [8,980/10,000] 건 저장 완료
+  - [8,990/10,000] 건 저장 완료
   - [9,000/10,000] 건 저장 완료
+  - [9,010/10,000] 건 저장 완료
+  - [9,020/10,000] 건 저장 완료
   - [9,030/10,000] 건 저장 완료
+  - [9,040/10,000] 건 저장 완료
+  - [9,050/10,000] 건 저장 완료
   - [9,060/10,000] 건 저장 완료
+  - [9,070/10,000] 건 저장 완료
+  - [9,080/10,000] 건 저장 완료
   - [9,090/10,000] 건 저장 완료
+  - [9,100/10,000] 건 저장 완료
+  - [9,110/10,000] 건 저장 완료
   - [9,120/10,000] 건 저장 완료
+  - [9,130/10,000] 건 저장 완료
+  - [9,140/10,000] 건 저장 완료
   - [9,150/10,000] 건 저장 완료
+  - [9,160/10,000] 건 저장 완료
+  - [9,170/10,000] 건 저장 완료
   - [9,180/10,000] 건 저장 완료
+  - [9,190/10,000] 건 저장 완료
+  - [9,200/10,000] 건 저장 완료
   - [9,210/10,000] 건 저장 완료
+  - [9,220/10,000] 건 저장 완료
+  - [9,230/10,000] 건 저장 완료
   - [9,240/10,000] 건 저장 완료
+  - [9,250/10,000] 건 저장 완료
+  - [9,260/10,000] 건 저장 완료
   - [9,270/10,000] 건 저장 완료
+  - [9,280/10,000] 건 저장 완료
+  - [9,290/10,000] 건 저장 완료
   - [9,300/10,000] 건 저장 완료
+  - [9,310/10,000] 건 저장 완료
+  - [9,320/10,000] 건 저장 완료
   - [9,330/10,000] 건 저장 완료
+  - [9,340/10,000] 건 저장 완료
+  - [9,350/10,000] 건 저장 완료
   - [9,360/10,000] 건 저장 완료
+  - [9,370/10,000] 건 저장 완료
+  - [9,380/10,000] 건 저장 완료
   - [9,390/10,000] 건 저장 완료
+  - [9,400/10,000] 건 저장 완료
+  - [9,410/10,000] 건 저장 완료
   - [9,420/10,000] 건 저장 완료
+  - [9,430/10,000] 건 저장 완료
+  - [9,440/10,000] 건 저장 완료
   - [9,450/10,000] 건 저장 완료
+  - [9,460/10,000] 건 저장 완료
+  - [9,470/10,000] 건 저장 완료
   - [9,480/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 40000, Requested 6936. Please try again in 10.404s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [9,490/10,000] 건 저장 완료
+  - [9,500/10,000] 건 저장 완료
   - [9,510/10,000] 건 저장 완료
+  - [9,520/10,000] 건 저장 완료
+  - [9,530/10,000] 건 저장 완료
   - [9,540/10,000] 건 저장 완료
+  - [9,550/10,000] 건 저장 완료
+  - [9,560/10,000] 건 저장 완료
   - [9,570/10,000] 건 저장 완료
+  - [9,580/10,000] 건 저장 완료
+  - [9,590/10,000] 건 저장 완료
   - [9,600/10,000] 건 저장 완료
+  - [9,610/10,000] 건 저장 완료
+  - [9,620/10,000] 건 저장 완료
   - [9,630/10,000] 건 저장 완료
+  - [9,640/10,000] 건 저장 완료
+  - [9,650/10,000] 건 저장 완료
   - [9,660/10,000] 건 저장 완료
+  - [9,670/10,000] 건 저장 완료
+  - [9,680/10,000] 건 저장 완료
   - [9,690/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 31610, Requested 9107. Please try again in 1.075s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [9,700/10,000] 건 저장 완료
+  - [9,710/10,000] 건 저장 완료
   - [9,720/10,000] 건 저장 완료
+  - [9,730/10,000] 건 저장 완료
+  - [9,740/10,000] 건 저장 완료
   - [9,750/10,000] 건 저장 완료
+  - [9,760/10,000] 건 저장 완료
+  - [9,770/10,000] 건 저장 완료
   - [9,780/10,000] 건 저장 완료
+  - [9,790/10,000] 건 저장 완료
+  - [9,800/10,000] 건 저장 완료
   - [9,810/10,000] 건 저장 완료
+  - [9,820/10,000] 건 저장 완료
+  - [9,830/10,000] 건 저장 완료
   - [9,840/10,000] 건 저장 완료
+  - [9,850/10,000] 건 저장 완료
+  - [9,860/10,000] 건 저장 완료
   - [9,870/10,000] 건 저장 완료
+  - [9,880/10,000] 건 저장 완료
+  - [9,890/10,000] 건 저장 완료
   - [9,900/10,000] 건 저장 완료
+  - [9,910/10,000] 건 저장 완료
+  - [9,920/10,000] 건 저장 완료
   - [9,930/10,000] 건 저장 완료
+  - [9,940/10,000] 건 저장 완료
+  - [9,950/10,000] 건 저장 완료
   - [9,960/10,000] 건 저장 완료
-
-⚠️ API 호출 중 에러 발생 (시도 1/5): Error code: 429 - {'error': {'message': 'Rate limit reached for text-embedding-3-small in organization org-QiZml4Na5szQSqhuoKGxvzKS on tokens per min (TPM): Limit 40000, Used 40000, Requested 7092. Please try again in 10.638s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
-⏳ Rate Limit 리셋을 위해 20초 동안 대기합니다...
+  - [9,970/10,000] 건 저장 완료
+  - [9,980/10,000] 건 저장 완료
   - [9,990/10,000] 건 저장 완료
   - [10,000/10,000] 건 저장 완료
 🎉 모든 데이터 저장 완료!
@@ -8387,7 +8907,7 @@ max        14065259.0    214629.0            53234.0
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
@@ -8459,149 +8979,145 @@ max        14065259.0    214629.0            53234.0
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">SyntaxError</span>                               Traceback (most recent call last)
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~\anaconda3\envs\contextory-ai\Lib\site-packages\sqlalchemy\engine\base.py:1969</span>, in <span class="ansi-cyan-fg">Connection._exec_single_context</span><span class="ansi-blue-fg">(self, dialect, context, statement, parameters)</span>
-<span class="ansi-green-fg">   1968</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span class="ansi-bold" style="color: rgb(175,0,255)">not</span> evt_handled:
-<span class="ansi-green-fg">-&gt; </span><span class="ansi-green-fg">1969</span>         <span class="ansi-black-fg ansi-yellow-bg">self</span><span class="ansi-black-fg ansi-yellow-bg">.</span><span class="ansi-black-fg ansi-yellow-bg">dialect</span><span class="ansi-black-fg ansi-yellow-bg">.</span><span class="ansi-black-fg ansi-yellow-bg">do_execute</span><span class="ansi-black-fg ansi-yellow-bg">(</span>
-<span class="ansi-green-fg">   1970</span> <span class="ansi-black-fg ansi-yellow-bg">            </span><span class="ansi-black-fg ansi-yellow-bg">cursor</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">str_statement</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">effective_parameters</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">context</span>
-<span class="ansi-green-fg">   1971</span> <span class="ansi-black-fg ansi-yellow-bg">        </span><span class="ansi-black-fg ansi-yellow-bg">)</span>
-<span class="ansi-green-fg">   1973</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span style="color: rgb(0,135,0)">self</span>._has_events <span class="ansi-bold" style="color: rgb(175,0,255)">or</span> <span style="color: rgb(0,135,0)">self</span>.engine._has_events:
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>=================================================================
+🔍 입력 질의문(Query): 'Check if list or array is null or empty before iterating'
+=================================================================
 
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~\anaconda3\envs\contextory-ai\Lib\site-packages\sqlalchemy\engine\default.py:952</span>, in <span class="ansi-cyan-fg">DefaultDialect.do_execute</span><span class="ansi-blue-fg">(self, cursor, statement, parameters, context)</span>
-<span class="ansi-green-fg">    951</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-fg">do_execute</span>(<span style="color: rgb(0,135,0)">self</span>, cursor, statement, parameters, context=<span class="ansi-bold" style="color: rgb(0,135,0)">None</span>):
-<span class="ansi-green-fg">--&gt; </span><span class="ansi-green-fg">952</span>     <span class="ansi-black-fg ansi-yellow-bg">cursor</span><span class="ansi-black-fg ansi-yellow-bg">.</span><span class="ansi-black-fg ansi-yellow-bg">execute</span><span class="ansi-black-fg ansi-yellow-bg">(</span><span class="ansi-black-fg ansi-yellow-bg">statement</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">parameters</span><span class="ansi-black-fg ansi-yellow-bg">)</span>
+🏆 [TOP 1] 유사도 점수(Similarity): 0.3875
+📌 출처: contextual_code_review | 이슈 여부: True
+💬 리뷰 코멘트:
+   └─ `.isBlank()` will capture cases such as "      "(empty spaces) as well. Do we really need this or just would `isEmpty()` is suffcient?
+📝 관련 PR Diff (미리보기):
+   ...
+-----------------------------------------------------------------
 
-<span class="ansi-red-fg">SyntaxError</span>: 오류:  구문 오류, ":" 부근
-LINE 8:             1 - (embedding &lt;=&gt; :query_vector::vector) AS sim...
-                                       ^
+🏆 [TOP 2] 유사도 점수(Similarity): 0.3513
+📌 출처: contextual_code_review | 이슈 여부: True
+💬 리뷰 코멘트:
+   └─ If there are no checkpoints to list, should we be returning an empty array rather than an exception?
+📝 관련 PR Diff (미리보기):
+   --- before
+   +++ after
+   @@ -1,25 +1,27 @@
+    public Flux&lt;Checkpoint&gt; listCheckpoints(String fullyQualifiedNamespace, String eventHubName, String consumerGroup) {
+    String prefix = prefixBuilder(fullyQualifi...
+-----------------------------------------------------------------
 
+🏆 [TOP 3] 유사도 점수(Similarity): 0.3432
+📌 출처: contextual_code_review | 이슈 여부: True
+💬 리뷰 코멘트:
+   └─ Should we test rows with null values as well?
+📝 관련 PR Diff (미리보기):
+   --- before
+   +++ after
+   @@ -1,6 +1,6 @@
+    public void testInnerJoinDifferentKeysNullable2() {
+    List&lt;Row&gt; pc1Rows =
+   -Lists.newArrayList(
+   +ImmutableList.of(
+    Row.withSchema(CG_SCHEMA_1).addValues("user1", 1...
+-----------------------------------------------------------------
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=a460438e">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
 
-The above exception was the direct cause of the following exception:
+<span class="n">client</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">()</span>
 
-<span class="ansi-red-fg">ProgrammingError</span>                          Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[30]</span><span class="ansi-green-fg">, line 58</span>
-<span class="ansi-green-fg">     54</span>         print(<span class="ansi-yellow-fg">f"   {diff_preview}..."</span>)
-<span class="ansi-green-fg">     55</span>         print(<span class="ansi-yellow-fg">"-"</span> * <span class="ansi-green-fg">65</span>)
-<span class="ansi-green-fg">     56</span> 
-<span class="ansi-green-fg">     57</span> <span style="color: rgb(95,135,135)"># 3. 실제 검색 테스트! (예: 리스트 null/비어있음 체크 관련)</span>
-<span class="ansi-green-fg">---&gt; </span><span class="ansi-green-fg">58</span> search_similar_code_reviews(<span class="ansi-yellow-fg">"Check if list or array is null or empty before iterating"</span>, top_k=<span class="ansi-green-fg">3</span>)
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_rag_code_review</span><span class="p">(</span><span class="n">user_diff_or_query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">top_k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">):</span>
+    <span class="c1"># 1단계: Vector DB에서 관련 과거 리뷰 검색 (Retrieval)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">=</span><span class="s2">"text-embedding-3-small"</span><span class="p">,</span>
+        <span class="nb">input</span><span class="o">=</span><span class="p">[</span><span class="n">user_diff_or_query</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">query_vector</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">embedding</span>
 
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[30]</span><span class="ansi-green-fg">, line 39</span>, in <span class="ansi-cyan-fg">search_similar_code_reviews</span><span class="ansi-blue-fg">(query_text, top_k)</span>
-<span class="ansi-green-fg">     35</span>         LIMIT :top_k;
-<span class="ansi-green-fg">     36</span>     """)
-<span class="ansi-green-fg">     37</span> 
-<span class="ansi-green-fg">     38</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">with</span> engine.connect() <span class="ansi-bold" style="color: rgb(0,135,0)">as</span> conn:
-<span class="ansi-green-fg">---&gt; </span><span class="ansi-green-fg">39</span>         results = conn.execute(
-<span class="ansi-green-fg">     40</span>             search_sql,
-<span class="ansi-green-fg">     41</span>             {<span class="ansi-yellow-fg">"query_vector"</span>: str(query_vector), <span class="ansi-yellow-fg">"top_k"</span>: top_k}
-<span class="ansi-green-fg">     42</span>         ).fetchall()
+    <span class="n">search_sql</span> <span class="o">=</span> <span class="n">text</span><span class="p">(</span><span class="s2">"""</span>
+<span class="s2">        SELECT pr_diff, review_comment, 1 - (embedding &lt;=&gt; CAST(:query_vector AS vector)) AS similarity</span>
+<span class="s2">        FROM code_reviews</span>
+<span class="s2">        ORDER BY embedding &lt;=&gt; CAST(:query_vector AS vector) ASC</span>
+<span class="s2">        LIMIT :top_k;</span>
+<span class="s2">    """</span><span class="p">)</span>
 
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~\anaconda3\envs\contextory-ai\Lib\site-packages\sqlalchemy\engine\base.py:1421</span>, in <span class="ansi-cyan-fg">Connection.execute</span><span class="ansi-blue-fg">(self, statement, parameters, execution_options)</span>
-<span class="ansi-green-fg">   1419</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">raise</span> exc.ObjectNotExecutableError(statement) <span class="ansi-bold" style="color: rgb(0,135,0)">from</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-intense-fg ansi-bold">err</span>
-<span class="ansi-green-fg">   1420</span> <span class="ansi-bold" style="color: rgb(0,135,0)">else</span>:
-<span class="ansi-green-fg">-&gt; </span><span class="ansi-green-fg">1421</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-black-fg ansi-yellow-bg">meth</span><span class="ansi-black-fg ansi-yellow-bg">(</span>
-<span class="ansi-green-fg">   1422</span> <span class="ansi-black-fg ansi-yellow-bg">        </span><span class="ansi-black-fg ansi-yellow-bg">self</span><span class="ansi-black-fg ansi-yellow-bg">,</span>
-<span class="ansi-green-fg">   1423</span> <span class="ansi-black-fg ansi-yellow-bg">        </span><span class="ansi-black-fg ansi-yellow-bg">distilled_parameters</span><span class="ansi-black-fg ansi-yellow-bg">,</span>
-<span class="ansi-green-fg">   1424</span> <span class="ansi-black-fg ansi-yellow-bg">        </span><span class="ansi-black-fg ansi-yellow-bg">execution_options</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-intense-fg ansi-yellow-bg ansi-bold">or</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">NO_OPTIONS</span><span class="ansi-black-fg ansi-yellow-bg">,</span>
-<span class="ansi-green-fg">   1425</span> <span class="ansi-black-fg ansi-yellow-bg">    </span><span class="ansi-black-fg ansi-yellow-bg">)</span>
+    <span class="k">with</span> <span class="n">engine</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+        <span class="n">retrieved_docs</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">search_sql</span><span class="p">,</span> <span class="p">{</span><span class="s2">"query_vector"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">query_vector</span><span class="p">),</span> <span class="s2">"top_k"</span><span class="p">:</span> <span class="n">top_k</span><span class="p">})</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
 
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~\anaconda3\envs\contextory-ai\Lib\site-packages\sqlalchemy\sql\elements.py:526</span>, in <span class="ansi-cyan-fg">ClauseElement._execute_on_connection</span><span class="ansi-blue-fg">(self, connection, distilled_params, execution_options)</span>
-<span class="ansi-green-fg">    524</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> TYPE_CHECKING:
-<span class="ansi-green-fg">    525</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">assert</span> <span style="color: rgb(0,135,0)">isinstance</span>(<span style="color: rgb(0,135,0)">self</span>, Executable)
-<span class="ansi-green-fg">--&gt; </span><span class="ansi-green-fg">526</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-black-fg ansi-yellow-bg">connection</span><span class="ansi-black-fg ansi-yellow-bg">.</span><span class="ansi-black-fg ansi-yellow-bg">_execute_clauseelement</span><span class="ansi-black-fg ansi-yellow-bg">(</span>
-<span class="ansi-green-fg">    527</span> <span class="ansi-black-fg ansi-yellow-bg">        </span><span class="ansi-black-fg ansi-yellow-bg">self</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">distilled_params</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">execution_options</span>
-<span class="ansi-green-fg">    528</span> <span class="ansi-black-fg ansi-yellow-bg">    </span><span class="ansi-black-fg ansi-yellow-bg">)</span>
-<span class="ansi-green-fg">    529</span> <span class="ansi-bold" style="color: rgb(0,135,0)">else</span>:
-<span class="ansi-green-fg">    530</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">raise</span> exc.ObjectNotExecutableError(<span style="color: rgb(0,135,0)">self</span>)
+    <span class="c1"># 2단계: Retrieve된 과거 맥락(Context) 조립</span>
+    <span class="n">context_text</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">doc</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">retrieved_docs</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">context_text</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"[과거 유사 리뷰 예시 </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="n">context_text</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"리뷰 코멘트: </span><span class="si">{</span><span class="n">doc</span><span class="o">.</span><span class="n">review_comment</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="n">context_text</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"관련 Diff: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">pr_diff</span><span class="p">)[:</span><span class="mi">150</span><span class="p">]</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">"</span>
 
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~\anaconda3\envs\contextory-ai\Lib\site-packages\sqlalchemy\engine\base.py:1643</span>, in <span class="ansi-cyan-fg">Connection._execute_clauseelement</span><span class="ansi-blue-fg">(self, elem, distilled_parameters, execution_options)</span>
-<span class="ansi-green-fg">   1631</span> compiled_cache: Optional[CompiledCacheType] = execution_options.get(
-<span class="ansi-green-fg">   1632</span>     <span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg">compiled_cache</span><span class="ansi-yellow-fg">"</span>, <span style="color: rgb(0,135,0)">self</span>.engine._compiled_cache
-<span class="ansi-green-fg">   1633</span> )
-<span class="ansi-green-fg">   1635</span> compiled_sql, extracted_params, cache_hit = elem._compile_w_cache(
-<span class="ansi-green-fg">   1636</span>     dialect=dialect,
-<span class="ansi-green-fg">   1637</span>     compiled_cache=compiled_cache,
-<span class="ansi-green-fg">   (...)</span><span class="ansi-green-fg">   1641</span>     linting=<span style="color: rgb(0,135,0)">self</span>.dialect.compiler_linting | compiler.WARN_LINTING,
-<span class="ansi-green-fg">   1642</span> )
-<span class="ansi-green-fg">-&gt; </span><span class="ansi-green-fg">1643</span> ret = <span class="ansi-black-fg ansi-yellow-bg">self</span><span class="ansi-black-fg ansi-yellow-bg">.</span><span class="ansi-black-fg ansi-yellow-bg">_execute_context</span><span class="ansi-black-fg ansi-yellow-bg">(</span>
-<span class="ansi-green-fg">   1644</span> <span class="ansi-black-fg ansi-yellow-bg">    </span><span class="ansi-black-fg ansi-yellow-bg">dialect</span><span class="ansi-black-fg ansi-yellow-bg">,</span>
-<span class="ansi-green-fg">   1645</span> <span class="ansi-black-fg ansi-yellow-bg">    </span><span class="ansi-black-fg ansi-yellow-bg">dialect</span><span class="ansi-black-fg ansi-yellow-bg">.</span><span class="ansi-black-fg ansi-yellow-bg">execution_ctx_cls</span><span class="ansi-black-fg ansi-yellow-bg">.</span><span class="ansi-black-fg ansi-yellow-bg">_init_compiled</span><span class="ansi-black-fg ansi-yellow-bg">,</span>
-<span class="ansi-green-fg">   1646</span> <span class="ansi-black-fg ansi-yellow-bg">    </span><span class="ansi-black-fg ansi-yellow-bg">compiled_sql</span><span class="ansi-black-fg ansi-yellow-bg">,</span>
-<span class="ansi-green-fg">   1647</span> <span class="ansi-black-fg ansi-yellow-bg">    </span><span class="ansi-black-fg ansi-yellow-bg">distilled_parameters</span><span class="ansi-black-fg ansi-yellow-bg">,</span>
-<span class="ansi-green-fg">   1648</span> <span class="ansi-black-fg ansi-yellow-bg">    </span><span class="ansi-black-fg ansi-yellow-bg">execution_options</span><span class="ansi-black-fg ansi-yellow-bg">,</span>
-<span class="ansi-green-fg">   1649</span> <span class="ansi-black-fg ansi-yellow-bg">    </span><span class="ansi-black-fg ansi-yellow-bg">compiled_sql</span><span class="ansi-black-fg ansi-yellow-bg">,</span>
-<span class="ansi-green-fg">   1650</span> <span class="ansi-black-fg ansi-yellow-bg">    </span><span class="ansi-black-fg ansi-yellow-bg">distilled_parameters</span><span class="ansi-black-fg ansi-yellow-bg">,</span>
-<span class="ansi-green-fg">   1651</span> <span class="ansi-black-fg ansi-yellow-bg">    </span><span class="ansi-black-fg ansi-yellow-bg">elem</span><span class="ansi-black-fg ansi-yellow-bg">,</span>
-<span class="ansi-green-fg">   1652</span> <span class="ansi-black-fg ansi-yellow-bg">    </span><span class="ansi-black-fg ansi-yellow-bg">extracted_params</span><span class="ansi-black-fg ansi-yellow-bg">,</span>
-<span class="ansi-green-fg">   1653</span> <span class="ansi-black-fg ansi-yellow-bg">    </span><span class="ansi-black-fg ansi-yellow-bg">cache_hit</span><span class="ansi-black-fg ansi-yellow-bg">=</span><span class="ansi-black-fg ansi-yellow-bg">cache_hit</span><span class="ansi-black-fg ansi-yellow-bg">,</span>
-<span class="ansi-green-fg">   1654</span> <span class="ansi-black-fg ansi-yellow-bg">)</span>
-<span class="ansi-green-fg">   1655</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> has_events:
-<span class="ansi-green-fg">   1656</span>     <span style="color: rgb(0,135,0)">self</span>.dispatch.after_execute(
-<span class="ansi-green-fg">   1657</span>         <span style="color: rgb(0,135,0)">self</span>,
-<span class="ansi-green-fg">   1658</span>         elem,
-<span class="ansi-green-fg">   (...)</span><span class="ansi-green-fg">   1662</span>         ret,
-<span class="ansi-green-fg">   1663</span>     )
+    <span class="c1"># 3단계: LLM 프롬프트 구성 (System Prompt + RAG Context + User Query)</span>
+    <span class="n">prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
+<span class="s2">너는 깃허브(GitHub)의 꼼꼼하고 친절한 Senior Software Engineer야.</span>
+<span class="s2">개발자가 작성한 코드/질문에 대해 과거 코드 리뷰 선례(Context)를 참고해서 건설적이고 명확한 코드 리뷰 의견을 작성해줘.</span>
 
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~\anaconda3\envs\contextory-ai\Lib\site-packages\sqlalchemy\engine\base.py:1848</span>, in <span class="ansi-cyan-fg">Connection._execute_context</span><span class="ansi-blue-fg">(self, dialect, constructor, statement, parameters, execution_options, *args, **kw)</span>
-<span class="ansi-green-fg">   1846</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span style="color: rgb(0,135,0)">self</span>._exec_insertmany_context(dialect, context)
-<span class="ansi-green-fg">   1847</span> <span class="ansi-bold" style="color: rgb(0,135,0)">else</span>:
-<span class="ansi-green-fg">-&gt; </span><span class="ansi-green-fg">1848</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-black-fg ansi-yellow-bg">self</span><span class="ansi-black-fg ansi-yellow-bg">.</span><span class="ansi-black-fg ansi-yellow-bg">_exec_single_context</span><span class="ansi-black-fg ansi-yellow-bg">(</span>
-<span class="ansi-green-fg">   1849</span> <span class="ansi-black-fg ansi-yellow-bg">        </span><span class="ansi-black-fg ansi-yellow-bg">dialect</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">context</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">statement</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">parameters</span>
-<span class="ansi-green-fg">   1850</span> <span class="ansi-black-fg ansi-yellow-bg">    </span><span class="ansi-black-fg ansi-yellow-bg">)</span>
+<span class="s2">[과거 유사 레퍼런스 데이터]</span>
+<span class="si">{</span><span class="n">context_text</span><span class="si">}</span>
 
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~\anaconda3\envs\contextory-ai\Lib\site-packages\sqlalchemy\engine\base.py:1988</span>, in <span class="ansi-cyan-fg">Connection._exec_single_context</span><span class="ansi-blue-fg">(self, dialect, context, statement, parameters)</span>
-<span class="ansi-green-fg">   1985</span>     result = context._setup_result_proxy()
-<span class="ansi-green-fg">   1987</span> <span class="ansi-bold" style="color: rgb(0,135,0)">except</span> <span class="ansi-bold" style="color: rgb(215,95,95)">BaseException</span> <span class="ansi-bold" style="color: rgb(0,135,0)">as</span> e:
-<span class="ansi-green-fg">-&gt; </span><span class="ansi-green-fg">1988</span>     <span class="ansi-black-fg ansi-yellow-bg">self</span><span class="ansi-black-fg ansi-yellow-bg">.</span><span class="ansi-black-fg ansi-yellow-bg">_handle_dbapi_exception</span><span class="ansi-black-fg ansi-yellow-bg">(</span>
-<span class="ansi-green-fg">   1989</span> <span class="ansi-black-fg ansi-yellow-bg">        </span><span class="ansi-black-fg ansi-yellow-bg">e</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">str_statement</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">effective_parameters</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">cursor</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">context</span>
-<span class="ansi-green-fg">   1990</span> <span class="ansi-black-fg ansi-yellow-bg">    </span><span class="ansi-black-fg ansi-yellow-bg">)</span>
-<span class="ansi-green-fg">   1992</span> <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> result
+<span class="s2">[검토할 질문 또는 코드]</span>
+<span class="si">{</span><span class="n">user_diff_or_query</span><span class="si">}</span>
 
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~\anaconda3\envs\contextory-ai\Lib\site-packages\sqlalchemy\engine\base.py:2365</span>, in <span class="ansi-cyan-fg">Connection._handle_dbapi_exception</span><span class="ansi-blue-fg">(self, e, statement, parameters, cursor, context, is_sub_exec)</span>
-<span class="ansi-green-fg">   2363</span> <span class="ansi-bold" style="color: rgb(0,135,0)">elif</span> should_wrap:
-<span class="ansi-green-fg">   2364</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">assert</span> sqlalchemy_exception <span class="ansi-bold" style="color: rgb(175,0,255)">is</span> <span class="ansi-bold" style="color: rgb(175,0,255)">not</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>
-<span class="ansi-green-fg">-&gt; </span><span class="ansi-green-fg">2365</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">raise</span> sqlalchemy_exception.with_traceback(exc_info[<span class="ansi-green-fg">2</span>]) <span class="ansi-bold" style="color: rgb(0,135,0)">from</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-intense-fg ansi-bold">e</span>
-<span class="ansi-green-fg">   2366</span> <span class="ansi-bold" style="color: rgb(0,135,0)">else</span>:
-<span class="ansi-green-fg">   2367</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">assert</span> exc_info[<span class="ansi-green-fg">1</span>] <span class="ansi-bold" style="color: rgb(175,0,255)">is</span> <span class="ansi-bold" style="color: rgb(175,0,255)">not</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>
+<span class="s2">위 레퍼런스와 질문을 바탕으로, 개발자에게 전달할 **최종 Code Review Comment**를 한글과 보편적인 영문 코드로 작성해줘.</span>
+<span class="s2">"""</span>
 
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~\anaconda3\envs\contextory-ai\Lib\site-packages\sqlalchemy\engine\base.py:1969</span>, in <span class="ansi-cyan-fg">Connection._exec_single_context</span><span class="ansi-blue-fg">(self, dialect, context, statement, parameters)</span>
-<span class="ansi-green-fg">   1967</span>                 <span class="ansi-bold" style="color: rgb(0,135,0)">break</span>
-<span class="ansi-green-fg">   1968</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span class="ansi-bold" style="color: rgb(175,0,255)">not</span> evt_handled:
-<span class="ansi-green-fg">-&gt; </span><span class="ansi-green-fg">1969</span>         <span class="ansi-black-fg ansi-yellow-bg">self</span><span class="ansi-black-fg ansi-yellow-bg">.</span><span class="ansi-black-fg ansi-yellow-bg">dialect</span><span class="ansi-black-fg ansi-yellow-bg">.</span><span class="ansi-black-fg ansi-yellow-bg">do_execute</span><span class="ansi-black-fg ansi-yellow-bg">(</span>
-<span class="ansi-green-fg">   1970</span> <span class="ansi-black-fg ansi-yellow-bg">            </span><span class="ansi-black-fg ansi-yellow-bg">cursor</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">str_statement</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">effective_parameters</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">context</span>
-<span class="ansi-green-fg">   1971</span> <span class="ansi-black-fg ansi-yellow-bg">        </span><span class="ansi-black-fg ansi-yellow-bg">)</span>
-<span class="ansi-green-fg">   1973</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span style="color: rgb(0,135,0)">self</span>._has_events <span class="ansi-bold" style="color: rgb(175,0,255)">or</span> <span style="color: rgb(0,135,0)">self</span>.engine._has_events:
-<span class="ansi-green-fg">   1974</span>     <span style="color: rgb(0,135,0)">self</span>.dispatch.after_cursor_execute(
-<span class="ansi-green-fg">   1975</span>         <span style="color: rgb(0,135,0)">self</span>,
-<span class="ansi-green-fg">   1976</span>         cursor,
-<span class="ansi-green-fg">   (...)</span><span class="ansi-green-fg">   1980</span>         context.executemany,
-<span class="ansi-green-fg">   1981</span>     )
+    <span class="c1"># 4단계: OpenAI LLM 호출 (Generation)</span>
+    <span class="n">completion</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">=</span><span class="s2">"gpt-4o-mini"</span><span class="p">,</span>
+        <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"system"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="s2">"You are an expert Code Reviewer AI."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">prompt</span><span class="p">}</span>
+        <span class="p">],</span>
+        <span class="n">temperature</span><span class="o">=</span><span class="mf">0.2</span>
+    <span class="p">)</span>
 
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~\anaconda3\envs\contextory-ai\Lib\site-packages\sqlalchemy\engine\default.py:952</span>, in <span class="ansi-cyan-fg">DefaultDialect.do_execute</span><span class="ansi-blue-fg">(self, cursor, statement, parameters, context)</span>
-<span class="ansi-green-fg">    951</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-fg">do_execute</span>(<span style="color: rgb(0,135,0)">self</span>, cursor, statement, parameters, context=<span class="ansi-bold" style="color: rgb(0,135,0)">None</span>):
-<span class="ansi-green-fg">--&gt; </span><span class="ansi-green-fg">952</span>     <span class="ansi-black-fg ansi-yellow-bg">cursor</span><span class="ansi-black-fg ansi-yellow-bg">.</span><span class="ansi-black-fg ansi-yellow-bg">execute</span><span class="ansi-black-fg ansi-yellow-bg">(</span><span class="ansi-black-fg ansi-yellow-bg">statement</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">parameters</span><span class="ansi-black-fg ansi-yellow-bg">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"=================================================="</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"🤖 RAG 기반 AI Senior Reviewer의 최종 피드백"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"=================================================="</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">completion</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
 
-<span class="ansi-red-fg">ProgrammingError</span>: (psycopg2.errors.SyntaxError) 오류:  구문 오류, ":" 부근
-LINE 8:             1 - (embedding &lt;=&gt; :query_vector::vector) AS sim...
-                                       ^
+<span class="c1"># 실행 테스트!</span>
+<span class="n">generate_rag_code_review</span><span class="p">(</span><span class="s2">"Check if list or array is null or empty before iterating"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>==================================================
+🤖 RAG 기반 AI Senior Reviewer의 최종 피드백
+==================================================
+리뷰 코멘트: 리스트나 배열이 null이거나 비어있는지 확인한 후에 반복(iterate)하는 것이 좋습니다. 이를 통해 NullPointerException이나 불필요한 반복을 방지할 수 있습니다. 예를 들어, 다음과 같이 수정할 수 있습니다:
 
-[SQL: 
-        SELECT 
-            dataset_source,
-            source_code,
-            pr_diff,
-            review_comment,
-            has_issue,
-            1 - (embedding &lt;=&gt; :query_vector::vector) AS similarity
-        FROM code_reviews
-        ORDER BY embedding &lt;=&gt; :query_vector::vector ASC
-        LIMIT %(top_k)s;
-    ]
-[parameters: {'top_k': 3}]
-(Background on this error at: https://sqlalche.me/e/20/f405)</pre>
+```java
+if (list != null &amp;&amp; !list.isEmpty()) {
+    for (Item item : list) {
+        // 처리 로직
+    }
+}
+```
+
+이렇게 하면 코드의 안정성을 높이고, 예외 상황을 사전에 방지할 수 있습니다.
+</pre>
 </div>
 </div>
 </div>
