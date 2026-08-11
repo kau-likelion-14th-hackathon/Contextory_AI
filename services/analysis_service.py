@@ -6,15 +6,21 @@ from services.retrieval import retrieve_contexts
 from services.context_filter import filter_contexts
 from services.prompt_builder import build_grounded_prompt
 from services.confidence import calculate_confidence
+from services.translation_service import translate_pr_to_en_query  # ✅ 공통 모듈로 import
 
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
+
 def analyze_pr_pipeline(request: PRAnalysisRequest) -> PRAnalysisResponse:
     """
-    전체 RAG Orchestration Pipeline
+    전체 RAG Orchestration Pipeline (Query Translation 공통 모듈 적용)
     """
-    # 1. PGVector Retrieval (request.title, request.diff_content 적용)
-    query_text = f"PR Title: {request.title}\nPR Diff:\n{request.diff_content}"
+    # 1. Query Translation (한/영 PR Title & Description -> 영문 검색 쿼리 변환)
+    description_text = getattr(request, "description", "")
+    translated_query = translate_pr_to_en_query(request.title, description_text)
+
+    # 1-1. PGVector Retrieval (영문 변환 쿼리 + request.diff_content 조합 적용)
+    query_text = f"PR Title/Summary: {translated_query}\nPR Diff:\n{request.diff_content}"
     raw_contexts = retrieve_contexts(query_text=query_text, top_k=settings.RAG_TOP_K)
     
     # 2. Context Filter Agent (무관 Chunk 제거 & Top-1 보존)
@@ -78,7 +84,7 @@ Analyze the PR and output ONLY a valid JSON with the following structure:
     ]
 
     return PRAnalysisResponse(
-        pr_id=request.pr_id,  # ✅ 추가된 pr_id 바인딩
+        pr_id=request.pr_id,
         summary=llm_output.get("summary", "Analysis complete."),
         risk_score=llm_output.get("risk_score", 0),
         reviews=reviews,

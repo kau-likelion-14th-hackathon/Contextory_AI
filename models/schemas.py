@@ -31,7 +31,8 @@ class CodeFileChunk(BaseModel):
     레포지토리 인덱싱을 위한 단일 코드 파일/조각 DTO
     """
     file_path: str = Field(..., description="파일 경로", example="src/main/java/com/contextory/service/UserService.java")
-    content: str = Field(..., description="파일의 전체 소스코드 내용", example="package com.contextory.service;\n\npublic class UserService { ... }")
+    chunk_idx: int = Field(default=0, description="파일 내 청크 인덱스 (단일 파일 시 0)", example=0)
+    content: str = Field(..., description="파일의 소스코드 내용", example="package com.contextory.service;\n\npublic class UserService { ... }")
 
 
 # ==========================================
@@ -70,11 +71,13 @@ class PRAnalysisResponse(BaseModel):
 
 class RepoIndexingRequest(BaseModel):
     """
-    Spring Boot -> FastAPI: 레포지토리 전체 코드 인덱싱(임베딩) 요청 DTO
+    Spring Boot -> FastAPI: 레포지토리 전체 코드 인덱싱(임베딩/Upsert/Delete) 요청 DTO
     """
     repo_name: str = Field(..., description="리포지토리 이름", example="Contextory/Backend")
     branch: str = Field(default="main", description="대상 브랜치명", example="main")
-    files: List[CodeFileChunk] = Field(..., description="인덱싱할 전체 코드 파일 목록")
+    commit_sha: Optional[str] = Field(None, description="인덱싱 대상 커밋 SHA", example="a1b2c3d4e5")
+    files: List[CodeFileChunk] = Field(default_factory=list, description="인덱싱/Upsert 처리할 소스코드 목록")
+    deleted_files: Optional[List[str]] = Field(default_factory=list, description="Rebase/삭제로 인해 DB에서 제거할 파일 경로 목록", example=["src/main/java/com/contextory/OldService.java"])
 
 
 class RepoIndexingResponse(BaseModel):
@@ -82,5 +85,6 @@ class RepoIndexingResponse(BaseModel):
     FastAPI -> Spring Boot: 레포지토리 인덱싱 결과 응답 DTO
     """
     repo_name: str = Field(..., description="인덱싱된 리포지토리 이름", example="Contextory/Backend")
-    indexed_files_count: int = Field(..., description="pgvector에 성공적으로 임베딩 처리된 파일 수", example=15)
-    message: str = Field(..., description="처리 결과 메시지", example="성공적으로 pgvector 인덱싱이 완료되었습니다.")
+    indexed_files_count: int = Field(..., description="pgvector에 성공적으로 임베딩/Upsert 처리된 파일(청크) 수", example=15)
+    deleted_files_count: int = Field(0, description="Rebase/삭제로 인해 DB에서 제거된 파일 수", example=1)
+    message: str = Field(..., description="처리 결과 메시지", example="성공적으로 pgvector 인덱싱 및 정리가 완료되었습니다.")
