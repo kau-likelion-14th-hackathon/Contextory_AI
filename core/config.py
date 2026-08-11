@@ -18,6 +18,12 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     EMBED_DIM: int = 1536
 
+    # 🚀 [추가] RAG & LLM Config
+    EMBEDDING_MODEL: str = "text-embedding-3-small"
+    LLM_MODEL: str = "gpt-4o"
+    RAG_TOP_K: int = 5            # pgvector Top-K 검색 수
+    SIM_THRESHOLD: float = 0.5    # Context Filter 유사도 임계값
+
     # Google API Config
     GOOGLE_API_KEY: str = ""
     GOOGLE_SEARCH_ENGINE_ID: str = ""

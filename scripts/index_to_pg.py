@@ -50,8 +50,24 @@ def init_db(engine):
 
 
 # ==========================================
-# 3. 안전한 토큰 자르기 유틸리티 함수
+# 3. 안전한 토큰 자르기 유틸리티 함수 및 NUL 문자 정제
 # ==========================================
+def sanitize_batch_df(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    PostgreSQL NUL (0x00) 문자 제거 전처리
+    """
+    df_sanitized = df.copy()
+    text_cols = ['pr_diff', 'review_comment', 'source_code']
+    for col in text_cols:
+        if col in df_sanitized.columns:
+            df_sanitized[col] = (
+                df_sanitized[col]
+                .astype(str)
+                .str.replace('\x00', '', regex=False)
+            )
+    return df_sanitized
+
+
 def truncate_by_tokens(text_str, max_tokens=6000):
     """
     OpenAI 8,192 토큰 한도를 넘지 않도록 실제 토큰 수 기준으로 안전하게 자릅니다.
@@ -95,12 +111,12 @@ def embed_and_insert_safe(df: pd.DataFrame, engine, batch_size=10, delay_seconds
     Session = sessionmaker(bind=engine)
 
     for i in range(0, total_target, batch_size):
-        # DataFrame iloc로 배치를 명확히 슬라이싱
-        batch_df = df_target.iloc[i:i + batch_size]
+        # DataFrame iloc로 배치를 명확히 슬라이싱 및 NUL(0x00) 문자 정제 적용
+        raw_batch = df_target.iloc[i:i + batch_size]
+        batch_df = sanitize_batch_df(raw_batch)  # 🧹 [수정] DB/API 전송 전 NUL 제거 전처리
 
-        # PR Diff는 최대 5,000 토큰, Review Comment는 최대 1,500 토큰으로 자름
         batch_texts = [
-            f"PR Diff:\n{truncate_by_tokens(row['pr_diff'], 5000)}\nReview Comment:\n{truncate_by_tokens(row['review_comment'], 1500)}"
+            f"PR Diff:\n{truncate_by_tokens(row['pr_diff'], 1500)}\nReview Comment:\n{truncate_by_tokens(row['review_comment'], 500)}"
             for _, row in batch_df.iterrows()
         ]
 
@@ -145,7 +161,13 @@ def embed_and_insert_safe(df: pd.DataFrame, engine, batch_size=10, delay_seconds
         try:
             session.bulk_save_objects(db_objects)
             session.commit()
-            print(f"  - [{i + len(batch_df):,}/{total_target:,}] 건 저장 완료 (전체 진행률: {(len(saved_set) + i + len(batch_df)) / len(df) * 100:.2f}%)")
+            
+            # 🚀 전체 데이터셋(len(df)) 기준 직관적 출력 계산
+            current_total = len(saved_set) + i + len(batch_df)
+            total_all = len(df)
+            progress_pct = (current_total / total_all) * 100
+
+            print(f"  - [{current_total:,}/{total_all:,}] 건 저장 완료 ({progress_pct:.2f}%)")
         except Exception as e:
             session.rollback()
             print(f"❌ DB 저장 중 에러 발생: {e}")

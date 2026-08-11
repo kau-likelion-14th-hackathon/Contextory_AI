@@ -6,11 +6,22 @@ from typing import List, Optional
 # 1. 공통 및 세부 요소를 위한 DTO
 # ==========================================
 
+class Evidence(BaseModel):
+    """
+    Context Filter를 통과해 LLM 분석 근거로 사용된 pgvector 검색 결과 DTO
+    """
+    id: str = Field(..., description="검색된 벡터 데이터 고유 ID", example="12345")
+    source_code: Optional[str] = Field(None, description="참조 원본 소스코드")
+    pr_diff: Optional[str] = Field(None, description="참조 PR Diff 조각")
+    review_comment: Optional[str] = Field(None, description="참조 과거 리뷰 코멘트")
+    similarity_score: float = Field(..., description="코사인 유사도 점수 (0.0~1.0)", example=0.87)
+
+
 class CodeReviewComment(BaseModel):
     """
     파일별 세부 코드 리뷰 피드백 DTO
     """
-    file_path: str = Field(..., description="리뷰 대상 파일 경로", example="src/main/java/com/contextory/service/UserService.java")
+    file_path: Optional[str] = Field(None, description="리뷰 대상 파일 경로", example="src/main/java/com/contextory/service/UserService.java")
     line_number: Optional[int] = Field(None, description="코드 줄 번호 (전체 파일 리뷰 시 None)", example=42)
     comment: str = Field(..., description="AI 코드 리뷰 피드백 내용", example="N+1 쿼리 문제가 발생할 수 있으므로 Fetch Join 사용을 권장합니다.")
 
@@ -47,6 +58,10 @@ class PRAnalysisResponse(BaseModel):
     summary: str = Field(..., description="AI가 요약한 PR 핵심 변경사항 및 영향도", example="사용자 인증을 위한 JWT 필터 및 Spring Security 설정이 추가되었습니다.")
     risk_score: int = Field(..., description="코드 변경 위험도 점수 (1~100)", example=25)
     reviews: List[CodeReviewComment] = Field(default_factory=list, description="파일별 코드 리뷰 목록")
+    evidences: List[Evidence] = Field(default_factory=list, description="RAG 분석 근거 Context 목록")
+    confidence: float = Field(0.0, description="RAG 답변 신뢰도 점수 (0.0~1.0)", example=0.85)
+    needs_confirmation: bool = Field(False, description="개발자 추가 확인 필요 여부", example=False)
+    filter_ratio: float = Field(0.0, description="Context Filter 필터링 비율 (0.0~1.0)", example=0.2)
 
 
 # ==========================================
