@@ -1,14 +1,28 @@
 from typing import List
+from urllib.parse import urlparse, unquote
+import psycopg2
 from openai import OpenAI
+
 from core.config import settings
-from db.connection import get_db_connection  # 프로젝트 내 DB 커넥션 유틸 함수
 from models.schemas import RepoIndexingRequest, RepoIndexingResponse
 
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 
+def get_raw_psycopg2_connection():
+    """settings.database_url에서 정보를 추출하여 psycopg2 커넥션 생성"""
+    parsed = urlparse(settings.database_url)
+    return psycopg2.connect(
+        dbname=parsed.path.lstrip("/"),
+        user=parsed.username,
+        password=unquote(parsed.password) if parsed.password else "",
+        host=parsed.hostname,
+        port=parsed.port or 5432
+    )
+
+
 def generate_embedding(text: str) -> List[float]:
-    """텍스트를 1536차원 벡터로 변환"""
+    """텍스트를 벡터로 변환 (settings에 지정된 EMBEDDING_MODEL 사용)"""
     response = client.embeddings.create(
         model=settings.EMBEDDING_MODEL,
         input=text
@@ -23,7 +37,8 @@ def index_repository_code(request: RepoIndexingRequest) -> RepoIndexingResponse:
     indexed_files_count = 0
     deleted_files_count = 0
 
-    with get_db_connection() as conn:
+    # settings에서 생성한 파싱 정보로 psycopg2 직접 커넥션 오픈
+    with get_raw_psycopg2_connection() as conn:
         with conn.cursor() as cur:
             # 1. Rebase/삭제 대응: deleted_files 목록 DB 제거
             if request.deleted_files:
