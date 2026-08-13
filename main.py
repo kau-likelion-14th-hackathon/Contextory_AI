@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import analysis, indexing
+from routers import analysis, indexing, internal_analysis
 
 app = FastAPI(
     title="Contextory AI Workers API",
@@ -23,3 +23,4 @@ def health_check():
 # 라우터 등록
 app.include_router(analysis.router)
 app.include_router(indexing.router)
+app.include_router(internal_analysis.router)

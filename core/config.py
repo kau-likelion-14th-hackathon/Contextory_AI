@@ -28,6 +28,17 @@ class Settings(BaseSettings):
     GOOGLE_API_KEY: str = ""
     GOOGLE_SEARCH_ENGINE_ID: str = ""
 
+    # 🚀 [추가] Vector Table 이름 (적재/조회 경로 일원화를 위한 단일 관리 지점)
+    # repo_code_vectors: LlamaIndex PGVectorStore table_name 파라미터 값.
+    #   테이블은 LlamaIndex 규약에 따라 "data_"가붙은 data_repo_code_vectors 이다.
+    REPO_CODE_TABLE_NAME: str = "repo_code_vectors"
+    # code_review_vectors: raw SQL(scripts/index_to_pg.py)로 적재되는 테이블명 그대로 사용.
+    CODE_REVIEW_TABLE_NAME: str = "code_review_vectors"
+
+    # 🚀 [추가] 내부 API(Backend<->AI) 공유 비밀키. X-Internal-Api-Key 헤더 검증 및
+    # 콜백(FastAPI -> Backend) 전송 시 동일 헤더로 사용한다. 콜백 대상 URL은 요청(callbackUrl)에서 받는다.
+    INTERNAL_API_KEY: str = ""
+
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
