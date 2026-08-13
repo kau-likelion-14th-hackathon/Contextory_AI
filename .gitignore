@@ -54,3 +54,9 @@ Thumbs.db
 *.log
 *.sqlite
 *.db
+
+
+# Data Files Ignore
+data/
+*.parquet
+*.csv
