@@ -20,27 +20,37 @@ FastAPI 기반으로 구축되어 있으며, GitHub PR 분석 및 LlamaIndex / P
 
 ```text
 AI_service/
-├── main.py                     # FastAPI 앱 실행 및 메인 라우터 연결
+├── main.py                     # FastAPI 앱 실행 및 라우터 연결
 ├── dependencies.py             # FastAPI Depends 주입 모듈 (DB 세션 생명주기 관리 등)
 ├── .env.example                # 환경 변수 템플릿
 ├── requirements.txt            # 의존성 패키지 목록
 │
 ├── core/                       # 환경설정, DB 커넥션, 공통 인프라 모듈
-│   ├── config.py               # pydantic-settings 기반 환경변수 관리
+│   ├── config.py               # pydantic-settings 기반 환경변수/테이블명 상수 관리
 │   └── db.py                   # SQLAlchemy Engine & SessionLocal 관리
 │
 ├── routers/                    # API 엔드포인트 계층
-│   ├── health.py               # DB 연동 상태 검증 헬스체크 API
-│   ├── repo.py                 # RAG 소스코드 인덱싱 API (/api/v1/repos/index)
-│   └── analyze.py              # RAG 기반 PR Diff 분석 API (/api/v1/analyze/pr)
+│   ├── health.py               # 헬스체크 API
+│   ├── indexing.py             # RAG 소스코드 인덱싱 API (POST /api/v1/repos/index)
+│   ├── analysis.py             # RAG 기반 PR Diff 동기 분석 API (POST /api/v1/analyze/pr)
+│   └── internal_analysis.py    # 비동기 PR 분석 내부 API (POST/GET /internal/v1/analyses[...])
 │
 ├── services/                   # 비즈니스 로직 및 전처리 모듈
+│   ├── analysis_service.py     # 동기/비동기 RAG 분석 오케스트레이션(공용 컨텍스트 조회 헬퍼 포함)
+│   ├── retrieval.py            # code_review_vectors / repo_code_vectors 조회(raw SQL + LlamaIndex)
+│   ├── context_filter.py       # 무관 컨텍스트 필터링
+│   ├── prompt_builder.py       # Grounded Prompt 구성
+│   ├── confidence.py           # 신뢰도 산출
+│   ├── translation_service.py  # PR 제목/설명 영문 검색쿼리 번역
+│   ├── callback_service.py     # 비동기 분석 완료/실패 Callback 전송
+│   ├── job_store.py            # 비동기 작업 상태 In-Memory 저장소 (단일 프로세스 한정)
+│   └── repo_index_service.py   # (미사용) 레포 코드 raw SQL 인덱싱 — 현재 어떤 라우터에도 연결되지 않음
 │
-├── models/                     # Pydantic 스키마 및 DB ORM 모델
-│   └── schemas.py               # Request/Response API DTO 및 리뷰 Pydantic 스키마
+├── models/                     # Pydantic 스키마
+│   └── schemas.py              # Request/Response API DTO (동기/비동기, camelCase 내부 API 포함)
 │
-├── llamaindex/                 # LlamaIndex VectorStore, Retriever, Ingestion 파이프라인
-│   ├── pipeline.py             # RAG Ingestion & Retrieval 실행 파이프라인
+├── llamaindex/                 # LlamaIndex VectorStore / Ingestion 파이프라인
+│   ├── pipeline.py             # repo_code_vectors(data_repo_code_vectors) Upsert/Delete 인덱싱
 │   └── vector_store.py         # PostgreSQL pgvector PGVectorStore 연동 및 관리
 │
 └── tests/                      # 테스트 코드
@@ -72,6 +82,9 @@ POSTGRES_DB=contextory_db
 
 # OpenAI Config
 OPENAI_API_KEY=your_openai_api_key_here
+
+# Internal API (Backend <-> AI) Config
+INTERNAL_API_KEY=your_internal_api_key_here
 
 # Google API Config
 GOOGLE_API_KEY=your_google_api_key_here
