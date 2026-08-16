@@ -181,7 +181,7 @@ def offline_keyword_judge(keyword: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-# Keyword Importance Judge 프롬프트 v5 (v4 + thought_process 노출: 선배 메모의 "사고 과정을 보이게"
+# Keyword Importance Judge 프롬프트 v5 (v4 + thought_process 노출
 # 요구사항 반영. thought_process를 label보다 먼저 오는 첫 필드로 둬서, LLM이 판정을 내리기 전에
 # 먼저 생각하도록 강제한다. 비용은 조금 늘지만 판정 근거를 사람이 감사(audit)하기 쉬워진다.
 _KEYWORD_JUDGE_PROMPT = """<role>
