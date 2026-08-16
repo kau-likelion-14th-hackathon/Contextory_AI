@@ -13,6 +13,7 @@ llm_keyword_judge/keyword_judge는 client를 주입받을 수 있게 설계되�
 import json
 
 from eval.judge import keyword_judge
+from eval.report import to_frontend_draft_fragment
 
 
 class _FakeMessage:
@@ -73,6 +74,7 @@ def main():
         "matched_criteria": ["A"],
         "reason": "테스트",
         "inferred_from_background_knowledge": False,
+        "relevant_roles": [],
     }))
     result = keyword_judge(PR_TITLE, PR_DESCRIPTION, PR_DIFF, "애매한 키워드1", client=ok_client)
     check(
@@ -83,6 +85,25 @@ def main():
         "thought_process 필드가 결과에 그대로 전달됨",
         bool(result.get("thought_process")),
     )
+
+    # 1-1. A+E 응답 -> 프론트 draft 변환 함수가 featureTags/impacts/followUps/checks를 제대로 채우는지
+    ae_client = FakeClient(content=json.dumps({
+        "thought_process": "설계 이유(A)이면서 QA가 신경 써야 함(E)",
+        "label": "important",
+        "matched_criteria": ["A", "B", "E"],
+        "reason": "이메일 초대 기능은 MVP 범위에서 제외",
+        "inferred_from_background_knowledge": True,
+        "relevant_roles": ["QA", "기획"],
+    }))
+    ae_result = keyword_judge(PR_TITLE, PR_DESCRIPTION, PR_DIFF, "이메일 초대 제외", client=ae_client)
+    fragment = to_frontend_draft_fragment([ae_result])
+    check("featureTags에 짧은 키워드 포함", "이메일 초대 제외" in fragment["featureTags"])
+    check("impacts에 역할별로 항목 생성", len(fragment["impacts"]) == 2)
+    check("impacts 항목에 role/description/variant 다 있음", all(
+        {"role", "description", "variant"} <= set(item.keys()) for item in fragment["impacts"]
+    ))
+    check("B 매치라서 followUps에도 들어감", len(fragment["followUps"]) == 1)
+    check("배경지식 추론이라 checks에도 들어감", len(fragment["checks"]) == 1)
 
     # 2. 규칙 위반: E만 있는데 important라고 응답 -> 검증 가드가 not_important로 다운그레이드해야 함
     bad_client = FakeClient(content=json.dumps({

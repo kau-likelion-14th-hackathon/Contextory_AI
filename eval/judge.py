@@ -148,6 +148,7 @@ def offline_keyword_judge(keyword: str) -> Optional[Dict[str, Any]]:
             "matched_criteria": [],
             "reason": "빈 키워드",
             "inferred_from_background_knowledge": False,
+            "relevant_roles": [],
         }
 
     if norm in _STOPWORD_PHRASES:
@@ -156,6 +157,7 @@ def offline_keyword_judge(keyword: str) -> Optional[Dict[str, Any]]:
             "matched_criteria": [],
             "reason": "형식적 문구",
             "inferred_from_background_knowledge": False,
+            "relevant_roles": [],
         }
 
     if _MOCK_ID_PATTERN.match(norm):
@@ -164,6 +166,7 @@ def offline_keyword_judge(keyword: str) -> Optional[Dict[str, Any]]:
             "matched_criteria": [],
             "reason": "의미 없는 예시/mock 식별자 패턴",
             "inferred_from_background_knowledge": False,
+            "relevant_roles": [],
         }
 
     if norm in _BARE_TECH_NAMES:
@@ -172,6 +175,7 @@ def offline_keyword_judge(keyword: str) -> Optional[Dict[str, Any]]:
             "matched_criteria": [],
             "reason": "PR의 핵심 결정과 연결되지 않은 일반 기술명 단독 언급",
             "inferred_from_background_knowledge": False,
+            "relevant_roles": [],
         }
 
     return None
@@ -218,7 +222,8 @@ C. SEARCH VALUE - 나중에 팀원이 "이거 왜 이렇게 됐지?"라고 검�
 D. IMPACT - 변경으로 인한 결과, 영향(호환성 변화, 마이그레이션 필요, 성능 변화 등)을 설명하는가
 
 [보조 - A~D 중 하나가 이미 성립된 상태에서만 확신도를 높이는 용도, 단독 사용 금지]
-E. 특정 역할(FE/BE/PM/QA/SRE/CS)이 신경 써야 함을 시사하는가
+E. 특정 역할(프론트엔드/백엔드/기획/QA/SRE/CS)이 신경 써야 함을 시사하는가
+   - 해당하면 relevant_roles에 구체적으로 어떤 역할인지 적는다 (예: ["프론트엔드", "QA"])
 F. 재사용 가능한 의미를 가진 코드 식별자(함수명/API 경로/설정값)인가
    - 단순히 재사용된다는 이유만으로는 충분하지 않으며, PR의 중요한 결정/제약/영향과 연결되어야 한다
 </criteria>
@@ -262,11 +267,13 @@ Diff: {pr_diff}
 - not_important인 경우 실제로 충족하는 핵심 기준이 없다면 matched_criteria는 빈 배열([])로 작성한다.
 - reason에는 keyword가 PR의 어떤 맥락과 연결되는지, 그리고 그 판정을 내린 이유를 함께 담는다.
 - thought_process는 반드시 label보다 먼저 나오는 첫 번째 필드로 작성해서, label을 정하기 전에 먼저 생각한다.
+- matched_criteria에 E가 포함되면 relevant_roles를 반드시 채운다 (프론트엔드/백엔드/기획/QA/SRE/CS 중에서).
+  E가 없으면 relevant_roles는 빈 배열([])로 둔다.
 </output_rule>
 
 반드시 아래 JSON 형식으로만 답해. 다른 설명, 마크다운, 코드블록 텍스트는 출력하지 마.
 thought_process를 반드시 첫 번째 필드로 작성해:
-{{"thought_process": "A~D/consistency_rule에 따라 판단한 짧은 사고 과정", "label": "important 또는 not_important", "matched_criteria": ["해당 항목"], "reason": "keyword가 어떤 맥락과 연결되는지 + 판정 이유", "inferred_from_background_knowledge": true 또는 false}}
+{{"thought_process": "A~D/consistency_rule에 따라 판단한 짧은 사고 과정", "label": "important 또는 not_important", "matched_criteria": ["해당 항목"], "reason": "keyword가 어떤 맥락과 연결되는지 + 판정 이유", "inferred_from_background_knowledge": true 또는 false, "relevant_roles": ["E가 해당할 때만 채움"]}}
 """
 
 
@@ -304,6 +311,7 @@ def llm_keyword_judge(
             "matched_criteria": [],
             "reason": f"LLM 호출 실패로 판단 불가(안전하게 not_important 처리): {e}",
             "inferred_from_background_knowledge": False,
+            "relevant_roles": [],
             "error": str(e),
         }
 
@@ -314,6 +322,7 @@ def llm_keyword_judge(
         "matched_criteria": result.get("matched_criteria", []),
         "reason": result.get("reason", ""),
         "inferred_from_background_knowledge": result.get("inferred_from_background_knowledge", False),
+        "relevant_roles": result.get("relevant_roles", []),
         "error": None,
     }
 

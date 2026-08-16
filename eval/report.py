@@ -70,6 +70,60 @@ def build_report(pr_judge_results: List[Dict[str, Any]]) -> Dict[str, Any]:
     }
 
 
+def to_frontend_draft_fragment(keyword_results: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    한 PR의 keyword_judge 결과 리스트를, 프론트 PullRequestReviewScreen의 draft 타입 중
+    featureTags/impacts/followUps/checks 4개 필드로 변환한다.
+
+    draft의 나머지 필드(recordType/summary/purpose/before/after/evidence/version)는
+    keyword 하나하나의 중요도 판단이 아니라 PR 전체를 보는 다른 분석 단계에서 채워야 해서
+    여기서는 다루지 않는다.
+
+    variant는 아직 팀에서 심각도 판단 기준이 정해지지 않아서 전부 "info"로 고정해뒀다.
+    기준이 정해지면 이 부분만 바꾸면 된다.
+    """
+    feature_tags: List[str] = []
+    impacts: List[Dict[str, Any]] = []
+    follow_ups: List[Dict[str, Any]] = []
+    checks: List[str] = []
+
+    for idx, judged in enumerate(keyword_results):
+        if judged.get("label") != "important":
+            continue
+
+        keyword = judged.get("keyword", "")
+        matched = set(judged.get("matched_criteria", []))
+        reason = judged.get("reason", "")
+
+        # 문장이 아니라 짧은 단어/구인 것만 태그 후보로 본다 (공백 3개 이하 = 대략 4단어 이하).
+        if keyword and keyword.count(" ") <= 3:
+            feature_tags.append(keyword)
+
+        for role in judged.get("relevant_roles", []):
+            impacts.append({
+                "role": role,
+                "description": reason,
+                "variant": "info",  # TODO: 실제 심각도 기준 정해지면 교체
+            })
+
+        if "B" in matched:
+            follow_ups.append({
+                "id": f"kw-{idx}",
+                "label": keyword,
+                "completed": False,
+            })
+
+        if judged.get("inferred_from_background_knowledge"):
+            checks.append(reason)
+
+    return {
+        "featureTags": feature_tags,
+        "impacts": impacts,
+        "followUps": follow_ups,
+        "checks": checks,
+    }
+
+
 def to_json_report(report: Dict[str, Any]) -> str:
     """기계가 읽을 JSON Report."""
     return json.dumps(report, ensure_ascii=False, indent=2)
