@@ -14,6 +14,12 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = 5432
     POSTGRES_DB: str = "contextory_db"
 
+    # DB 커넥션 풀 크기. job_store(CRUD)와 LlamaIndex 인덱싱/조회가 같은 엔진을 공유하므로,
+    # 동시 요청이 몰릴 때 풀 고갈로 커넥션 체크아웃이 대기(기본 30초 타임아웃)하지 않도록
+    # SQLAlchemy 기본값(5 + overflow 10)보다 넉넉하게 잡는다.
+    DB_POOL_SIZE: int = 10
+    DB_MAX_OVERFLOW: int = 20
+
     # OpenAI Config
     OPENAI_API_KEY: str = ""
     EMBED_DIM: int = 1536

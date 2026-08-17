@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from core.security import verify_internal_api_key
 from models.schemas import PRAnalysisRequest, PRAnalysisResponse
 from services.analysis_service import analyze_pr_pipeline
 
-router = APIRouter(prefix="/api/v1", tags=["Analysis"])
+router = APIRouter(prefix="/api/v1", tags=["Analysis"], dependencies=[Depends(verify_internal_api_key)])
 
 @router.post("/analyze/pr", response_model=PRAnalysisResponse)
 async def analyze_pr(request: PRAnalysisRequest):

@@ -17,6 +17,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from sqlalchemy import BigInteger, Column, DateTime, Index, String, Text, func
+from sqlalchemy.schema import CreateIndex, CreateTable
 from starlette.concurrency import run_in_threadpool
 
 from core.config import settings
@@ -67,18 +68,22 @@ def init_job_store_table() -> None:
     """앱 기동 시 1회 호출: ai_analysis_jobs 테이블과 인덱스가 없으면 생성한다.
 
     저장소에 Alembic 등 마이그레이션 도구가 없어(scripts/index_to_pg.py의
-    init_db()와 동일한 패턴으로) SQLAlchemy metadata.create_all을 사용한다.
-    tables=[...]로 범위를 이 테이블 하나로 한정해 다른 pgvector 테이블에는
-    영향을 주지 않는다.
+    init_db()와 동일한 패턴으로) DDL을 직접 실행한다. tables=[...]로 범위를
+    이 테이블 하나로 한정해 다른 pgvector 테이블에는 영향을 주지 않는다.
 
-    create_all은 테이블이 이미 있으면 인덱스 생성까지 통째로 건너뛴다. 인덱스가
-    추가되기 전에 만들어진 기존 배포본에도 인덱스가 적용되도록 별도로 checkfirst
-    생성을 한 번 더 수행한다.
+    `create_all`/`Index.create`의 `checkfirst=True`는 "존재 여부를 먼저 SELECT로
+    확인한 뒤 조건부로 CREATE를 실행"하는 방식이라 원자적이지 않다(TOCTOU). 이
+    함수는 FastAPI `lifespan`에서 호출되므로 `uvicorn --workers N`으로 기동하면
+    N개 워커가 거의 동시에 호출하며, checkfirst 방식에서는 두 워커가 동시에
+    "테이블 없음"을 확인하고 둘 다 CREATE를 시도해 하나가 DuplicateTable/
+    DuplicateObject 오류로 해당 워커의 기동 자체가 실패할 수 있다. 대신 Postgres가
+    원자적으로 처리하는 `CREATE TABLE IF NOT EXISTS` / `CREATE INDEX IF NOT EXISTS`
+    DDL을 직접 실행해 이 경쟁 조건을 없앤다.
     """
-    Base.metadata.create_all(bind=engine, tables=[AIAnalysisJob.__table__])
     with engine.connect() as conn:
+        conn.execute(CreateTable(AIAnalysisJob.__table__, if_not_exists=True))
         for index in AIAnalysisJob.__table__.indexes:
-            index.create(bind=conn, checkfirst=True)
+            conn.execute(CreateIndex(index, if_not_exists=True))
         conn.commit()
 
 

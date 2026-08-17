@@ -7,8 +7,8 @@ from services.job_store import init_job_store_table
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # ai_analysis_jobs 테이블이 없으면 생성한다 (Alembic 미도입 저장소이므로 create_all 사용).
-    # 멀티 워커 기동 시 각 워커가 동시에 호출해도 checkfirst 기본값 덕분에 안전하다.
+    # ai_analysis_jobs 테이블이 없으면 생성한다 (Alembic 미도입 저장소이므로 DDL 직접 실행).
+    # CREATE TABLE/INDEX IF NOT EXISTS를 사용해 멀티 워커 기동 시 동시 호출에도 안전하다.
     init_job_store_table()
     yield
 
