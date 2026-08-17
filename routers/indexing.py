@@ -1,8 +1,11 @@
-from fastapi import APIRouter, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException
+from core.security import verify_internal_api_key
 from models.schemas import RepoIndexingRequest, RepoIndexingResponse
 from llamaindex.pipeline import index_repository_files
 
-router = APIRouter(prefix="/api/v1/repos", tags=["Repository Indexing"])
+router = APIRouter(
+    prefix="/api/v1/repos", tags=["Repository Indexing"], dependencies=[Depends(verify_internal_api_key)]
+)
 
 
 @router.post("/index", response_model=RepoIndexingResponse, status_code=status.HTTP_200_OK)

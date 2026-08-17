@@ -1,5 +1,6 @@
 import os
 from typing import List, Dict, Any
+import tiktoken
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from openai import OpenAI
@@ -17,11 +18,31 @@ from llamaindex.vector_store import get_vector_store
 
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
+# text-embedding-3-small/large의 입력 한도. 초과 시 OpenAI가 400(Invalid 'input[0]')을 반환한다.
+# PR Diff 전체를 쿼리 텍스트로 사용하므로(services/analysis_service.py._gather_grounded_context)
+# 대형 PR에서는 쉽게 이 한도를 넘길 수 있다.
+_EMBEDDING_MAX_TOKENS = 8192
+
+
+def _truncate_to_token_limit(text_input: str, model: str, max_tokens: int = _EMBEDDING_MAX_TOKENS) -> str:
+    """임베딩 모델의 최대 입력 토큰 수를 넘지 않도록 앞부분 기준으로 자른다."""
+    try:
+        encoding = tiktoken.encoding_for_model(model)
+    except KeyError:
+        encoding = tiktoken.get_encoding("cl100k_base")
+
+    tokens = encoding.encode(text_input)
+    if len(tokens) <= max_tokens:
+        return text_input
+    return encoding.decode(tokens[:max_tokens])
+
+
 def embed_query(text_input: str) -> List[float]:
     """입력받은 PR Diff / 쿼리 텍스트를 1536차원 임베딩 벡터로 변환"""
+    truncated_input = _truncate_to_token_limit(text_input, settings.EMBEDDING_MODEL)
     response = client.embeddings.create(
         model=settings.EMBEDDING_MODEL,
-        input=[text_input]
+        input=[truncated_input]
     )
     return response.data[0].embedding
 

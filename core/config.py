@@ -14,6 +14,12 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = 5432
     POSTGRES_DB: str = "contextory_db"
 
+    # DB 커넥션 풀 크기. job_store(CRUD)와 LlamaIndex 인덱싱/조회가 같은 엔진을 공유하므로,
+    # 동시 요청이 몰릴 때 풀 고갈로 커넥션 체크아웃이 대기(기본 30초 타임아웃)하지 않도록
+    # SQLAlchemy 기본값(5 + overflow 10)보다 넉넉하게 잡는다.
+    DB_POOL_SIZE: int = 10
+    DB_MAX_OVERFLOW: int = 20
+
     # OpenAI Config
     OPENAI_API_KEY: str = ""
     EMBED_DIM: int = 1536
@@ -38,6 +44,13 @@ class Settings(BaseSettings):
     # 🚀 [추가] 내부 API(Backend<->AI) 공유 비밀키. X-Internal-Api-Key 헤더 검증 및
     # 콜백(FastAPI -> Backend) 전송 시 동일 헤더로 사용한다. 콜백 대상 URL은 요청(callbackUrl)에서 받는다.
     INTERNAL_API_KEY: str = ""
+
+    # 🚀 [추가] 비동기 분석 작업(ai_analysis_jobs) 관리 정책
+    # JOB_TIMEOUT_MINUTES: PROCESSING 상태가 이 시간을 넘기면 좀비 작업으로 보고 FAILED 처리한다.
+    #   (서버가 분석 도중 강제 종료되면 해당 행이 영원히 PROCESSING으로 남기 때문)
+    JOB_TIMEOUT_MINUTES: int = 30
+    # JOB_RETENTION_DAYS: 종료(COMPLETED/FAILED)된 작업 행의 보존 기간. 0이면 자동 삭제를 하지 않는다.
+    JOB_RETENTION_DAYS: int = 0
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"

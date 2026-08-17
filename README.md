@@ -43,7 +43,7 @@ AI_service/
 │   ├── confidence.py           # 신뢰도 산출
 │   ├── translation_service.py  # PR 제목/설명 영문 검색쿼리 번역
 │   ├── callback_service.py     # 비동기 분석 완료/실패 Callback 전송
-│   ├── job_store.py            # 비동기 작업 상태 In-Memory 저장소 (단일 프로세스 한정)
+│   ├── job_store.py            # 비동기 작업 상태 저장소 (PostgreSQL ai_analysis_jobs 영속화 + 좀비 작업 정리)
 │   └── repo_index_service.py   # (미사용) 레포 코드 raw SQL 인덱싱 — 현재 어떤 라우터에도 연결되지 않음
 │
 ├── models/                     # Pydantic 스키마
@@ -85,6 +85,12 @@ OPENAI_API_KEY=your_openai_api_key_here
 
 # Internal API (Backend <-> AI) Config
 INTERNAL_API_KEY=your_internal_api_key_here
+
+# 비동기 분석 작업(ai_analysis_jobs) 관리 정책 (선택, 미설정 시 기본값 사용)
+# JOB_TIMEOUT_MINUTES: PROCESSING이 이 시간을 넘기면 좀비로 보고 FAILED 처리 (기본 30)
+# JOB_RETENTION_DAYS: 종료된 작업 행 보존 기간. 0이면 자동 삭제 안 함 (기본 0)
+JOB_TIMEOUT_MINUTES=30
+JOB_RETENTION_DAYS=0
 
 # Google API Config
 GOOGLE_API_KEY=your_google_api_key_here
