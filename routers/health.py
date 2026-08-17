@@ -1,11 +1,14 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+
+from core.security import verify_internal_api_key
 from dependencies import get_db
 
 # main.py의 "/health"는 프로세스 생존 확인(liveness)용이라 DB를 보지 않는다.
 # 이 라우터는 DB 연동까지 확인하는 readiness 체크로 "/api/v1/health"에 등록된다.
-router = APIRouter(prefix="/api/v1", tags=["Health"])
+# 응답에 DB 연결 실패 사유가 담기므로, develop의 보안 방침대로 내부 API 키를 요구한다.
+router = APIRouter(prefix="/api/v1", tags=["Health"], dependencies=[Depends(verify_internal_api_key)])
 
 @router.get(
     "/health", 

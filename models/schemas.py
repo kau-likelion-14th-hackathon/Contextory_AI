@@ -237,6 +237,16 @@ class AsyncAnalysisStatusResponse(CamelModel):
     completed_at: Optional[str] = Field(None, example=None)
 
 
+class JobMaintenanceResponse(CamelModel):
+    """
+    FastAPI -> Spring Boot: 좀비 작업 정리/보존기간 삭제 결과 응답 DTO
+    (POST /internal/v1/analyses/maintenance)
+    """
+    reaped_count: int = Field(..., description="타임아웃으로 FAILED 처리된 좀비 작업 수", example=2)
+    purged_count: int = Field(..., description="보존 기간 초과로 삭제된 작업 수", example=0)
+    timeout_minutes: int = Field(..., description="좀비 판정 기준 시간(분)", example=30)
+
+
 class AnalysisCallbackPayload(CamelModel):
     """
     FastAPI -> Spring Boot: 분석 완료/실패 콜백 DTO (POST {callbackUrl})

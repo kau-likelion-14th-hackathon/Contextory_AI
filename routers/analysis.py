@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from core.security import verify_internal_api_key
 from models.schemas import PRAnalysisRequest, PRAnalysisResponse
 from services.analysis_service import LLMResponseParseError, analyze_pr_pipeline
 from services.retrieval import RetrievalError
 
-router = APIRouter(prefix="/api/v1", tags=["Analysis"])
+router = APIRouter(prefix="/api/v1", tags=["Analysis"], dependencies=[Depends(verify_internal_api_key)])
 
 
 @router.post("/analyze/pr", response_model=PRAnalysisResponse)

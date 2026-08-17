@@ -60,14 +60,35 @@ class RetrievalOutcome:
 # 1. 임베딩 (① PR Diff Embedding)
 # ==========================================
 
+# text-embedding-3-small/large의 입력 한도. 초과 시 OpenAI가 400(Invalid 'input[0]')을 반환한다.
+# PR Diff 전체를 쿼리 텍스트로 쓰므로 대형 PR에서는 쉽게 이 한도를 넘긴다.
+EMBEDDING_MAX_TOKENS = 8192
+
+
+def truncate_to_token_limit(text_input: str, model: Optional[str] = None, max_tokens: int = EMBEDDING_MAX_TOKENS) -> str:
+    """임베딩 모델의 최대 입력 토큰 수를 넘지 않도록 앞부분 기준으로 자른다."""
+    import tiktoken  # 지연 import: 인코딩 파일 로드를 실제 임베딩 시점까지 미룬다
+
+    try:
+        encoding = tiktoken.encoding_for_model(model or settings.EMBEDDING_MODEL)
+    except KeyError:
+        encoding = tiktoken.get_encoding("cl100k_base")
+
+    tokens = encoding.encode(text_input)
+    if len(tokens) <= max_tokens:
+        return text_input
+    return encoding.decode(tokens[:max_tokens])
+
+
 def _default_embed(text_input: str) -> List[float]:
     """
     llamaindex.pipeline.get_embed_model()을 재사용해 임베딩한다.
     (인덱싱 시점과 조회 시점의 임베딩 모델을 단일 지점에서 일치시키기 위함)
+    입력은 모델 토큰 한도로 잘라서 보낸다.
     """
     from llamaindex.pipeline import get_embed_model  # 지연 import: 테스트 시 불필요한 초기화 회피
 
-    return get_embed_model().get_text_embedding(text_input)
+    return get_embed_model().get_text_embedding(truncate_to_token_limit(text_input))
 
 
 def embed_query(text_input: str, embed_fn: Optional[Callable[[str], List[float]]] = None) -> List[float]:

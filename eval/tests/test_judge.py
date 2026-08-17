@@ -2,7 +2,7 @@
 
 import json
 
-from eval.judge import CRITERIA, LLMJudge, OfflineKeywordJudge, offline_keyword_judge
+from eval.judge import CRITERIA, LLMJudge, OfflineKeywordJudge, offline_generation_judge
 from eval.metrics.generation import evaluate_generation, exact_match, hallucination_rate, token_f1
 
 QUESTION = "JWT 로그인 도입 PR: AuthService에 login 추가"
@@ -60,19 +60,19 @@ def test_offline_judge_scores_grounded_answer_high():
 
 
 def test_offline_judge_scores_hallucinated_answer_low():
-    grounded = offline_keyword_judge(question=QUESTION, context=CONTEXT, answer=HALLUCINATED_ANSWER, criterion="groundedness")
-    hallucination = offline_keyword_judge(question=QUESTION, context=CONTEXT, answer=HALLUCINATED_ANSWER, criterion="hallucination")
+    grounded = offline_generation_judge(question=QUESTION, context=CONTEXT, answer=HALLUCINATED_ANSWER, criterion="groundedness")
+    hallucination = offline_generation_judge(question=QUESTION, context=CONTEXT, answer=HALLUCINATED_ANSWER, criterion="hallucination")
 
     assert grounded["score"] < 0.4
     assert hallucination["score"] > 0.6  # hallucination만 '높을수록 나쁨'
 
 
 def test_offline_judge_completeness_uses_reference_keywords():
-    full = offline_keyword_judge(
+    full = offline_generation_judge(
         question=QUESTION, context=CONTEXT, answer=GROUNDED_ANSWER,
         criterion="completeness", reference={"reference_keywords": ["AuthService", "JWT", "SecurityConfig"]},
     )
-    partial = offline_keyword_judge(
+    partial = offline_generation_judge(
         question=QUESTION, context=CONTEXT, answer="AuthService만 수정했다.",
         criterion="completeness", reference={"reference_keywords": ["AuthService", "JWT", "SecurityConfig"]},
     )
@@ -82,14 +82,14 @@ def test_offline_judge_completeness_uses_reference_keywords():
 
 
 def test_offline_judge_without_reference_reports_error_not_fake_score():
-    result = offline_keyword_judge(question=QUESTION, context=CONTEXT, answer=GROUNDED_ANSWER, criterion="completeness")
+    result = offline_generation_judge(question=QUESTION, context=CONTEXT, answer=GROUNDED_ANSWER, criterion="completeness")
 
     assert result["score"] is None
     assert result["error"] == "no_reference"
 
 
 def test_unsupported_criterion_is_rejected():
-    result = offline_keyword_judge(criterion="vibes")
+    result = offline_generation_judge(criterion="vibes")
 
     assert result["score"] is None
     assert result["error"] == "unsupported_criterion"
