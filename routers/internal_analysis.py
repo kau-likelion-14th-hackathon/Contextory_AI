@@ -10,15 +10,31 @@ from models.schemas import (
     AsyncAnalysisStatusResponse,
     AnalysisCallbackPayload,
 )
-from services.analysis_service import analyze_pr_for_callback, build_diff_content
+from services.analysis_service import LLMResponseParseError, analyze_pr_for_callback, build_diff_content
 from services.callback_service import send_analysis_callback, now_iso
 from services.job_store import create_job, update_job_status, get_job
+from services.retrieval import RetrievalError
 
 router = APIRouter(prefix="/internal/v1", tags=["Internal Analysis"])
 
 # 콜백 errorMessage에 SQL/임베딩 벡터 등 내부 구현 세부사항이 그대로 노출되지 않도록 길이를 제한한다.
 # 전체 트레이스백은 서버 로그에 남긴다.
 MAX_CALLBACK_ERROR_LENGTH = 300
+
+# 실패 원인을 Backend가 코드로 구분할 수 있도록 errorMessage 앞에 붙이는 분류 태그.
+# (문자열 필드이므로 기존 계약을 깨지 않는 추가 정보다)
+FAILURE_CODE_RETRIEVAL = "RETRIEVAL_FAILED"
+FAILURE_CODE_LLM_RESPONSE = "LLM_RESPONSE_INVALID"
+FAILURE_CODE_UNEXPECTED = "ANALYSIS_FAILED"
+
+
+def _classify_failure(error: Exception) -> str:
+    """외부 실패를 원인별로 분류한다 (검색/DB · LLM 응답 · 그 외)."""
+    if isinstance(error, RetrievalError):
+        return FAILURE_CODE_RETRIEVAL
+    if isinstance(error, LLMResponseParseError):
+        return FAILURE_CODE_LLM_RESPONSE
+    return FAILURE_CODE_UNEXPECTED
 
 
 def _check_internal_api_key(x_internal_api_key: str) -> None:
@@ -39,8 +55,13 @@ def _run_analysis_job(request: AsyncAnalysisRequest, job_id: str) -> None:
             completed_at=now_iso(),
         )
     except Exception as e:
-        print(f"[Analysis Job Failed] job_id={job_id} analysis_id={request.analysis_id}\n{traceback.format_exc()}")
-        error_summary = str(e).splitlines()[0][:MAX_CALLBACK_ERROR_LENGTH]
+        failure_code = _classify_failure(e)
+        print(
+            f"[Analysis Job Failed] job_id={job_id} analysis_id={request.analysis_id} "
+            f"code={failure_code}\n{traceback.format_exc()}"
+        )
+        detail = (str(e).splitlines() or [""])[0]
+        error_summary = f"[{failure_code}] {detail}"[:MAX_CALLBACK_ERROR_LENGTH]
         payload = AnalysisCallbackPayload(
             job_id=job_id,
             status="FAILED",

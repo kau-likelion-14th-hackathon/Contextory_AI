@@ -50,10 +50,41 @@ AI_service/
 │   └── schemas.py              # Request/Response API DTO (동기/비동기, camelCase 내부 API 포함)
 │
 ├── llamaindex/                 # LlamaIndex VectorStore / Ingestion 파이프라인
-│   ├── pipeline.py             # repo_code_vectors(data_repo_code_vectors) Upsert/Delete 인덱싱
+│   ├── pipeline.py             # repo_code_vectors(data_repo_code_vectors) Upsert/Delete 인덱싱 + 임베딩 모델 단일 지점
 │   └── vector_store.py         # PostgreSQL pgvector PGVectorStore 연동 및 관리
 │
-└── tests/                      # 테스트 코드
+├── eval/                       # 평가 시스템 (services/를 절대 import하지 않음 — callback 주입식)
+│   ├── runner.py               # Filter OFF/ON 비교 실행, Ground Truth / Reference-Free 분기
+│   ├── judge.py                # LLM Judge(주입식) + Offline Keyword Judge(LLM 없이 동작)
+│   ├── report.py               # Text/JSON 리포트, Fake Confidence 판정
+│   ├── error_analysis.py       # 실패 단계 분류(Retrieval→Ranking→Filter→Context→Interpretation→Generation→Hallucination)
+│   ├── fakes.py                # LLM·DB 없이 돌리기 위한 가짜 callback 모음
+│   ├── metrics/                # retrieval / filtering / generation / retrieval_signals (전부 순수 함수)
+│   ├── datasets/               # ground_truth, loader(JSONL), codereview_adapters, silver_builder
+│   └── data/                   # 최소 샘플 Ground Truth (sample_ground_truth.jsonl)
+│
+├── scripts/                    # 실행 스크립트 — services와 eval을 연결하는 유일한 조립 계층
+│   ├── index_to_pg.py          # 임베딩·적재 로직 (노트북/CLI 공용 라이브러리)
+│   ├── load_code_review_subset.py  # code_review_vectors 서브셋 적재 CLI (--dry-run 비용 추정 지원)
+│   ├── create_vector_indexes.py    # pgvector hnsw ANN 인덱스 생성/점검 (기본 dry-run)
+│   ├── eval_adapters.py        # services(필터·Confidence·검색·생성) → eval callback 어댑터
+│   ├── run_eval.py             # Filter OFF/ON 비교 리포트 실행 (offline / live 모드)
+│   └── build_eval_dataset.py   # 평가 데이터셋 생성 (codereview / fromdb / silver)
+│
+└── tests/                      # 런타임(services/routers) 테스트 — DB·LLM은 전부 주입/mock
+```
+
+### RAG Runtime Data Flow
+
+```
+routers/analysis.py (POST /api/v1/analyze/pr) / routers/internal_analysis.py (POST /internal/v1/analyses)
+    ▼ services/analysis_service.py  (PipelineContext로 각 단계 산출물 추적)
+    ① PR Diff Embedding          → llamaindex/pipeline.get_embed_model() 재사용
+    ② PGVector Similarity Search → services/retrieval.py (근거 충분성 신호 포함)
+    ③ Context Filter Agent       → services/context_filter.py (FILTER_MODE=on|off|llm, Top-1 무조건 보존, 제거분도 반환)
+    ④ Grounded Prompt            → services/prompt_builder.py (필터 통과 Context만 주입)
+    ⑤ GPT-4o Structured Output   → JSON 강제, 파싱 실패 시 LLMResponseParseError
+    ⑥ Confidence                 → services/confidence.py (검색 신호 기반, LLM 자기평가 금지)
 ```
 
 ---
@@ -115,5 +146,83 @@ CREATE EXTENSION IF NOT EXISTS vector;
 # Uvicorn 서버 구동
 uvicorn main:app --reload
 ```
+
+---
+
+## 🧪 테스트 & 평가 (Evaluation-Driven Development)
+
+### 테스트
+```bash
+# 런타임 + 평가 테스트 (OpenAI/DB 호출 없음 — 전부 주입/mock)
+pytest tests/ eval/tests/ -q
+```
+
+### Filter OFF vs ON 비교 리포트
+`eval/` 은 `services/` 를 import하지 않는다. 실제 필터·신뢰도 로직을 평가에 연결하는 조립은
+`scripts/eval_adapters.py` + `scripts/run_eval.py` 가 담당하며, `offline` 모드는 LLM·DB 없이 끝까지 실행된다.
+
+```bash
+# offline(기본): fixture 검색기 + 템플릿 생성기 + Offline Keyword Judge
+#                필터·Confidence는 실제 services 로직을 주입한다
+python -m scripts.run_eval
+
+# 임계값을 높인 실행을 함께 비교 (필터가 gold를 지우는 상황 확인)
+python -m scripts.run_eval --strict-threshold 0.9
+
+# Confidence를 '평균 유사도' 취약 공식으로 바꿔 Fake Confidence 판정이 잡히는지 확인
+python -m scripts.run_eval --strict-threshold 0.9 --vulnerable-confidence
+
+# live 검색만: 실제 pgvector 검색·필터·Confidence 검증 (임베딩 비용만, GPT 미호출)
+python -m scripts.run_eval --live --no-generation \
+    --dataset eval/data/live_selfretrieval_cases.jsonl --strict-threshold 0.9
+
+# live 전체: 실제 검색 + GPT-4o 생성 + LLM Judge (호출 비용 발생)
+python -m scripts.run_eval --live --dataset eval/data/live_selfretrieval_cases.jsonl \
+    --criteria faithfulness,completeness,answer_relevance
+
+# JSON 리포트
+python -m scripts.run_eval --json
+```
+
+### 평가 데이터 준비 (라이브 평가용 셋업 순서)
+
+```bash
+# 1) 벡터 데이터 서브셋 적재 (먼저 --dry-run 으로 건수·비용 추정)
+python -m scripts.load_code_review_subset --limit 300 --dry-run
+python -m scripts.load_code_review_subset --limit 300
+
+# 2) ANN 인덱스 생성 (코사인 hnsw). 대량 적재는 "적재 후 인덱스 생성"이 빠르다
+python -m scripts.create_vector_indexes --apply
+
+# 3) 적재된 실제 id로 self-retrieval 평가 케이스 생성 (DB 조회만, LLM 미호출)
+python -m scripts.build_eval_dataset fromdb --limit 10
+
+# (선택) 외부 코드리뷰 JSONL → 평가 포맷. gold id가 cr-{index}라 live 평가엔 부적합
+python -m scripts.build_eval_dataset codereview --limit 20
+
+# (선택) 실제 검색 결과로 silver 라벨 생성 (회귀 비교 전용)
+python -m scripts.build_eval_dataset silver --input eval/data/codereview_cases.jsonl
+```
+
+> gold chunk id는 `services.retrieval.make_review_chunk_id()` 한 곳에서만 정의한다.
+> `fromdb` 데이터셋은 이 함수로 gold를 만들기 때문에 런타임 검색 결과와 그대로 맞물린다.
+> 반면 `codereview` 데이터셋의 `cr-{index}`는 DB id와 무관하므로 `--live` 평가에 쓰면 지표가 0으로 나온다.
+
+### 측정 지표
+
+| 구분 | 지표 | 위치 |
+| --- | --- | --- |
+| 검색 | Precision@K, Recall@K, MRR, Hit Rate, Retrieval Failure Rate | `eval/metrics/retrieval.py` |
+| 필터 | filter_ratio, gold_retained, false_deletion, recall_delta@K | `eval/metrics/filtering.py` |
+| 생성 | Groundedness/Faithfulness, Completeness, Answer/Context Relevance, Hallucination, EM, F1 | `eval/metrics/generation.py` |
+| 신뢰 신호 | Top Score, Evidence 수, Strong Evidence 수, Filter Ratio | `eval/metrics/retrieval_signals.py` |
+
+### Fake Confidence 판정 규칙 (`eval/report.py`)
+
+| 조건 | 판정 |
+| --- | --- |
+| Confidence↑ AND Precision↑ AND Faithfulness↑ AND recall_delta ≥ 0 AND false_deletion = 0 | 정상 개선 |
+| Confidence↑ BUT (recall_delta < 0 OR false_deletion > 0) | ⚠ Fake Confidence — 필터 threshold 하향 권고 |
+| filter_ratio > `FILTER_RATIO_WARN_THRESHOLD` | Confidence와 무관하게 "⚠ 검색 품질 확인 필요" |
 
 ---

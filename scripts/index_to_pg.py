@@ -7,8 +7,12 @@ from pgvector.sqlalchemy import Vector
 from openai import OpenAI, RateLimitError
 import tiktoken
 
-# 1. OpenAI 클라이언트 초기화 (환경변수 OPENAI_API_KEY 사용)
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# 1. OpenAI 클라이언트 초기화
+# .env는 pydantic-settings(core.config)가 읽으므로 셸 환경변수만 보면 키를 못 찾아 import 자체가 실패한다.
+# 환경변수를 우선 쓰고, 없으면 settings(.env) 값으로 폴백한다.
+from core.config import settings  # noqa: E402
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY") or settings.OPENAI_API_KEY or None)
 
 # 2. OpenAI 토큰 계산기 (cl100k_base: text-embedding-3-small 용)
 tokenizer = tiktoken.get_encoding("cl100k_base")

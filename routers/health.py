@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from dependencies import get_db
 
-router = APIRouter(tags=["Health"])
+# main.py의 "/health"는 프로세스 생존 확인(liveness)용이라 DB를 보지 않는다.
+# 이 라우터는 DB 연동까지 확인하는 readiness 체크로 "/api/v1/health"에 등록된다.
+router = APIRouter(prefix="/api/v1", tags=["Health"])
 
 @router.get(
     "/health", 

@@ -60,3 +60,7 @@ Thumbs.db
 data/
 *.parquet
 *.csv
+
+# 단, 평가용 최소 샘플 데이터셋은 저장소에 포함한다 (eval/data/)
+!eval/data/
+!eval/data/**
