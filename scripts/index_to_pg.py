@@ -134,7 +134,7 @@ def embed_and_insert_safe(df: pd.DataFrame, engine, batch_size=10, delay_seconds
                 embeddings = [data.embedding for data in response.data]
                 break
 
-            except RateLimitError as e:
+            except RateLimitError:
                 wait_time = (attempt + 1) * 5
                 print(f"\n⚠️ Rate Limit(429) 감지 (시도 {attempt+1}/5): {wait_time}초 대기...")
                 time.sleep(wait_time)
