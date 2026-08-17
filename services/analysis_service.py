@@ -29,7 +29,8 @@ from models.schemas import (
 from services.retrieval import RetrievalOutcome, retrieve_with_signals
 from services.context_filter import FilterOutcome, filter_contexts, filter_contexts_with_llm
 from services.prompt_builder import (
-    PRInput, ProjectInfo, SYSTEM_INSTRUCTION, build_grounded_prompt,
+    ALLOWED_BASIS, ALLOWED_ROLES, EVIDENCE_SOURCE_CONTEXT, EVIDENCE_SOURCE_DIFF, PRInput,
+    ProjectInfo, RecordDraftOutput, build_system_prompt, build_user_prompt,
 )
 from services.confidence import ConfidenceOutcome, calculate_confidence
 
@@ -37,6 +38,7 @@ INSUFFICIENT_GROUNDING_SUMMARY = (
     "이번 PR을 설명할 만한 프로젝트 컨텍스트를 충분히 찾지 못했습니다. "
     "AI 초안 대신 사람이 직접 확인해 주세요."
 )
+EMPTY_DIFF_SUMMARY = "코드 diff가 비어 있어 변경 내용을 분석할 수 없습니다."
 
 
 class LLMResponseParseError(RuntimeError):
@@ -50,6 +52,7 @@ class PipelineContext:
     query_text: str = ""
     retrieval: Optional[RetrievalOutcome] = None
     filtering: Optional[FilterOutcome] = None
+    system_prompt: Optional[str] = None
     prompt: Optional[str] = None
     llm_raw: Optional[str] = None
     llm_output: Dict[str, Any] = field(default_factory=dict)
@@ -114,21 +117,41 @@ def _make_default_filter(query_text: str) -> Callable[[List[Dict[str, Any]]], Fi
 # ⑤ GPT-4o Structured Response
 # ==========================================
 
-def _default_generate(system_instruction: str, prompt: str) -> str:
-    """OpenAI Chat Completions(JSON mode) 호출. 원문 문자열을 그대로 반환한다."""
+def _default_generate(system_prompt: str, user_prompt: str) -> str:
+    """
+    OpenAI Structured Output 호출.
+
+    RecordDraftOutput(Pydantic) 으로 JSON 스키마를 강제하고 그대로 파싱하므로
+    자유 텍스트 후처리 파싱이 필요 없다. 반환값은 정규화된 JSON 문자열이며,
+    이후 파이프라인은 주입된 generate_fn과 동일한 인터페이스(문자열)를 그대로 쓴다.
+    """
     from openai import OpenAI  # 지연 import: API Key 없이도 모듈 import가 가능하도록
 
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
-    response = client.chat.completions.create(
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
+
+    # SDK 버전에 따라 parse()가 client.chat.completions / client.beta.chat.completions 에 있다.
+    completions = client.chat.completions
+    if not hasattr(completions, "parse"):
+        completions = client.beta.chat.completions
+
+    response = completions.parse(
         model=settings.LLM_MODEL,
-        messages=[
-            {"role": "system", "content": system_instruction},
-            {"role": "user", "content": prompt},
-        ],
-        response_format={"type": "json_object"},
+        messages=messages,
+        response_format=RecordDraftOutput,
         temperature=0.2,
     )
-    return response.choices[0].message.content
+
+    message = response.choices[0].message
+    if getattr(message, "refusal", None):
+        raise LLMResponseParseError(f"LLM이 응답을 거부했습니다: {message.refusal}")
+    if message.parsed is None:
+        raise LLMResponseParseError("LLM 응답을 출력 스키마로 파싱하지 못했습니다.")
+
+    return message.parsed.model_dump_json()
 
 
 def parse_llm_json(raw: Optional[str]) -> Dict[str, Any]:
@@ -171,6 +194,17 @@ def run_pipeline(
     """
     ctx = PipelineContext()
 
+    # ⓪ diff가 비어 있으면 분석할 대상이 없다 — LLM을 호출하지 않고 확인 필요 경로로 처리한다.
+    if not pr.has_diff:
+        ctx.grounding_sufficient = False
+        ctx.notes.append("코드 diff가 비어 있어 분석을 진행하지 않았습니다.")
+        ctx.llm_output = {
+            "summary": EMPTY_DIFF_SUMMARY,
+            "needsConfirmation": ["코드 diff가 비어 있음 — PR에 실제 변경이 있는지 확인 필요"],
+        }
+        ctx.confidence = calculate_confidence([], 0.0)
+        return ctx
+
     # ① 쿼리 구성 (+ 검색 정밀도용 영문 번역)
     translate = translate_fn or _default_translate
     translated = translate(pr.title, pr.body)
@@ -198,18 +232,18 @@ def run_pipeline(
         ctx.notes.append(f"근거 부족: {ctx.retrieval.reason}")
         ctx.llm_output = {
             "summary": INSUFFICIENT_GROUNDING_SUMMARY,
-            "needsConfirmation": True,
-            "confirmationItems": [ctx.retrieval.reason or "검색된 근거가 부족합니다."],
+            "needsConfirmation": [ctx.retrieval.reason or "검색된 근거가 부족합니다."],
         }
         ctx.confidence.needs_confirmation = True
         return ctx
 
     # ④ Grounded Prompt (필터 통과 Context만)
-    ctx.prompt = build_grounded_prompt(pr=pr, filtered_contexts=ctx.kept, project=project)
+    ctx.system_prompt = build_system_prompt(project)
+    ctx.prompt = build_user_prompt(pr=pr, filtered_contexts=ctx.kept, project=project)
 
     # ⑤ 구조화 출력 생성 + 파싱 (실패 시 예외 전파)
     generate = generate_fn or _default_generate
-    ctx.llm_raw = generate(SYSTEM_INSTRUCTION, ctx.prompt)
+    ctx.llm_raw = generate(ctx.system_prompt, ctx.prompt)
     ctx.llm_output = parse_llm_json(ctx.llm_raw)
 
     return ctx
@@ -219,20 +253,29 @@ def run_pipeline(
 # 응답 매핑
 # ==========================================
 
-def _needs_confirmation(ctx: PipelineContext) -> bool:
-    """LLM이 스스로 표시한 확인 필요 + 검색 신호 기반 확인 필요를 OR로 합친다."""
-    llm_flag = bool(ctx.llm_output.get("needsConfirmation", False))
-    signal_flag = bool(ctx.confidence.needs_confirmation) if ctx.confidence else True
-    return llm_flag or signal_flag or not ctx.grounding_sufficient
-
-
 def _confirmation_items(ctx: PipelineContext) -> List[str]:
-    items = [str(i) for i in ctx.llm_output.get("confirmationItems", []) if str(i).strip()]
+    """
+    확인 필요 사항(needsConfirmation) 목록.
+    LLM이 적은 항목 + 검색 신호로 판단한 항목을 합친다.
+    """
+    raw = ctx.llm_output.get("needsConfirmation")
+    if isinstance(raw, bool):        # 구버전 출력(bool) 하위 호환
+        raw = []
+    items = [str(i).strip() for i in (raw or []) if str(i).strip()]
+
     if ctx.confidence and ctx.confidence.retrieval_quality_warning:
         items.append(
             f"검색 결과의 {ctx.filter_ratio:.0%}가 필터링되었습니다. 검색 품질(인덱싱 범위·임계값) 확인이 필요합니다."
         )
+    if not ctx.grounding_sufficient and not items:
+        items.append("검색된 근거가 부족합니다 — 사람이 직접 확인 필요")
     return items
+
+
+def _needs_confirmation(ctx: PipelineContext) -> bool:
+    """동기 API의 bool 필드용 — 확인 항목이 있거나 검색 신호가 나쁘면 True (하위 호환 유지)"""
+    signal_flag = bool(ctx.confidence.needs_confirmation) if ctx.confidence else True
+    return bool(_confirmation_items(ctx)) or signal_flag or not ctx.grounding_sufficient
 
 
 def _build_evidences(ctx: PipelineContext) -> List[Evidence]:
@@ -254,37 +297,58 @@ def _build_evidences(ctx: PipelineContext) -> List[Evidence]:
 
 def _build_evidence_refs(ctx: PipelineContext) -> List[EvidenceRef]:
     """
-    콜백용 EvidenceRef — LLM이 각 판단에 연결한 근거(설명 포함)를 우선 싣고,
-    LLM이 인용하지 않은 필터 통과 chunk도 추적 가능하도록 뒤에 덧붙인다.
-    """
-    score_by_chunk = {c.get("chunk_id"): c.get("similarity_score") for c in ctx.kept}
-    refs: List[EvidenceRef] = []
-    cited: set = set()
+    분석 근거(evidence) 목록.
 
-    for item in ctx.llm_output.get("evidence", []) or []:
+    LLM이 각 판단에 연결한 근거(id/source/location/description)를 그대로 싣고,
+    location이 검색 chunk를 가리키면 유사도를 붙여 추적 가능하게 한다.
+    LLM이 인용하지 않은 필터 통과 chunk도 뒤에 덧붙여 "무엇을 보여줬는지"를 남긴다.
+    """
+    kept_by_chunk = {str(c.get("chunk_id")): c for c in ctx.kept}
+    refs: List[EvidenceRef] = []
+    used_ids: set = set()
+    cited_chunks: set = set()
+
+    for idx, item in enumerate(ctx.llm_output.get("evidence", []) or [], 1):
         if not isinstance(item, dict):
             continue
-        chunk_id = _nullable_str(item.get("chunkId") or item.get("chunk_id"))
-        cited.add(chunk_id)
+        location = _nullable_str(item.get("location"))
+        source = _nullable_str(item.get("source")) or (
+            EVIDENCE_SOURCE_CONTEXT if location in kept_by_chunk else EVIDENCE_SOURCE_DIFF
+        )
+        chunk = kept_by_chunk.get(location or "")
+        if chunk is not None:
+            cited_chunks.add(str(chunk.get("chunk_id")))
+
+        evidence_id = _nullable_str(item.get("id")) or f"e{idx}"
+        used_ids.add(evidence_id)
         refs.append(
             EvidenceRef(
-                chunk_id=chunk_id,
-                file_path=_nullable_str(item.get("filePath") or item.get("file_path")),
-                diff_location=_nullable_str(item.get("diffLocation") or item.get("diff_location")),
+                id=evidence_id,
+                source=source,
+                location=location,
                 description=_nullable_str(item.get("description")),
-                similarity_score=score_by_chunk.get(chunk_id),
+                chunk_id=str(chunk.get("chunk_id")) if chunk is not None else None,
+                similarity_score=chunk.get("similarity_score") if chunk is not None else None,
             )
         )
 
-    for c in ctx.kept:
-        if c.get("chunk_id") in cited:
+    # LLM이 인용하지 않은 컨텍스트도 근거 목록에 남긴다(무엇을 보여줬는지 추적).
+    for offset, c in enumerate(ctx.kept, 1):
+        chunk_id = str(c.get("chunk_id"))
+        if chunk_id in cited_chunks:
             continue
+        candidate = f"c{offset}"
+        while candidate in used_ids:
+            offset += len(ctx.kept)
+            candidate = f"c{offset}"
+        used_ids.add(candidate)
         refs.append(
             EvidenceRef(
-                chunk_id=c.get("chunk_id"),
-                file_path=c.get("file_path"),
-                diff_location=None,
+                id=candidate,
+                source=EVIDENCE_SOURCE_CONTEXT,
+                location=c.get("file_path") or chunk_id,
                 description=None,
+                chunk_id=chunk_id,
                 similarity_score=c.get("similarity_score"),
             )
         )
@@ -333,18 +397,41 @@ def _str_list(value: Any) -> List[str]:
     return [str(v) for v in value if str(v).strip()]
 
 
+def _allowed_roles(value: Any) -> List[str]:
+    """
+    affectedRoles를 허용 역할 목록으로 제한한다.
+    프롬프트 규칙 7("근거 없는 역할을 만들지 않는다")을 코드에서도 강제해,
+    LLM이 만들어낸 임의 역할(예: "개발자")이 응답에 새는 것을 막는다.
+    """
+    roles = []
+    for role in _str_list(value):
+        name = role.strip()
+        if name in ALLOWED_ROLES and name not in roles:
+            roles.append(name)
+    return roles
+
+
 def _role_impacts(value: Any) -> List[Dict[str, Any]]:
+    """roleImpacts 정규화 — 허용 역할만, basis는 허용 값만 남긴다."""
     if not isinstance(value, list):
         return []
+
     parsed = []
     for item in value:
         if not isinstance(item, dict) or not item.get("role"):
             continue
+        role = str(item.get("role")).strip()
+        if role not in ALLOWED_ROLES:
+            continue
+        basis = _nullable_str(item.get("basis"))
         parsed.append(
             {
-                "role": str(item.get("role")),
+                "role": role,
                 "impact": str(item.get("impact", "")),
-                "evidence_ids": _str_list(item.get("evidenceIds") or item.get("evidence_ids")),
+                "basis": basis if basis in ALLOWED_BASIS else None,
+                "evidence_refs": _str_list(
+                    item.get("evidenceRefs") or item.get("evidence_refs") or item.get("evidenceIds")
+                ),
             }
         )
     return parsed
@@ -393,7 +480,7 @@ def analyze_pr_pipeline(
         before=out.get("before"),
         after=out.get("after"),
         related_features=_str_list(out.get("relatedFeatures")),
-        affected_roles=_str_list(out.get("affectedRoles")),
+        affected_roles=_allowed_roles(out.get("affectedRoles")),
         role_impacts=[RoleImpact(**ri) for ri in _role_impacts(out.get("roleImpacts"))],
         follow_up_tasks=_str_list(out.get("followUpTasks")),
         confirmation_items=_confirmation_items(ctx),
@@ -425,7 +512,21 @@ def analyze_pr_for_callback(
     ctx = run_pipeline(pr=pr, repo_name=request.repository_full_name, project=project, **injected)
     out = ctx.llm_output
 
+    role_impacts = _role_impacts(out.get("roleImpacts"))
+    evidence = _build_evidence_refs(ctx)
+    follow_up_tasks = _str_list(out.get("followUpTasks"))
+
+    # 기존 콜백 계약 필드(changes/impacts/recommendations)는 새 출력 스키마에 대응 항목이 없다.
+    # LLM에 같은 내용을 두 번 만들게 하지 않고, 새 스키마를 기존 필드로 투영(projection)한다.
+    #   changes         ← evidence 중 현재 PR diff 근거
+    #   impacts         ← 역할별 영향
+    #   recommendations ← 후속 작업
+    #   risks           ← 대응 항목 없음(빈 배열). LLM이 값을 내면 그대로 통과시킨다.
     changes = [
+        AnalysisChangeItem(file_path=e.location or "unknown", description=e.description or "")
+        for e in evidence
+        if e.source == EVIDENCE_SOURCE_DIFF and (e.location or e.description)
+    ] or [
         AnalysisChangeItem(
             file_path=_nullable_str(c.get("filePath") or c.get("file_path")) or "unknown",
             description=str(c.get("description", "")),
@@ -433,24 +534,27 @@ def analyze_pr_for_callback(
         for c in out.get("changes", []) or []
         if isinstance(c, dict)
     ]
+    impacts = _str_list(out.get("impacts")) or [
+        f"{ri['role']}: {ri['impact']}" for ri in role_impacts if ri.get("impact")
+    ]
+    recommendations = _str_list(out.get("recommendations")) or follow_up_tasks
 
     return AnalysisResultPayload(
         summary=str(out.get("summary", "")) or INSUFFICIENT_GROUNDING_SUMMARY,
         changes=changes,
-        impacts=_str_list(out.get("impacts")),
+        impacts=impacts,
         risks=_str_list(out.get("risks")),
-        recommendations=_str_list(out.get("recommendations")),
+        recommendations=recommendations,
         purpose=out.get("purpose"),
         change_reason=out.get("changeReason"),
         before=out.get("before"),
         after=out.get("after"),
         related_features=_str_list(out.get("relatedFeatures")),
-        affected_roles=_str_list(out.get("affectedRoles")),
-        role_impacts=[RoleImpactItem(**ri) for ri in _role_impacts(out.get("roleImpacts"))],
-        follow_up_tasks=_str_list(out.get("followUpTasks")),
-        needs_confirmation=_needs_confirmation(ctx),
-        confirmation_items=_confirmation_items(ctx),
-        evidence=_build_evidence_refs(ctx),
+        affected_roles=_allowed_roles(out.get("affectedRoles")),
+        role_impacts=[RoleImpactItem(**ri) for ri in role_impacts],
+        follow_up_tasks=follow_up_tasks,
+        needs_confirmation=_confirmation_items(ctx),
+        evidence=evidence,
         confidence=ctx.confidence.score if ctx.confidence else 0.0,
         retrieval_quality_warning=bool(ctx.confidence.retrieval_quality_warning) if ctx.confidence else False,
     )

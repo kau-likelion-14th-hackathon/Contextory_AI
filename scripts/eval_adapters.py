@@ -18,7 +18,9 @@ from core.config import settings
 from services.analysis_service import parse_llm_json
 from services.confidence import calculate_confidence
 from services.context_filter import filter_contexts, filter_contexts_with_llm
-from services.prompt_builder import PRInput, ProjectInfo, SYSTEM_INSTRUCTION, build_grounded_prompt
+from services.prompt_builder import (
+    PRInput, ProjectInfo, RecordDraftOutput, build_system_prompt, build_user_prompt,
+)
 from services.retrieval import retrieve_with_signals
 
 
@@ -99,11 +101,9 @@ def make_live_generate_fn(
     """
 
     def generate_fn(query: str, contexts: List[Dict[str, Any]]) -> Dict[str, Any]:
-        prompt = build_grounded_prompt(
-            pr=PRInput(title=query[:200], body="", diff=query),
-            filtered_contexts=contexts,
-            project=project,
-        )
+        pr = PRInput(title=query[:200], body="", diff=query)
+        system_prompt = build_system_prompt(project)
+        user_prompt = build_user_prompt(pr=pr, filtered_contexts=contexts, project=project)
 
         nonlocal client
         if client is None:
@@ -111,22 +111,28 @@ def make_live_generate_fn(
 
             client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
-        response = client.chat.completions.create(
+        completions = client.chat.completions
+        if not hasattr(completions, "parse"):
+            completions = client.beta.chat.completions
+
+        response = completions.parse(
             model=model or settings.LLM_MODEL,
             messages=[
-                {"role": "system", "content": SYSTEM_INSTRUCTION},
-                {"role": "user", "content": prompt},
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
             ],
-            response_format={"type": "json_object"},
+            response_format=RecordDraftOutput,
             temperature=0.2,
         )
-        output = parse_llm_json(response.choices[0].message.content)
+        output = parse_llm_json(response.choices[0].message.parsed.model_dump_json())
 
+        # 평가용 answer 텍스트: 기록 초안의 핵심 서술 + 역할별 영향 + 후속 작업
         parts = [
             str(output.get(key, ""))
             for key in ("summary", "purpose", "changeReason", "before", "after")
             if output.get(key)
         ]
+        parts += [f"{ri.get('role')}: {ri.get('impact')}" for ri in output.get("roleImpacts", []) or []]
         parts += [str(item) for item in output.get("followUpTasks", []) or []]
         return {"answer": "\n".join(parts), "raw": output}
 

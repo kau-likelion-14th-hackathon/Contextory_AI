@@ -37,10 +37,14 @@ class CodeReviewComment(BaseModel):
 class RoleImpact(BaseModel):
     """
     프로젝트 기록 초안의 역할별 영향 DTO (실제 변경과 연결되는 역할만 생성)
+
+    허용 역할: 프론트엔드 / 백엔드 / AI / 기획 / 디자인 / QA / 프로젝트 관리자
+    basis: "확인된 사실"(diff에서 직접 확인) 또는 "변경 기반 예상"(사실로부터 추론)
     """
-    role: str = Field(..., description="영향을 받는 팀 역할", example="Frontend")
-    impact: str = Field(..., description="해당 역할이 받는 구체적 영향", example="로그인 응답에서 accessToken을 저장하도록 수정 필요")
-    evidence_ids: List[str] = Field(default_factory=list, description="판단 근거가 된 chunk_id / diff 위치", example=["ctx-1", "src/auth/AuthService.java"])
+    role: str = Field(..., description="영향을 받는 팀 역할", example="프론트엔드")
+    impact: str = Field(..., description="그 역할이 실제로 확인·수정해야 하는 내용", example="message 기반 오류 분기를 errorCode 기반으로 수정해야 한다")
+    basis: Optional[str] = Field(None, description="확인된 사실 | 변경 기반 예상", example="변경 기반 예상")
+    evidence_refs: List[str] = Field(default_factory=list, description="근거 evidence[].id 참조", example=["e1"])
 
 
 class CodeFileChunk(BaseModel):
@@ -180,21 +184,24 @@ class AnalysisChangeItem(CamelModel):
 
 class EvidenceRef(CamelModel):
     """
-    콜백 계약(camelCase)에서 사용하는 근거 참조 DTO.
-    주요 판단마다 "어느 chunk / 어느 파일 / 어느 diff 위치"를 근거로 삼았는지 연결한다.
+    분석 근거 DTO (프론트 "분석 근거" 항목).
+    roleImpacts[].evidenceRefs 가 이 항목의 id를 참조해 "이 영향의 근거 보기"로 연결된다.
     """
-    chunk_id: Optional[str] = Field(None, description="검색 Context 식별자", example="ctx-1")
-    file_path: Optional[str] = Field(None, description="근거 파일 경로", example="src/main/java/auth/AuthService.java")
-    diff_location: Optional[str] = Field(None, description="근거가 된 diff 위치(hunk 헤더 등)", example="@@ -21,7 +21,18 @@")
-    description: Optional[str] = Field(None, description="이 근거로 무엇을 판단했는지", example="JWT 필터 등록으로 인증 방식이 변경됨")
+    id: str = Field(..., description="근거 식별자 (roleImpacts[].evidenceRefs가 참조)", example="e1")
+    source: str = Field(..., description="pr_diff(현재 PR diff) | context(검색된 기존 컨텍스트)", example="pr_diff")
+    location: Optional[str] = Field(None, description="파일 경로 또는 chunk_id", example="src/main/java/auth/LoginResponse.java")
+    description: Optional[str] = Field(None, description="이 근거에서 확인되는 내용", example="errorCode 필드 추가 및 오류 응답 생성부 변경")
+    # 검색 근거일 때만 채워지는 추적용 부가 정보
+    chunk_id: Optional[str] = Field(None, description="검색 Context 식별자", example="cr-1")
     similarity_score: Optional[float] = Field(None, description="검색 유사도 점수", example=0.87)
 
 
 class RoleImpactItem(CamelModel):
     """콜백 계약(camelCase)의 역할별 영향 DTO"""
-    role: str = Field(..., example="Frontend")
-    impact: str = Field(..., example="로그인 응답에서 accessToken을 저장하도록 수정 필요")
-    evidence_ids: List[str] = Field(default_factory=list, example=["ctx-1"])
+    role: str = Field(..., example="프론트엔드")
+    impact: str = Field(..., example="message 기반 오류 분기를 errorCode 기반으로 수정해야 한다")
+    basis: Optional[str] = Field(None, description="확인된 사실 | 변경 기반 예상", example="변경 기반 예상")
+    evidence_refs: List[str] = Field(default_factory=list, description="evidence[].id 참조", example=["e1"])
 
 
 class AnalysisResultPayload(CamelModel):
@@ -210,7 +217,10 @@ class AnalysisResultPayload(CamelModel):
     risks: List[str] = Field(default_factory=list)
     recommendations: List[str] = Field(default_factory=list)
 
-    # 🚀 [추가] 프로젝트 기록 초안 필드 (기획 기준 camelCase로 직렬화됨)
+    # 🚀 [추가] 프로젝트 기록 초안 필드 — 프론트 표시 10개 항목 (camelCase로 직렬화됨)
+    #   작업 요약 summary / 작업 목적 purpose / 변경 이유 changeReason / 변경 전 before /
+    #   변경 후 after / 관련 기능 relatedFeatures / 영향받는 역할 affectedRoles /
+    #   역할별 영향 roleImpacts / 확인 필요 사항 needsConfirmation / 분석 근거 evidence
     purpose: Optional[str] = None
     change_reason: Optional[str] = None
     before: Optional[str] = None
@@ -219,8 +229,8 @@ class AnalysisResultPayload(CamelModel):
     affected_roles: List[str] = Field(default_factory=list)
     role_impacts: List[RoleImpactItem] = Field(default_factory=list)
     follow_up_tasks: List[str] = Field(default_factory=list)
-    needs_confirmation: bool = False
-    confirmation_items: List[str] = Field(default_factory=list)
+    # 확인 필요 사항 목록. 비어 있으면 사람이 추가로 확인할 항목이 없다는 뜻이다.
+    needs_confirmation: List[str] = Field(default_factory=list)
     evidence: List[EvidenceRef] = Field(default_factory=list)
     confidence: float = 0.0
     retrieval_quality_warning: bool = False

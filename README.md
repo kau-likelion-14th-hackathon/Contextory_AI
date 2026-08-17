@@ -83,7 +83,8 @@ routers/analysis.py (POST /api/v1/analyze/pr) / routers/internal_analysis.py (PO
     ② PGVector Similarity Search → services/retrieval.py (근거 충분성 신호 포함)
     ③ Context Filter Agent       → services/context_filter.py (FILTER_MODE=on|off|llm, Top-1 무조건 보존, 제거분도 반환)
     ④ Grounded Prompt            → services/prompt_builder.py (필터 통과 Context만 주입)
-    ⑤ GPT-4o Structured Output   → JSON 강제, 파싱 실패 시 LLMResponseParseError
+    ⑤ GPT-4o Structured Output   → RecordDraftOutput(Pydantic)으로 JSON 스키마 강제,
+                                   파싱 실패/거부 시 LLMResponseParseError
     ⑥ Confidence                 → services/confidence.py (검색 신호 기반, LLM 자기평가 금지)
 ```
 
@@ -222,6 +223,30 @@ python -m scripts.build_eval_dataset silver --input eval/data/codereview_cases.j
 | 필터 | filter_ratio, gold_retained, false_deletion, recall_delta@K | `eval/metrics/filtering.py` |
 | 생성 | Groundedness/Faithfulness, Completeness, Answer/Context Relevance, Hallucination, EM, F1 | `eval/metrics/generation.py` |
 | 신뢰 신호 | Top Score, Evidence 수, Strong Evidence 수, Filter Ratio | `eval/metrics/retrieval_signals.py` |
+
+### 분석 결과 출력 스키마 (프론트 표시 항목 ↔ JSON 키)
+
+`services/prompt_builder.py` 의 `RecordDraftOutput` 이 프롬프트의 출력 스키마와 1:1로 대응하며,
+GPT 호출 시 이 모델로 JSON 스키마를 강제해 그대로 파싱한다(자유 텍스트 후처리 없음).
+
+| 프론트 표시 항목 | JSON 키 | 타입 |
+| --- | --- | --- |
+| 작업 요약 | `summary` | string |
+| 작업 목적 | `purpose` | string (근거 없으면 `"확인 필요"`) |
+| 변경 이유 | `changeReason` | string (근거 없으면 `"확인 필요"`) |
+| 변경 전 / 변경 후 | `before` / `after` | string |
+| 관련 기능 | `relatedFeatures` | string[] |
+| 영향받는 역할 | `affectedRoles` | string[] (아래 7개 값만) |
+| 역할별 영향 | `roleImpacts` | `{role, impact, basis, evidenceRefs}[]` |
+| 확인 필요 사항 | `needsConfirmation` | string[] |
+| 분석 근거 | `evidence` | `{id, source, location, description}[]` |
+
+- `affectedRoles` 허용 값: 프론트엔드, 백엔드, AI, 기획, 디자인, QA, 프로젝트 관리자
+  (허용 목록 밖 역할은 `services/analysis_service._allowed_roles` 에서 걸러낸다)
+- `roleImpacts[].basis`: `"확인된 사실"`(diff에서 직접 확인) 또는 `"변경 기반 예상"`(추론)
+- `roleImpacts[].evidenceRefs` → `evidence[].id` 참조 (프론트 "이 영향의 근거 보기")
+- `evidence[].source`: `pr_diff`(현재 PR) 또는 `context`(검색된 기존 컨텍스트)
+- diff가 비어 있거나 검색 근거가 부족하면 **LLM을 호출하지 않고** `needsConfirmation` 경로로 응답한다
 
 ### Fake Confidence 판정 규칙 (`eval/report.py`)
 

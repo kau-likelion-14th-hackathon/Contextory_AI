@@ -1,55 +1,72 @@
 """
-LLM 출력 정규화 회귀 테스트
+LLM 출력 정규화 / 응답 매핑 회귀 테스트
 
-라이브 호출에서 실제로 발견된 결함들을 고정한다.
-  - GPT가 JSON null 대신 문자열 "null"을 내보내 chunk_id="null"이 응답에 실렸다
-  - riskScore가 문자열/범위 밖 값으로 와도 0~100 정수로 응답해야 한다
-  - reviews / changes 가 프롬프트 스키마에 없어 항상 빈 배열이었다(하위 호환 회귀)
+라이브 호출과 명세 변경 과정에서 실제로 문제가 됐던 지점들을 고정한다.
+  - GPT가 JSON null 대신 문자열 "null"을 내보내 응답에 그대로 실렸다
+  - 허용되지 않은 역할("개발자" 등)을 만들어내면 응답에서 걸러야 한다
+  - needsConfirmation은 string[] 이고, 검색 신호로 판단한 항목도 합쳐야 한다
+  - roleImpacts[].basis / evidence[].id·source·location 매핑
+  - diff가 비어 있으면 LLM을 호출하지 않고 확인 필요 경로로 나간다
 """
 
 import json
 
 import pytest
 
-from models.schemas import PRAnalysisRequest
+from models.schemas import PRAnalysisRequest, PullRequestFile, PullRequestInfo, AsyncAnalysisRequest
 from services.analysis_service import (
-    _nullable_int, _nullable_str, _risk_score, analyze_pr_pipeline,
+    EMPTY_DIFF_SUMMARY, _allowed_roles, _nullable_int, _nullable_str, _risk_score,
+    analyze_pr_for_callback, analyze_pr_pipeline,
 )
 from services.context_filter import filter_contexts
-from services.prompt_builder import _OUTPUT_SCHEMA_SECTION
+from services.prompt_builder import ALLOWED_ROLES, BASIS_EXPECTED, OUTPUT_SCHEMA_SECTION
 from services.retrieval import build_outcome
 
 CHUNKS = [
     {"chunk_id": "cr-1", "id": "1", "source_type": "code_review", "similarity_score": 0.88,
-     "text": "JWT 필터", "review_comment": "JWT 필터"},
+     "text": "JWT 필터", "review_comment": "JWT 필터", "file_path": None},
 ]
 
 LLM_OUTPUT = {
     "summary": "요약",
-    "riskScore": "45",
-    "reviews": [
-        {"file_path": "AuthService.java", "line_number": "21", "comment": "필터 순서 확인"},
-        {"file_path": "null", "line_number": "null", "comment": "전체 구조 검토"},
-        {"file_path": "X.java", "line_number": None, "comment": "   "},          # 빈 코멘트 → 제외
+    "purpose": "목적",
+    "changeReason": "확인 필요",
+    "before": "before",
+    "after": "after",
+    "relatedFeatures": ["로그인"],
+    "affectedRoles": ["프론트엔드", "개발자", "QA"],          # "개발자"는 허용 목록 밖 → 제거되어야 함
+    "roleImpacts": [
+        {"role": "프론트엔드", "impact": "오류 분기 수정", "basis": BASIS_EXPECTED, "evidenceRefs": ["e1"]},
+        {"role": "개발자", "impact": "임의 역할", "basis": BASIS_EXPECTED, "evidenceRefs": []},
+        {"role": "QA", "impact": "테스트 추가", "basis": "아무말", "evidenceRefs": ["e1"]},  # basis 허용값 아님 → None
     ],
-    "changes": [{"filePath": "null", "description": "설명"}],
+    "followUpTasks": ["리프레시 토큰 정책 정의"],
+    "needsConfirmation": ["변경 이유가 PR 본문에 없음 — PR 작성자에게 확인 필요"],
     "evidence": [
-        {"chunkId": "null", "filePath": "None", "diffLocation": "@@ -1 +1 @@", "description": "판단 근거"},
-        {"chunkId": "cr-1", "filePath": None, "diffLocation": None, "description": "직접 근거"},
+        {"id": "e1", "source": "pr_diff", "location": "AuthService.java", "description": "login 추가"},
+        {"id": "e2", "source": "context", "location": "cr-1", "description": "과거 리뷰 지적"},
     ],
 }
 
 
-def _run(output):
-    request = PRAnalysisRequest(
+def _request(diff: str = "@@ -1 +1 @@\n+login()") -> PRAnalysisRequest:
+    return PRAnalysisRequest(
         pr_id=1, repo_name="org/contextory", title="t", description="d",
-        diff_content="@@ -1 +1 @@", author="dev",
+        diff_content=diff, author="dev",
     )
+
+
+def _run(output=None, diff: str = "@@ -1 +1 @@\n+login()", generate_calls=None):
+    def generate(system_prompt, user_prompt):
+        if generate_calls is not None:
+            generate_calls.append((system_prompt, user_prompt))
+        return json.dumps(output if output is not None else LLM_OUTPUT, ensure_ascii=False)
+
     return analyze_pr_pipeline(
-        request,
+        _request(diff),
         retrieve_fn=lambda **kwargs: build_outcome(CHUNKS, sim_threshold=0.5, min_evidence_count=1),
         filter_fn=lambda chunks: filter_contexts(chunks, sim_threshold=0.5, filter_mode="on"),
-        generate_fn=lambda system, prompt: json.dumps(output, ensure_ascii=False),
+        generate_fn=generate,
         translate_fn=lambda title, body: "q",
     )
 
@@ -77,46 +94,128 @@ def test_risk_score_is_clamped_int(raw, expected):
     assert _risk_score({"riskScore": raw}) == expected
 
 
-def test_risk_score_accepts_snake_case_key():
-    assert _risk_score({"risk_score": 30}) == 30
+def test_allowed_roles_filters_invented_roles():
+    assert _allowed_roles(["프론트엔드", "개발자", "QA", "프론트엔드"]) == ["프론트엔드", "QA"]
+    assert _allowed_roles("문자열") == []
+    assert set(_allowed_roles(list(ALLOWED_ROLES))) == set(ALLOWED_ROLES)
 
 
 # ==========================================
 # 응답 매핑
 # ==========================================
 
-def test_string_null_does_not_leak_into_evidence():
-    response = _run(LLM_OUTPUT)
+def test_affected_roles_and_role_impacts_are_restricted():
+    response = _run()
 
-    # 동기 응답의 evidences는 실제 검색 chunk 기반이라 "null"이 있을 수 없다
+    assert response.affected_roles == ["프론트엔드", "QA"]        # "개발자" 제거
+    assert [ri.role for ri in response.role_impacts] == ["프론트엔드", "QA"]
+    assert response.role_impacts[0].basis == BASIS_EXPECTED
+    assert response.role_impacts[1].basis is None                # 허용값 아닌 basis는 버린다
+    assert response.role_impacts[0].evidence_refs == ["e1"]
+
+
+def test_needs_confirmation_items_are_collected():
+    response = _run()
+
+    assert response.needs_confirmation is True                   # 동기 API는 bool 유지(하위 호환)
+    assert "변경 이유가 PR 본문에 없음 — PR 작성자에게 확인 필요" in response.confirmation_items
+
+
+def test_record_draft_fields_are_mapped():
+    response = _run()
+
+    assert response.purpose == "목적"
+    assert response.change_reason == "확인 필요"
+    assert response.before == "before" and response.after == "after"
+    assert response.related_features == ["로그인"]
+    assert response.follow_up_tasks == ["리프레시 토큰 정책 정의"]
+
+
+def test_string_null_does_not_leak_into_evidence():
+    output = {**LLM_OUTPUT, "evidence": [{"id": "null", "source": "null", "location": "None", "description": "설명"}]}
+
+    payload = analyze_pr_for_callback(
+        AsyncAnalysisRequest(
+            analysisId=1, projectId=1, repositoryId=1, repositoryFullName="org/contextory",
+            pullRequest=PullRequestInfo(
+                githubPrId=1, prNumber=1, title="t", body="b", headSha="a1",
+                sourceBranch="f", targetBranch="d",
+                files=[PullRequestFile(filePath="AuthService.java", changeType="MODIFIED", patch="@@ +login()")],
+            ),
+            language="ko", callbackUrl="https://example.com/cb",
+        ),
+        retrieve_fn=lambda **kwargs: build_outcome(CHUNKS, sim_threshold=0.5, min_evidence_count=1),
+        filter_fn=lambda chunks: filter_contexts(chunks, sim_threshold=0.5, filter_mode="on"),
+        generate_fn=lambda system_prompt, user_prompt: json.dumps(output, ensure_ascii=False),
+        translate_fn=lambda title, body: "q",
+    )
+
+    body = payload.model_dump(by_alias=True)
+    first = body["evidence"][0]
+    assert first["id"] == "e1"           # 문자열 "null" → 자동 부여 id
+    assert first["location"] is None     # "None" → None
+    assert body["needsConfirmation"]     # string[] 계약
+
+
+def test_callback_projects_new_schema_onto_legacy_fields():
+    payload = analyze_pr_for_callback(
+        AsyncAnalysisRequest(
+            analysisId=1, projectId=1, repositoryId=1, repositoryFullName="org/contextory",
+            pullRequest=PullRequestInfo(
+                githubPrId=1, prNumber=1, title="t", body="b", headSha="a1",
+                sourceBranch="f", targetBranch="d",
+                files=[PullRequestFile(filePath="AuthService.java", changeType="MODIFIED", patch="@@ +login()")],
+            ),
+            language="ko", callbackUrl="https://example.com/cb",
+        ),
+        retrieve_fn=lambda **kwargs: build_outcome(CHUNKS, sim_threshold=0.5, min_evidence_count=1),
+        filter_fn=lambda chunks: filter_contexts(chunks, sim_threshold=0.5, filter_mode="on"),
+        generate_fn=lambda system_prompt, user_prompt: json.dumps(LLM_OUTPUT, ensure_ascii=False),
+        translate_fn=lambda title, body: "q",
+    )
+
+    body = payload.model_dump(by_alias=True)
+    # changes ← pr_diff 근거 / impacts ← 역할별 영향 / recommendations ← 후속 작업
+    assert body["changes"][0]["filePath"] == "AuthService.java"
+    assert body["impacts"] == ["프론트엔드: 오류 분기 수정", "QA: 테스트 추가"]
+    assert body["recommendations"] == ["리프레시 토큰 정책 정의"]
+    assert body["roleImpacts"][0]["basis"] == BASIS_EXPECTED
+    assert body["evidence"][1]["chunkId"] == "cr-1"       # location이 chunk를 가리키면 추적 정보 부착
+    assert body["evidence"][1]["similarityScore"] == 0.88
+
+
+def test_evidence_includes_unused_context():
+    """LLM이 인용하지 않은 컨텍스트도 '무엇을 보여줬는지' 남긴다."""
+    output = {**LLM_OUTPUT, "evidence": [{"id": "e1", "source": "pr_diff", "location": "x.java", "description": "d"}]}
+
+    response = _run(output)
+
+    # 동기 응답의 evidences는 필터 통과 chunk 기반
     assert [e.chunk_id for e in response.evidences] == ["cr-1"]
 
 
-def test_reviews_are_populated_and_cleaned():
-    response = _run(LLM_OUTPUT)
+# ==========================================
+# 빈 diff 경로
+# ==========================================
 
-    assert len(response.reviews) == 2                       # 빈 코멘트 1건 제외
-    assert response.reviews[0].file_path == "AuthService.java"
-    assert response.reviews[0].line_number == 21
-    assert response.reviews[1].file_path is None            # "null" → None
-    assert response.reviews[1].line_number is None
+def test_empty_diff_skips_llm_and_returns_confirmation_path():
+    calls = []
+    response = _run(diff="   ", generate_calls=calls)
 
-
-def test_risk_score_is_parsed_from_string():
-    assert _run(LLM_OUTPUT).risk_score == 45
-
-
-def test_prompt_schema_requests_backward_compatible_fields():
-    """프롬프트가 reviews/changes/riskScore를 요구해야 기존 응답 필드가 채워진다."""
-    for field in ('"reviews"', '"changes"', '"riskScore"'):
-        assert field in _OUTPUT_SCHEMA_SECTION
-    assert "0~100" in _OUTPUT_SCHEMA_SECTION
+    assert calls == []                                   # LLM 미호출
+    assert response.summary == EMPTY_DIFF_SUMMARY
+    assert response.grounding_sufficient is False
+    assert response.needs_confirmation is True
+    assert any("diff" in item for item in response.confirmation_items)
 
 
-def test_prompt_forbids_inventing_roles():
-    from services.prompt_builder import PRInput, ProjectInfo, build_grounded_prompt
+# ==========================================
+# 프롬프트 ↔ 스키마 정합성
+# ==========================================
 
-    prompt = build_grounded_prompt(pr=PRInput(title="t", diff="d"), filtered_contexts=[], project=ProjectInfo())
-
-    assert "팀 역할: (정보 없음)" in prompt
-    assert "빈 배열로 두고" in prompt
+def test_prompt_schema_matches_front_display_items():
+    for field in (
+        '"summary"', '"purpose"', '"changeReason"', '"before"', '"after"',
+        '"relatedFeatures"', '"affectedRoles"', '"roleImpacts"', '"needsConfirmation"', '"evidence"',
+    ):
+        assert field in OUTPUT_SCHEMA_SECTION

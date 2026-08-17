@@ -15,6 +15,7 @@ from services.context_filter import filter_contexts
 from services.prompt_builder import PRInput
 from services.retrieval import RetrievalError, build_outcome
 
+# 프론트 표시 10개 항목 스키마 (services/prompt_builder.RecordDraftOutput)
 LLM_OUTPUT = {
     "summary": "JWT 기반 인증을 도입했다.",
     "purpose": "모바일 클라이언트 인증 유지",
@@ -22,17 +23,16 @@ LLM_OUTPUT = {
     "before": "세션 인증",
     "after": "JWT 인증",
     "relatedFeatures": ["로그인"],
-    "affectedRoles": ["Backend"],
-    "roleImpacts": [{"role": "Backend", "impact": "토큰 검증 필터 추가", "evidenceIds": ["cr-1"]}],
+    "affectedRoles": ["백엔드"],
+    "roleImpacts": [
+        {"role": "백엔드", "impact": "토큰 검증 필터 추가", "basis": "확인된 사실", "evidenceRefs": ["e1"]}
+    ],
     "followUpTasks": ["리프레시 토큰 만료 정책 정의"],
-    "needsConfirmation": False,
-    "confirmationItems": [],
-    "evidence": [{"chunkId": "cr-1", "filePath": None, "diffLocation": "@@ -21,7 +21,18 @@", "description": "필터 등록"}],
-    "risks": ["토큰 탈취"],
-    "recommendations": ["만료 시간 축소 검토"],
-    "riskScore": 30,
-    "reviews": [{"file_path": "AuthService.java", "line_number": 21, "comment": "필터 순서 확인"}],
-    "changes": [{"filePath": "AuthService.java", "description": "login 추가"}],
+    "needsConfirmation": [],
+    "evidence": [
+        {"id": "e1", "source": "pr_diff", "location": "AuthService.java", "description": "JWT 필터 등록"},
+        {"id": "e2", "source": "context", "location": "cr-1", "description": "과거 리뷰 지적"},
+    ],
 }
 
 CHUNKS = [
@@ -180,16 +180,19 @@ def test_sync_response_keeps_backward_compatible_fields():
         translate_fn=lambda title, body: "q",
     )
 
-    # 기존 계약 필드
+    # 기존 계약 필드 (필드 자체는 유지된다 — 하위 호환)
     assert response.pr_id == 101
     assert response.summary == LLM_OUTPUT["summary"]
-    assert response.risk_score == 30
-    assert response.reviews[0].comment == "필터 순서 확인"
     assert response.evidences[0].chunk_id == "cr-1"
     assert response.filter_ratio == 0.5
-    # 추가된 기록 초안 필드
+    # 새 출력 스키마에는 riskScore/reviews가 없으므로 기본값으로 남는다 (백엔드 합의 필요 항목)
+    assert response.risk_score == 0
+    assert response.reviews == []
+    # 기록 초안 필드
     assert response.purpose == LLM_OUTPUT["purpose"]
-    assert response.role_impacts[0].role == "Backend"
+    assert response.role_impacts[0].role == "백엔드"
+    assert response.role_impacts[0].basis == "확인된 사실"
+    assert response.role_impacts[0].evidence_refs == ["e1"]
     assert response.grounding_sufficient is True
 
 
@@ -219,11 +222,18 @@ def test_callback_payload_serializes_camel_case():
 
     body = payload.model_dump(by_alias=True)
     assert body["summary"] == LLM_OUTPUT["summary"]
-    assert body["changes"][0]["filePath"] == "AuthService.java"
     assert body["changeReason"] == LLM_OUTPUT["changeReason"]
-    assert body["evidence"][0]["chunkId"] == "cr-1"
-    assert body["roleImpacts"][0]["role"] == "Backend"
+    assert body["roleImpacts"][0]["role"] == "백엔드"
     assert body["confidence"] > 0
+    # 분석 근거: id/source/location/description + 검색 근거에는 chunkId·유사도가 붙는다
+    assert body["evidence"][0]["id"] == "e1"
+    assert body["evidence"][0]["source"] == "pr_diff"
+    assert body["evidence"][1]["chunkId"] == "cr-1"
+    # 기존 필드는 새 스키마를 투영해 채운다
+    assert body["changes"][0]["filePath"] == "AuthService.java"
+    assert body["impacts"] == ["백엔드: 토큰 검증 필터 추가"]
+    assert body["recommendations"] == LLM_OUTPUT["followUpTasks"]
+    assert body["needsConfirmation"] == []
 
 
 def test_prompt_excludes_removed_chunks():
