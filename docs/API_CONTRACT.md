@@ -265,11 +265,27 @@ projects:
 ### 레포 코드 인덱싱 (AI 파트 운영)
 
 ```bash
+# 대상·비용 추정 후 적재
 python -m scripts.index_repo_code --path . \
-    --repo-name kau-likelion-14th-hackathon/Contextory_AI --dry-run   # 대상·비용 추정
+    --repo-name kau-likelion-14th-hackathon/Contextory_AI --dry-run
 python -m scripts.index_repo_code --path . \
-    --repo-name kau-likelion-14th-hackathon/Contextory_AI             # 실제 적재
+    --repo-name kau-likelion-14th-hackathon/Contextory_AI
+
+# 백엔드 저장소도 동일하게 (Java 파일 포함)
+python -m scripts.index_repo_code --path ../Contextory_BackEnd \
+    --repo-name kau-likelion-14th-hackathon/Contextory_BackEnd
 ```
+
+현재 적재 현황 (2026-08-18):
+
+| repo_name | chunks |
+| --- | --- |
+| `kau-likelion-14th-hackathon/Contextory_AI` | 325 |
+| `kau-likelion-14th-hackathon/Contextory_BackEnd` | 229 |
+
+> 인덱싱되지 않은 저장소의 PR은 유사도가 임계값에 못 미쳐 **"근거 부족" 경로**로 빠진다.
+> 실제로 백엔드 인덱싱 전에는 백엔드 PR의 최고 유사도가 0.4624(< 0.5)라 LLM이 호출되지 않았고,
+> 인덱싱 후에는 0.6008로 올라 정상 분석됐다.
 
 - git 저장소면 `git ls-files` 를 쓰므로 `.gitignore` 가 자동 반영된다
 - `--repo-name` 은 검색 격리 키다. 분석 요청의 `repo_name` / `repositoryFullName` 과 **정확히 같아야** 검색된다
