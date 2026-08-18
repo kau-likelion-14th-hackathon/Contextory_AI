@@ -10,6 +10,13 @@
 #   (목록 밖 값은 로드 시 제거된다 — 임의 역할이 프롬프트에 들어가는 것을 막기 위함)
 # - 항목이 없으면 default 가 쓰이고, default 도 없으면 프롬프트에 "(정보 없음)"으로 표기되어
 #   affectedRoles / roleImpacts 를 만들지 않는다.
+#
+# 아래 내용은 각 저장소의 실제 코드·문서에서 확인한 것이다.
+#   - description/purpose: OffCourse_FrontEnd(README.md) 문구 기준
+#   - features: 각 저장소의 실제 도메인·라우트 구성
+#   - roles: 실제 저장소 구성(프론트/백엔드/AI)과 기획 역할 기준.
+#     팀에 디자인·QA·프로젝트 관리자가 있다면 해당 저장소 항목에 추가할 것.
+#     (없는 역할을 넣으면 AI가 그 역할의 영향을 만들어내므로 실제 있는 역할만 적는다)
 
 default:
   language: ko
@@ -18,34 +25,43 @@ default:
     - 백엔드
     - AI
     - 기획
-    - 디자인
-    - QA
-    - 프로젝트 관리자
 
 projects:
+  # ── AI 서버 (이 저장소) ────────────────────────────────────────────────
   "kau-likelion-14th-hackathon/Contextory_AI":
     name: Contextory
-    description: GitHub PR을 AI가 분석해 프로젝트 기록 초안을 만들고, 사람이 검토·승인해 프로젝트 메모리에 축적하는 서비스
+    description: GitHub에서 발생한 작업과 변경을 AI 분석 초안으로 정리하고, 사람이 검토·승인한 내용을 프로젝트 메모리로 축적하는 웹 기반 협업 서비스
     purpose: 팀원이 "이 변경이 왜 이렇게 됐는지"를 나중에 검색해 이해할 수 있게 한다
     features:
-      - PR 분석 및 프로젝트 기록 초안 생성
-      - 기록 검토·승인 후 프로젝트 메모리 축적
-      - pgvector 기반 프로젝트 컨텍스트 검색(RAG)
-    roles:
-      - 프론트엔드
-      - 백엔드
-      - AI
-      - 기획
+      - PR 분석 RAG 파이프라인 (pgvector 검색 → Context Filter → Grounded Prompt → 구조화 출력 → Confidence)
+      - 프로젝트 코드 인덱싱 및 프로젝트 컨텍스트 검색
+      - 비동기 분석 작업 처리와 분석 완료/실패 콜백 전송
+      - RAG 품질 평가 시스템 (검색·필터·생성 지표, Filter OFF/ON 비교)
+    roles: [프론트엔드, 백엔드, AI, 기획]
 
+  # ── 백엔드 ────────────────────────────────────────────────────────────
   "kau-likelion-14th-hackathon/Contextory_BackEnd":
     name: Contextory
-    description: Contextory 백엔드 (GitHub 연동, 분석 요청·콜백 수신, 기록 저장)
+    description: GitHub에서 발생한 작업과 변경을 AI 분석 초안으로 정리하고, 사람이 검토·승인한 내용을 프로젝트 메모리로 축적하는 웹 기반 협업 서비스
     purpose: 팀원이 "이 변경이 왜 이렇게 됐는지"를 나중에 검색해 이해할 수 있게 한다
     features:
-      - GitHub PR 웹훅 수신 및 AI 분석 요청
-      - 분석 결과 콜백 저장 및 기록 승인 플로우
-    roles:
-      - 프론트엔드
-      - 백엔드
-      - AI
-      - 기획
+      - GitHub 연동 (OAuth 로그인, App 설치, 저장소·PR 조회)
+      - 프로젝트 생성과 멤버·초대 관리
+      - AI 분석 요청·상태 조회·결과 콜백 수신 및 저장
+      - 카카오 로그인 및 사용자 인증
+    roles: [프론트엔드, 백엔드, AI, 기획]
+
+  # ── 프론트엔드 ────────────────────────────────────────────────────────
+  # 주의: 저장소 이름이 OffCourse_FrontEnd 지만 내용은 Contextory 프론트엔드다
+  # (README.md 첫 줄이 "# Contextory Frontend"). 이전 프로젝트 저장소를 재사용한 것으로 보인다.
+  # repo_name 매칭은 GitHub 저장소 이름 기준이므로 여기에도 실제 이름으로 등록한다.
+  "kau-likelion-14th-hackathon/OffCourse_FrontEnd":
+    name: Contextory
+    description: GitHub에서 발생한 작업과 변경을 AI 분석 초안으로 정리하고, 사람이 검토·승인한 내용을 프로젝트 메모리로 축적하는 웹 기반 협업 서비스
+    purpose: 팀원이 "이 변경이 왜 이렇게 됐는지"를 나중에 검색해 이해할 수 있게 한다
+    features:
+      - 프로젝트 생성·설정 및 초대 수락 화면
+      - GitHub 저장소·PR 목록과 상세 화면
+      - AI 분석 결과 상세 화면
+      - 프로젝트 기록(records) 목록·상세 화면
+    roles: [프론트엔드, 백엔드, AI, 기획]
