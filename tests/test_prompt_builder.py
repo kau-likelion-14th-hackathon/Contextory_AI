@@ -164,3 +164,17 @@ def test_record_draft_output_parses_spec_example():
     assert draft.needsConfirmation
     assert draft.riskScore == 40
     assert draft.reviews[0].lineNumber == 12
+
+
+def test_prompt_has_grounded_rules_for_optional_fields():
+    """
+    followUpTasks / reviews 는 스키마에만 넣으면 LLM이 '지어내지 말라'는 규칙 때문에
+    스스로 빈 배열을 택한다. 실제로 생성되게 하려면 분석 규칙 쪽에 근거 기반 지시가 있어야 한다.
+    (실측: 규칙 없을 때 4회 연속 빈 배열 → 규칙 추가 후 생성됨)
+    """
+    prompt = build_system_prompt(PROJECT)
+
+    assert "[후속 작업 규칙]" in prompt
+    assert "누군가 해야 할 일" in prompt          # needsConfirmation과의 구분
+    assert "일반론" in prompt                    # 지어내기 방지
+    assert "[검토 지점 규칙]" in prompt

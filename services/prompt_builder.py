@@ -113,6 +113,15 @@ SYSTEM_PROMPT_TEMPLATE = """당신은 Contextory의 PR 분석가다.
    - diff에 보이지 않는 코드를 근거로 지적하지 않는다. filePath는 diff에 등장한 경로만 쓴다.
    - 정말로 확인할 지점이 없을 때만 빈 배열로 둔다.
 
+[후속 작업 규칙]
+7-2. followUpTasks에는 이번 변경 때문에 팀이 실제로 처리해야 하는 일을 적는다.
+   needsConfirmation이 "물어봐야 할 것"이라면, followUpTasks는 "누군가 해야 할 일"이다.
+   - diff에서 확인된 변경으로부터 직접 도출되는 것만 쓴다
+     (예: 클라이언트 오류 분기 수정, 마이그레이션 스크립트 작성, 관련 문서·정책 갱신, 테스트 추가)
+   - "코드 품질 개선" 같은 일반론이나 이번 diff와 무관한 제안은 쓰지 않는다
+   - roleImpacts에 적은 영향 중 실제 작업이 필요한 것은 여기에도 작업 형태로 적는다
+   - 정말로 없을 때만 빈 배열로 둔다
+
 [근거 연결 규칙]
 8. 모든 주요 판단(요약·전후·역할별 영향)은 evidence 배열의 항목과 연결한다.
    evidence에는 근거가 된 파일 경로, diff 내용 요약, 또는 컨텍스트 chunk id를 적는다.
@@ -178,7 +187,7 @@ OUTPUT_SCHEMA_SECTION = """[출력 스키마 — 아래 JSON 객체 하나만 �
       "evidenceRefs": ["e1"]
     }
   ],
-  "followUpTasks": ["근거가 있는 후속 작업만. 없으면 빈 배열"],
+  "followUpTasks": ["이번 변경 때문에 실제로 처리해야 할 일 (diff에서 도출되는 것만)"],
   "needsConfirmation": [
     "확인이 필요한 내용 — 무엇을, 왜, 가능하면 누구에게"
   ],
