@@ -40,7 +40,11 @@ LLM_OUTPUT = {
         {"role": "개발자", "impact": "임의 역할", "basis": BASIS_EXPECTED, "evidenceRefs": []},
         {"role": "QA", "impact": "테스트 추가", "basis": "아무말", "evidenceRefs": ["e1"]},  # basis 허용값 아님 → None
     ],
-    "followUpTasks": ["리프레시 토큰 정책 정의"],
+    "followUpTasks": [
+        {"role": "백엔드", "task": "리프레시 토큰 정책 정의", "evidenceRefs": ["e1"]},
+        {"role": "개발자", "task": "담당 미상 작업", "evidenceRefs": []},   # 허용 밖 역할 → role=None
+        {"role": "", "task": "   ", "evidenceRefs": []},                    # 빈 task → 제외
+    ],
     "needsConfirmation": ["변경 이유가 PR 본문에 없음 — PR 작성자에게 확인 필요"],
     "evidence": [
         {"id": "e1", "source": "pr_diff", "location": "AuthService.java", "description": "login 추가"},
@@ -128,7 +132,10 @@ def test_record_draft_fields_are_mapped():
     assert response.change_reason == "확인 필요"
     assert response.before == "before" and response.after == "after"
     assert response.related_features == ["로그인"]
-    assert response.follow_up_tasks == ["리프레시 토큰 정책 정의"]
+    assert [(t.role, t.task, t.evidence_refs) for t in response.follow_up_tasks] == [
+        ("백엔드", "리프레시 토큰 정책 정의", ["e1"]),
+        (None, "담당 미상 작업", []),          # 허용 밖 역할은 담당 미정으로, 작업은 유지
+    ]
 
 
 def test_string_null_does_not_leak_into_evidence():
@@ -178,7 +185,9 @@ def test_callback_projects_new_schema_onto_legacy_fields():
     # changes ← pr_diff 근거 / impacts ← 역할별 영향 / recommendations ← 후속 작업
     assert body["changes"][0]["filePath"] == "AuthService.java"
     assert body["impacts"] == ["프론트엔드: 오류 분기 수정", "QA: 테스트 추가"]
-    assert body["recommendations"] == ["리프레시 토큰 정책 정의"]
+    assert body["recommendations"] == ["백엔드: 리프레시 토큰 정책 정의", "담당 미상 작업"]
+    assert body["followUpTasks"][0] == {"role": "백엔드", "task": "리프레시 토큰 정책 정의", "evidenceRefs": ["e1"]}
+    assert body["followUpTasks"][1]["role"] is None      # 허용 밖 역할 → 담당 미정
     assert body["roleImpacts"][0]["basis"] == BASIS_EXPECTED
     assert body["evidence"][1]["chunkId"] == "cr-1"       # location이 chunk를 가리키면 추적 정보 부착
     assert body["evidence"][1]["similarityScore"] == 0.88

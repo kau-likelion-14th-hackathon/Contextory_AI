@@ -47,6 +47,18 @@ class RoleImpact(BaseModel):
     evidence_refs: List[str] = Field(default_factory=list, description="근거 evidence[].id 참조", example=["e1"])
 
 
+class FollowUpTask(BaseModel):
+    """
+    역할별 후속 작업 DTO.
+
+    `needs_confirmation`("물어봐야 할 것")과 달리 "누군가 실제로 해야 할 일"이다.
+    role은 허용 역할 7종 중 하나이며, 담당을 특정할 수 없으면 None으로 둔다(지어내지 않는다).
+    """
+    role: Optional[str] = Field(None, description="작업을 수행할 역할 (특정 불가 시 None)", example="프론트엔드")
+    task: str = Field(..., description="처리해야 할 작업", example="message 기반 오류 분기를 errorCode 기반으로 수정")
+    evidence_refs: List[str] = Field(default_factory=list, description="근거 evidence[].id 참조", example=["e1"])
+
+
 class CodeFileChunk(BaseModel):
     """
     레포지토리 인덱싱을 위한 단일 코드 파일/조각 DTO
@@ -95,7 +107,7 @@ class PRAnalysisResponse(BaseModel):
     related_features: List[str] = Field(default_factory=list, description="이번 변경과 연결된 기능 목록")
     affected_roles: List[str] = Field(default_factory=list, description="영향을 받는 팀 역할 목록", example=["Backend", "Frontend"])
     role_impacts: List["RoleImpact"] = Field(default_factory=list, description="역할별 영향 상세")
-    follow_up_tasks: List[str] = Field(default_factory=list, description="후속 작업 목록")
+    follow_up_tasks: List["FollowUpTask"] = Field(default_factory=list, description="역할별 후속 작업 목록")
     confirmation_items: List[str] = Field(default_factory=list, description="근거 부족·충돌로 사람 확인이 필요한 항목")
     retrieval_quality_warning: bool = Field(False, description="filter_ratio 경고 기준 초과 등 검색 품질 확인 필요 신호", example=False)
     grounding_sufficient: bool = Field(True, description="분석에 필요한 근거 Context가 확보되었는지 여부", example=True)
@@ -196,6 +208,13 @@ class EvidenceRef(CamelModel):
     similarity_score: Optional[float] = Field(None, description="검색 유사도 점수", example=0.87)
 
 
+class FollowUpTaskItem(CamelModel):
+    """콜백 계약(camelCase)의 역할별 후속 작업 DTO"""
+    role: Optional[str] = Field(None, description="작업을 수행할 역할 (특정 불가 시 null)", example="프론트엔드")
+    task: str = Field(..., example="message 기반 오류 분기를 errorCode 기반으로 수정")
+    evidence_refs: List[str] = Field(default_factory=list, description="evidence[].id 참조", example=["e1"])
+
+
 class RoleImpactItem(CamelModel):
     """콜백 계약(camelCase)의 역할별 영향 DTO"""
     role: str = Field(..., example="프론트엔드")
@@ -228,7 +247,7 @@ class AnalysisResultPayload(CamelModel):
     related_features: List[str] = Field(default_factory=list)
     affected_roles: List[str] = Field(default_factory=list)
     role_impacts: List[RoleImpactItem] = Field(default_factory=list)
-    follow_up_tasks: List[str] = Field(default_factory=list)
+    follow_up_tasks: List[FollowUpTaskItem] = Field(default_factory=list)
     # 확인 필요 사항 목록. 비어 있으면 사람이 추가로 확인할 항목이 없다는 뜻이다.
     needs_confirmation: List[str] = Field(default_factory=list)
     evidence: List[EvidenceRef] = Field(default_factory=list)

@@ -27,7 +27,9 @@ LLM_OUTPUT = {
     "roleImpacts": [
         {"role": "백엔드", "impact": "토큰 검증 필터 추가", "basis": "확인된 사실", "evidenceRefs": ["e1"]}
     ],
-    "followUpTasks": ["리프레시 토큰 만료 정책 정의"],
+    "followUpTasks": [
+        {"role": "백엔드", "task": "리프레시 토큰 만료 정책 정의", "evidenceRefs": ["e1"]}
+    ],
     "needsConfirmation": [],
     "evidence": [
         {"id": "e1", "source": "pr_diff", "location": "AuthService.java", "description": "JWT 필터 등록"},
@@ -240,7 +242,8 @@ def test_callback_payload_serializes_camel_case():
     # 기존 필드는 새 스키마를 투영해 채운다
     assert body["changes"][0]["filePath"] == "AuthService.java"
     assert body["impacts"] == ["백엔드: 토큰 검증 필터 추가"]
-    assert body["recommendations"] == LLM_OUTPUT["followUpTasks"]
+    assert body["recommendations"] == ["백엔드: 리프레시 토큰 만료 정책 정의"]
+    assert body["followUpTasks"][0] == {"role": "백엔드", "task": "리프레시 토큰 만료 정책 정의", "evidenceRefs": ["e1"]}
     assert body["needsConfirmation"] == []
 
 

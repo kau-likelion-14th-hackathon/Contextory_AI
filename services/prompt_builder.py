@@ -120,6 +120,9 @@ SYSTEM_PROMPT_TEMPLATE = """당신은 Contextory의 PR 분석가다.
      (예: 클라이언트 오류 분기 수정, 마이그레이션 스크립트 작성, 관련 문서·정책 갱신, 테스트 추가)
    - "코드 품질 개선" 같은 일반론이나 이번 diff와 무관한 제안은 쓰지 않는다
    - roleImpacts에 적은 영향 중 실제 작업이 필요한 것은 여기에도 작업 형태로 적는다
+   - **role**: 그 작업을 실제로 수행할 역할을 affectedRoles 허용 값 중에서 고른다.
+     특정할 수 없으면 빈 문자열("")로 두고 담당을 지어내지 않는다.
+   - **evidenceRefs**: 그 작업이 필요하다고 판단한 근거를 evidence[].id로 연결한다.
    - 정말로 없을 때만 빈 배열로 둔다
 
 [근거 연결 규칙]
@@ -187,7 +190,13 @@ OUTPUT_SCHEMA_SECTION = """[출력 스키마 — 아래 JSON 객체 하나만 �
       "evidenceRefs": ["e1"]
     }
   ],
-  "followUpTasks": ["이번 변경 때문에 실제로 처리해야 할 일 (diff에서 도출되는 것만)"],
+  "followUpTasks": [
+    {
+      "role": "이 작업을 해야 하는 역할 (허용 값 중 하나. 특정할 수 없으면 빈 문자열)",
+      "task": "이번 변경 때문에 실제로 처리해야 할 일 (diff에서 도출되는 것만)",
+      "evidenceRefs": ["e1"]
+    }
+  ],
   "needsConfirmation": [
     "확인이 필요한 내용 — 무엇을, 왜, 가능하면 누구에게"
   ],
@@ -247,6 +256,16 @@ class RecordDraftRoleImpact(BaseModel):
     evidenceRefs: List[str]
 
 
+class RecordDraftFollowUpTask(BaseModel):
+    """역할별 후속 작업 — 근거(evidence[].id)와 연결한다."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    role: str            # ALLOWED_ROLES 중 하나. 특정 불가 시 빈 문자열
+    task: str
+    evidenceRefs: List[str]
+
+
 class RecordDraftReview(BaseModel):
     """
     기존 동기 API(POST /api/v1/analyze/pr)의 reviews 필드를 유지하기 위한 코드 리뷰 항목.
@@ -273,7 +292,7 @@ class RecordDraftOutput(BaseModel):
     relatedFeatures: List[str]
     affectedRoles: List[str]
     roleImpacts: List[RecordDraftRoleImpact]
-    followUpTasks: List[str]
+    followUpTasks: List[RecordDraftFollowUpTask]
     needsConfirmation: List[str]
     evidence: List[RecordDraftEvidence]
     # 아래 둘은 기존 동기 API 응답(risk_score / reviews) 계약을 유지하기 위한 필드다.

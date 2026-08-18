@@ -125,7 +125,7 @@ Spring Boot                              AI 서버
 | 역할별 영향 | `roleImpacts` | `{role, impact, basis, evidenceRefs}[]` |
 | 확인 필요 사항 | `needsConfirmation` | **string[]** |
 | 분석 근거 | `evidence` | `{id, source, location, description}[]` |
-| (부가) 후속 작업 | `followUpTasks` | string[] |
+| 후속 작업 | `followUpTasks` | `{role, task, evidenceRefs}[]` |
 
 ### 값 제약
 
@@ -137,7 +137,18 @@ Spring Boot                              AI 서버
 - `evidence[].source`: `"pr_diff"`(현재 PR) 또는 `"context"`(검색된 기존 컨텍스트)
   - `pr_diff` → `location`은 파일 경로
   - `context` → `location`은 chunk id, `chunkId`·`similarityScore`가 채워진다
+- `followUpTasks[].role`: 허용 역할 7종 중 하나. **담당을 특정할 수 없으면 `null`**(작업 자체는 유지)
+- `followUpTasks[].evidenceRefs` → `evidence[].id` 참조 (역할별 영향과 동일한 근거 연결 방식)
 - `confidence`: 0.0~1.0. **LLM 자기평가가 아니라 검색 신호(Top 유사도·근거 수·강한 근거 수·필터 잔존율)** 기반
+
+### 프론트 표시 정책 (확정)
+
+| 항목 | 정책 |
+| --- | --- |
+| `confidence` | **화면에 노출하지 않는다.** 내부 지표로만 사용 |
+| `retrievalQualityWarning` | `true` 이면 **경고 UI를 노출**한다 (초안 품질을 신뢰하기 어려운 상태) |
+| `affectedRoles` 에는 있으나 `roleImpacts` 에 상세가 없는 역할 | **역할 자체는 표시**하고, 상세 영향은 **"확인 필요" 상태**로 렌더한다 |
+| 표시 항목의 JSON 키 | 백엔드 `analysisResult` 로 전달되는 키(**camelCase**) 기준으로 연동한다 |
 
 ---
 

@@ -23,7 +23,7 @@ from core.config import settings
 from models.schemas import (
     PRAnalysisRequest, PRAnalysisResponse, Evidence, CodeReviewComment, RoleImpact,
     AsyncAnalysisRequest, AnalysisResultPayload, AnalysisChangeItem, PullRequestFile,
-    EvidenceRef, RoleImpactItem,
+    EvidenceRef, RoleImpactItem, FollowUpTask, FollowUpTaskItem,
 )
 # RetrievalError(검색/DB 실패)는 이 모듈에서 잡지 않고 그대로 전파한다 → 라우터에서 502로 변환.
 from services.retrieval import RetrievalOutcome, retrieve_with_signals
@@ -436,6 +436,43 @@ def _allowed_roles(value: Any) -> List[str]:
     return roles
 
 
+def _follow_up_tasks(value: Any) -> List[Dict[str, Any]]:
+    """
+    followUpTasks 정규화 — `{role, task, evidenceRefs}` 형태.
+
+    - role은 허용 역할 7종만 인정하고, 그 외/빈 값은 None(담당 미정)으로 둔다.
+      작업 자체는 버리지 않는다 — 담당을 특정 못 했다고 해야 할 일이 사라지는 건 아니다.
+    - 구버전 출력(string[])도 받아들인다.
+    """
+    if not isinstance(value, list):
+        return []
+
+    tasks: List[Dict[str, Any]] = []
+    for item in value:
+        if isinstance(item, str):                       # 구버전 string[] 하위 호환
+            text = item.strip()
+            if text:
+                tasks.append({"role": None, "task": text, "evidence_refs": []})
+            continue
+        if not isinstance(item, dict):
+            continue
+
+        text = str(item.get("task", "")).strip()
+        if not text:
+            continue
+        role = _nullable_str(item.get("role"))
+        tasks.append(
+            {
+                "role": role if role in ALLOWED_ROLES else None,
+                "task": text,
+                "evidence_refs": _str_list(
+                    item.get("evidenceRefs") or item.get("evidence_refs")
+                ),
+            }
+        )
+    return tasks
+
+
 def _role_impacts(value: Any) -> List[Dict[str, Any]]:
     """roleImpacts 정규화 — 허용 역할만, basis는 허용 값만 남긴다."""
     if not isinstance(value, list):
@@ -509,7 +546,7 @@ def analyze_pr_pipeline(
         related_features=_str_list(out.get("relatedFeatures")),
         affected_roles=_allowed_roles(out.get("affectedRoles")),
         role_impacts=[RoleImpact(**ri) for ri in _role_impacts(out.get("roleImpacts"))],
-        follow_up_tasks=_str_list(out.get("followUpTasks")),
+        follow_up_tasks=[FollowUpTask(**task) for task in _follow_up_tasks(out.get("followUpTasks"))],
         confirmation_items=_confirmation_items(ctx),
         retrieval_quality_warning=bool(ctx.confidence.retrieval_quality_warning) if ctx.confidence else False,
         grounding_sufficient=ctx.grounding_sufficient,
@@ -544,7 +581,7 @@ def analyze_pr_for_callback(
 
     role_impacts = _role_impacts(out.get("roleImpacts"))
     evidence = _build_evidence_refs(ctx)
-    follow_up_tasks = _str_list(out.get("followUpTasks"))
+    follow_up_tasks = _follow_up_tasks(out.get("followUpTasks"))
 
     # 기존 콜백 계약 필드(changes/impacts/recommendations)는 새 출력 스키마에 대응 항목이 없다.
     # LLM에 같은 내용을 두 번 만들게 하지 않고, 새 스키마를 기존 필드로 투영(projection)한다.
@@ -567,7 +604,10 @@ def analyze_pr_for_callback(
     impacts = _str_list(out.get("impacts")) or [
         f"{ri['role']}: {ri['impact']}" for ri in role_impacts if ri.get("impact")
     ]
-    recommendations = _str_list(out.get("recommendations")) or follow_up_tasks
+    recommendations = _str_list(out.get("recommendations")) or [
+        f"{task['role']}: {task['task']}" if task.get("role") else task["task"]
+        for task in follow_up_tasks
+    ]
 
     return AnalysisResultPayload(
         summary=str(out.get("summary", "")) or INSUFFICIENT_GROUNDING_SUMMARY,
@@ -582,7 +622,7 @@ def analyze_pr_for_callback(
         related_features=_str_list(out.get("relatedFeatures")),
         affected_roles=_allowed_roles(out.get("affectedRoles")),
         role_impacts=[RoleImpactItem(**ri) for ri in role_impacts],
-        follow_up_tasks=follow_up_tasks,
+        follow_up_tasks=[FollowUpTaskItem(**task) for task in follow_up_tasks],
         needs_confirmation=_confirmation_items(ctx),
         evidence=evidence,
         confidence=ctx.confidence.score if ctx.confidence else 0.0,

@@ -12,13 +12,13 @@
     ],
     "impacts": [
       "프론트엔드: message 기반 오류 분기 로직을 errorCode 기반으로 수정하고, 오류 코드별 화면 처리를 추가해야 한다.",
-      "QA: errorCode 값별 테스트 케이스 추가가 필요하다.",
-      "기획: 오류 코드별 사용자 안내 문구 정책 확인이 필요하다."
+      "QA: errorCode 값별 테스트 케이스 추가가 필요하다."
     ],
     "risks": [],
     "recommendations": [
-      "오류 코드별 사용자 안내 문구 정의",
-      "message 필드 유지/삭제 정책 확정"
+      "프론트엔드: message 기반 오류 분기를 errorCode 기반으로 수정",
+      "기획: 오류 코드별 사용자 안내 문구 정의",
+      "message 필드 유지/삭제 정책 확정 후 문서 갱신"
     ],
     "purpose": "오류 유형을 코드로 구분해 클라이언트가 오류별 처리를 할 수 있게 하기 위함",
     "changeReason": "확인 필요",
@@ -49,19 +49,31 @@
         "evidenceRefs": [
           "e1"
         ]
-      },
-      {
-        "role": "기획",
-        "impact": "오류 코드별 사용자 안내 문구 정책 확인이 필요하다.",
-        "basis": "변경 기반 예상",
-        "evidenceRefs": [
-          "e1"
-        ]
       }
     ],
     "followUpTasks": [
-      "오류 코드별 사용자 안내 문구 정의",
-      "message 필드 유지/삭제 정책 확정"
+      {
+        "role": "프론트엔드",
+        "task": "message 기반 오류 분기를 errorCode 기반으로 수정",
+        "evidenceRefs": [
+          "e1"
+        ]
+      },
+      {
+        "role": "기획",
+        "task": "오류 코드별 사용자 안내 문구 정의",
+        "evidenceRefs": [
+          "e1"
+        ]
+      },
+      {
+        "role": null,
+        "task": "message 필드 유지/삭제 정책 확정 후 문서 갱신",
+        "evidenceRefs": [
+          "e1",
+          "e2"
+        ]
+      }
     ],
     "needsConfirmation": [
       "변경 이유가 PR 본문에 없음 — PR 작성자에게 확인 필요",
