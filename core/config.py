@@ -52,6 +52,12 @@ class Settings(BaseSettings):
     CONFIDENCE_CONFIRM_THRESHOLD: float = 0.6    # 이 미만이면 needs_confirmation=True
     FILTER_RATIO_WARN_THRESHOLD: float = 0.8     # 이 이상 필터링되면 "검색 품질 확인 필요" 경고
 
+    # 🚀 [추가] 프로젝트 메타 레지스트리 경로
+    # 분석 요청에 프로젝트 정보(이름/목적/팀 역할)가 없으므로, 저장소 이름으로 이 파일에서 찾아 쓴다.
+    # 백엔드가 나중에 요청에 project 객체를 담게 되면 그쪽이 우선하고 이 파일은 폴백으로 남는다.
+    # 상대 경로면 저장소 루트 기준으로 해석한다.
+    PROJECT_REGISTRY_PATH: str = "project.yml"
+
     # 🚀 [추가] 근거 부족(답변 거부) 판단 기준
     # 검색 결과가 0건이거나, threshold 이상 chunk가 이 개수 미만이면 "근거 부족" 경로로 처리한다.
     MIN_GROUNDING_EVIDENCE_COUNT: int = 1

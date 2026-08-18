@@ -224,10 +224,43 @@ POST /internal/v1/analyses/maintenance      → { reapedCount, purgedCount, time
 
 | # | 항목 | 현재 상태 | 필요한 결정 |
 | --- | --- | --- | --- |
-| 1 | **프로젝트 메타 전달** | 요청에 프로젝트 이름·목적·팀 역할이 없어 `affectedRoles`·`roleImpacts`가 비게 된다 | 요청에 `project` 객체를 담을지, **AI 서버가 설정 파일에서 읽을지**(백엔드 작업 0) |
-| 2 | **레포 코드 인덱싱 트리거** | `POST /api/v1/repos/index`는 동작하나 호출 주체·시점 미정 | 백엔드가 호출할지, **AI 파트가 스크립트로 운영할지**(백엔드 작업 0) |
+| 1 | ~~프로젝트 메타 전달~~ | **해결됨** — AI 서버가 `project.yml`에서 저장소 이름으로 찾아 채운다 (백엔드 작업 0). 나중에 요청에 `project` 객체를 담게 되면 그쪽이 우선한다 | 없음 (요청 스키마 확장은 선택) |
+| 2 | ~~레포 코드 인덱싱 트리거~~ | **해결됨** — `python -m scripts.index_repo_code` 로 AI 파트가 운영 (백엔드 작업 0). `POST /api/v1/repos/index` 는 그대로 남아 있어 나중에 백엔드가 붙여도 된다 | 없음 (자동화 시점만 추후 결정) |
 | 3 | `maintenance` 스케줄러 | 호출 주체 없음 | 호출하지 않아도 `get_job()`의 lazy 타임아웃으로 정확성은 유지됨 → **MVP에서는 생략 가능** |
 | 4 | `followUpTasks` 형태 | `string[]` | `{role, task, evidenceRefs}[]`로 확장할지 |
+
+### 프로젝트 메타 (`project.yml`)
+
+```yaml
+default:
+  language: ko
+  roles: [프론트엔드, 백엔드, AI, 기획, 디자인, QA, 프로젝트 관리자]
+
+projects:
+  "kau-likelion-14th-hackathon/Contextory_AI":
+    name: Contextory
+    description: PR을 프로젝트 기록으로 축적하는 서비스
+    purpose: 팀원이 변경 이유와 영향을 나중에 검색해 이해할 수 있게 한다
+    features: [PR 분석 및 기록 초안 생성, 기록 승인, 컨텍스트 검색(RAG)]
+    roles: [프론트엔드, 백엔드, AI, 기획]
+```
+
+- 키는 `owner/repo` 와 `repo` 양쪽으로 매칭된다 (대소문자 무시)
+- `roles` 는 허용 7종만 유효하며 목록 밖 값은 로드 시 제거된다
+- 파일이 없거나 항목이 없으면 프롬프트에 `(정보 없음)`으로 표기되고 역할 판단을 하지 않는다
+- 경로는 `PROJECT_REGISTRY_PATH` 로 바꿀 수 있다
+
+### 레포 코드 인덱싱 (AI 파트 운영)
+
+```bash
+python -m scripts.index_repo_code --path . \
+    --repo-name kau-likelion-14th-hackathon/Contextory_AI --dry-run   # 대상·비용 추정
+python -m scripts.index_repo_code --path . \
+    --repo-name kau-likelion-14th-hackathon/Contextory_AI             # 실제 적재
+```
+
+- git 저장소면 `git ls-files` 를 쓰므로 `.gitignore` 가 자동 반영된다
+- `--repo-name` 은 검색 격리 키다. 분석 요청의 `repo_name` / `repositoryFullName` 과 **정확히 같아야** 검색된다
 
 ### 1번 제안 스키마
 

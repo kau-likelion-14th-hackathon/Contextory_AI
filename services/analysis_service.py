@@ -103,6 +103,25 @@ def _default_translate(title: str, description: str) -> str:
     return translate_pr_to_en_query(title, description or "")
 
 
+def _lookup_project(repo_name: str, language: Optional[str] = None) -> Optional[ProjectInfo]:
+    """
+    project.yml 에서 저장소 이름으로 프로젝트 메타를 찾는다.
+    파일이 없거나 항목이 없으면 None — 프롬프트에 "(정보 없음)"으로 표기되고 역할 판단을 하지 않는다.
+    레지스트리 파일 오류가 분석 전체를 막지 않도록 예외는 삼키고 로그만 남긴다.
+    """
+    try:
+        from services.project_registry import get_project_info  # 지연 import
+
+        project = get_project_info(repo_name)
+    except Exception as e:  # YAML 파싱 오류 등
+        print(f"[Project Registry] 프로젝트 메타 조회 실패 repo={repo_name}: {type(e).__name__}: {e}")
+        return None
+
+    if project is not None and language:
+        project.language = language
+    return project
+
+
 def _make_default_filter(query_text: str) -> Callable[[List[Dict[str, Any]]], FilterOutcome]:
     """
     settings.FILTER_MODE에 따라 필터 구현을 고른다.
@@ -459,6 +478,7 @@ def analyze_pr_pipeline(
         changed_files=[],
         diff=request.diff_content,
     )
+    project = project or _lookup_project(request.repo_name)
     ctx = run_pipeline(pr=pr, repo_name=request.repo_name, project=project, **injected)
     out = ctx.llm_output
 
@@ -514,7 +534,10 @@ def analyze_pr_for_callback(
         diff=build_diff_content(files),
         commits=[request.pull_request.head_sha] if request.pull_request.head_sha else [],
     )
-    project = project or ProjectInfo(name=request.repository_full_name, language=request.language)
+    # 요청에 project가 넘어오면 그것이 우선, 없으면 레지스트리(project.yml)에서 찾는다.
+    project = project or _lookup_project(request.repository_full_name, language=request.language)
+    if project is None:
+        project = ProjectInfo(name=request.repository_full_name, language=request.language)
 
     ctx = run_pipeline(pr=pr, repo_name=request.repository_full_name, project=project, **injected)
     out = ctx.llm_output

@@ -26,3 +26,4 @@ huggingface_hub>=1.26.0
 
 tiktoken       # 임베딩 입력 토큰 한도(8192) 계산
 pandas>=2.0.0  # utils/adapter.py, scripts/load_code_review_subset.py 데이터셋 전처리
+PyYAML>=6.0    # project.yml 프로젝트 메타 레지스트리 (llama-index-core가 이미 끌어오던 패키지를 직접 명시)

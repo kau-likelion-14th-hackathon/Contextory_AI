@@ -191,6 +191,21 @@ python -m scripts.run_eval --live --dataset eval/data/live_selfretrieval_cases.j
 python -m scripts.run_eval --json
 ```
 
+### 프로젝트 메타 · 레포 코드 인덱싱 (백엔드 작업 없이 운영)
+
+```bash
+# 1) 프로젝트 정보: project.yml 에 저장소별 이름/목적/주요 기능/팀 역할을 적는다
+#    (요청에 프로젝트 정보가 없어도 AI가 여기서 찾아 프롬프트에 채운다)
+
+# 2) 프로젝트 코드 인덱싱 — 검색 근거가 되는 컨텍스트를 채운다
+python -m scripts.index_repo_code --path . \
+    --repo-name kau-likelion-14th-hackathon/Contextory_AI --dry-run   # 대상·비용 추정
+python -m scripts.index_repo_code --path . \
+    --repo-name kau-likelion-14th-hackathon/Contextory_AI             # 실제 적재
+```
+
+> `--repo-name` 은 검색 격리 키다. 분석 요청의 `repo_name` / `repositoryFullName` 과 정확히 같아야 검색된다.
+
 ### 평가 데이터 준비 (라이브 평가용 셋업 순서)
 
 ```bash
