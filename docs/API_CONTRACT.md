@@ -287,3 +287,48 @@ python -m scripts.index_repo_code --path . \
 - 컨테이너: `Dockerfile` (헬스체크는 인증 없는 `/health` 사용)
 - CI: `.github/workflows/ci.yml` — pgvector 컨테이너로 DB 테스트까지 실행, `OPENAI_API_KEY=""`로 두어
   테스트가 유료 호출을 하지 않음을 강제한다
+
+---
+
+## 10. 백엔드 연동 실측 검증
+
+`Contextory_BackEnd` (origin/develop, `dc76a95`)의 실제 구현을 기준으로 계약 호환성을 확인했다.
+
+### 백엔드 구현 현황
+
+| 확인 지점 | 파일 | 결과 |
+| --- | --- | --- |
+| 호출하는 AI 엔드포인트 | `global/client/FastApiClient.java` | `POST /internal/v1/analyses`, `GET /internal/v1/analyses/{jobId}` **비동기 API만** 사용. `/api/v1/analyze/pr` 호출부 없음 |
+| 요청 직렬화 | `dto/request/FastApiAnalysisRequestDto.java` | `@JsonProperty("analysis_id")` 등 **snake_case** (단 `callbackUrl` 은 camelCase) |
+| 콜백 수신 | `dto/request/FastApiCallbackRequestDto.java` | `private Object result` — **필드 단위 매핑 없이 통째로 수신** |
+| 저장 | `entity/AiAnalysis.java` | `@Column(columnDefinition = "json") private String resultJson` |
+| 프론트 전달 | `dto/response/AiAnalysisDetailResponse.java` | `private JsonNode analysisResult` — **통째로 전달** |
+
+> 결론: AI가 `result`에 필드를 추가해도 백엔드는 **코드 수정 없이 저장·중계**한다.
+> 프론트가 받는 `analysisResult` 가 곧 이 문서 3장의 `result` 객체다.
+
+### 요청 표기법 (snake_case) 호환성
+
+AI의 `AsyncAnalysisRequest`는 `CamelModel`(alias=camelCase) 이지만 `populate_by_name=True` 이므로
+**필드명(snake_case)과 alias(camelCase) 양쪽 모두 허용**한다. 백엔드가 보내는 형태 그대로 파싱된다.
+
+### 실측 결과
+
+백엔드 DTO가 직렬화하는 형태 그대로 AI 서버에 요청하고, 로컬 콜백 수신 서버로 전 구간을 확인했다.
+
+| 단계 | 결과 |
+| --- | --- |
+| `POST /internal/v1/analyses` (snake_case 요청) | `202` + `{"jobId": "...", "status": "PROCESSING"}` → `FastApiAnalysisResponseDto` 호환 |
+| `GET /internal/v1/analyses/{jobId}` | `jobId` / `analysisId` / `status` / `startedAt` / `completedAt` 전부 존재 → `FastApiJobStatusResponseDto` 호환 |
+| 콜백 수신 | 경로·`X-Internal-Api-Key` 일치. `jobId` / `status` / `modelName` / `result` / `errorMessage` 전부 존재 → `FastApiCallbackRequestDto` 호환 |
+| `result` 내용 | 17개 키 (기존 5개 + 기록 초안 12개) |
+
+### 백엔드에서 확인이 필요한 것 (1건)
+
+`FastApiClient` 는 `RestClient.builder()` 를 직접 생성한다(Spring Boot가 구성한 `RestClient.Builder` 를 주입받지 않음).
+이 경우 Boot가 설정한 Jackson `ObjectMapper`(JavaTimeModule 포함)가 적용되지 않을 수 있는데,
+`FastApiJobStatusResponseDto` 는 `OffsetDateTime startedAt / completedAt` 을 사용한다.
+
+- AI가 보내는 값은 `"2026-08-18T08:49:17Z"` (ISO-8601 UTC)로 정상이다
+- `getJobStatus()` 를 실제로 한 번 호출해 역직렬화가 되는지만 확인하면 된다
+- 실패한다면 `RestClient.Builder` 를 주입받도록 바꾸거나 `JavaTimeModule` 을 등록한다
