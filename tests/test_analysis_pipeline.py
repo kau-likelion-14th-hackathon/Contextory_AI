@@ -33,6 +33,12 @@ LLM_OUTPUT = {
         {"id": "e1", "source": "pr_diff", "location": "AuthService.java", "description": "JWT 필터 등록"},
         {"id": "e2", "source": "context", "location": "cr-1", "description": "과거 리뷰 지적"},
     ],
+    # 기존 동기 API 계약 유지용 필드
+    "riskScore": 65,
+    "reviews": [
+        {"filePath": "AuthService.java", "lineNumber": 24, "comment": "재발급 시 refresh token 만료 검증이 필요하다."},
+        {"filePath": "", "lineNumber": 0, "comment": "   "},   # 빈 코멘트 → 제외
+    ],
 }
 
 CHUNKS = [
@@ -185,9 +191,11 @@ def test_sync_response_keeps_backward_compatible_fields():
     assert response.summary == LLM_OUTPUT["summary"]
     assert response.evidences[0].chunk_id == "cr-1"
     assert response.filter_ratio == 0.5
-    # 새 출력 스키마에는 riskScore/reviews가 없으므로 기본값으로 남는다 (백엔드 합의 필요 항목)
-    assert response.risk_score == 0
-    assert response.reviews == []
+    # 백엔드가 이미 소비 중인 기존 필드 — 출력 스키마에 유지되어 계속 채워져야 한다
+    assert response.risk_score == 65
+    assert response.reviews[0].file_path == "AuthService.java"
+    assert response.reviews[0].line_number == 24
+    assert response.reviews[0].comment == "재발급 시 refresh token 만료 검증이 필요하다."
     # 기록 초안 필드
     assert response.purpose == LLM_OUTPUT["purpose"]
     assert response.role_impacts[0].role == "백엔드"

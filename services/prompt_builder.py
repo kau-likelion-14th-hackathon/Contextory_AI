@@ -105,6 +105,14 @@ SYSTEM_PROMPT_TEMPLATE = """당신은 Contextory의 PR 분석가다.
    affectedRoles에 넣는다. 역할별 영향은 일반론이 아니라 "그 역할이 실제로
    확인하거나 수정해야 하는 것"을 쓴다. 근거가 약하면 만들지 말고 확인 필요로 남긴다.
 
+[검토 지점 규칙]
+7-1. reviews에는 diff에 실제로 보이는 코드를 근거로, 리뷰어가 확인해야 할 지점을 적는다.
+   이것은 "지어낸 개선 제안"이 아니라 needsConfirmation과 같은 성격의 "확인이 필요한 지점"이다.
+   - 예: 추가된 메서드에 입력 검증이 보이지 않음 / 만료·예외 처리가 diff에 없음 /
+     외부 호출에 실패 처리가 보이지 않음 / 반환값이 그대로 노출됨
+   - diff에 보이지 않는 코드를 근거로 지적하지 않는다. filePath는 diff에 등장한 경로만 쓴다.
+   - 정말로 확인할 지점이 없을 때만 빈 배열로 둔다.
+
 [근거 연결 규칙]
 8. 모든 주요 판단(요약·전후·역할별 영향)은 evidence 배열의 항목과 연결한다.
    evidence에는 근거가 된 파일 경로, diff 내용 요약, 또는 컨텍스트 chunk id를 적는다.
@@ -117,7 +125,12 @@ SYSTEM_PROMPT_TEMPLATE = """당신은 Contextory의 PR 분석가다.
 
 [출력 규칙]
 11. 반드시 아래 "출력 스키마"의 JSON 형식으로만 출력한다. JSON 외의 텍스트를 붙이지 않는다.
-12. 해당 없는 배열 필드는 빈 배열 []로, 판단 불가한 문자열 필드는 "{unknown}"로 채운다."""
+12. 해당 없는 배열 필드는 빈 배열 []로, 판단 불가한 문자열 필드는 "{unknown}"로 채운다.
+13. riskScore와 reviews는 기존 연동이 사용하는 필드이므로 함께 채운다.
+    - riskScore: 변경 범위·영향 반경·되돌리기 난이도를 근거로 0~100을 판단한다.
+    - reviews: diff에서 실제로 확인되는 코드 리뷰 의견(누락된 검증, 예외 처리, 보안·성능상
+      확인이 필요한 지점 등)을 적는다. diff에 근거가 없는 지적은 만들지 않으며,
+      지적할 것이 정말 없을 때만 빈 배열로 둔다."""
 
 USER_PROMPT_TEMPLATE = """[프로젝트 정보 — 분석의 배경 지식]
 - 프로젝트 이름: {project_name}
@@ -176,6 +189,14 @@ OUTPUT_SCHEMA_SECTION = """[출력 스키마 — 아래 JSON 객체 하나만 �
       "location": "파일 경로 또는 chunk_id",
       "description": "이 근거에서 확인되는 내용"
     }
+  ],
+  "riskScore": 0,
+  "reviews": [
+    {
+      "filePath": "리뷰 대상 파일 경로 (파일 특정 불가 시 빈 문자열)",
+      "lineNumber": 0,
+      "comment": "diff에서 확인되는 구체적 리뷰 의견"
+    }
   ]
 }
 
@@ -183,7 +204,11 @@ OUTPUT_SCHEMA_SECTION = """[출력 스키마 — 아래 JSON 객체 하나만 �
   (이 목록에 없는 역할은 쓰지 않는다)
 - roleImpacts[].evidenceRefs 는 evidence[].id 를 참조한다
 - roleImpacts[].basis 는 "확인된 사실" 또는 "변경 기반 예상" 중 하나만 쓴다
-- evidence[].source 는 "pr_diff"(현재 PR diff) 또는 "context"(검색된 기존 컨텍스트) 중 하나다"""
+- evidence[].source 는 "pr_diff"(현재 PR diff) 또는 "context"(검색된 기존 컨텍스트) 중 하나다
+- riskScore 는 0~100 정수다. 변경 범위·영향 반경·되돌리기 난이도로 판단하며
+  근거 없이 0을 넣지 않는다 (예: 단순 문구 수정 10 / 인증·결제 로직 변경 70 이상)
+- reviews 는 diff에서 실제로 확인되는 리뷰 의견만 쓴다. 지적할 것이 없으면 빈 배열([])로 둔다.
+  lineNumber 를 특정할 수 없으면 0, filePath 를 특정할 수 없으면 빈 문자열을 쓴다"""
 
 # 컨텍스트 항목 형식: [chunk_id] (출처: 파일경로, similarity: 점수) 내용
 _CONTEXT_ITEM_TEMPLATE = "[{chunk_id}] (출처: {source}, similarity: {score:.4f})\n{content}"
@@ -213,8 +238,21 @@ class RecordDraftRoleImpact(BaseModel):
     evidenceRefs: List[str]
 
 
+class RecordDraftReview(BaseModel):
+    """
+    기존 동기 API(POST /api/v1/analyze/pr)의 reviews 필드를 유지하기 위한 코드 리뷰 항목.
+    프론트 표시 10개 항목에는 없지만, 백엔드가 이미 이 필드를 소비하고 있어 계속 생성한다.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    filePath: str        # 특정 불가 시 빈 문자열 (Structured Output strict 모드라 null 대신 빈 값)
+    lineNumber: int      # 특정 불가 시 0
+    comment: str
+
+
 class RecordDraftOutput(BaseModel):
-    """프론트 표시 10개 항목 + followUpTasks"""
+    """프론트 표시 10개 항목 + followUpTasks + 기존 계약 유지용(riskScore/reviews)"""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -229,6 +267,10 @@ class RecordDraftOutput(BaseModel):
     followUpTasks: List[str]
     needsConfirmation: List[str]
     evidence: List[RecordDraftEvidence]
+    # 아래 둘은 기존 동기 API 응답(risk_score / reviews) 계약을 유지하기 위한 필드다.
+    # 프롬프트 스키마에서 빠지면 응답이 조용히 0 / [] 로 비므로 반드시 함께 요구한다.
+    riskScore: int
+    reviews: List[RecordDraftReview]
 
 
 def build_system_prompt(project: Optional[ProjectInfo] = None) -> str:

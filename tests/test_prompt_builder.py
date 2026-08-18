@@ -127,10 +127,13 @@ def test_grounded_prompt_combines_system_and_user():
 def test_record_draft_output_covers_front_display_items():
     fields = set(RecordDraftOutput.model_fields)
 
-    assert fields == {
+    # 프론트 표시 10개 항목 + followUpTasks
+    assert {
         "summary", "purpose", "changeReason", "before", "after", "relatedFeatures",
-        "affectedRoles", "roleImpacts", "followUpTasks", "needsConfirmation", "evidence",
-    }
+        "affectedRoles", "roleImpacts", "needsConfirmation", "evidence", "followUpTasks",
+    } <= fields
+    # 기존 동기 API(POST /api/v1/analyze/pr)가 소비 중인 필드도 함께 생성한다
+    assert {"riskScore", "reviews"} <= fields
 
 
 def test_record_draft_output_parses_spec_example():
@@ -150,8 +153,14 @@ def test_record_draft_output_parses_spec_example():
         "evidence": [
             {"id": "e1", "source": "pr_diff", "location": "LoginResponse.java", "description": "errorCode 추가"}
         ],
+        "riskScore": 40,
+        "reviews": [
+            {"filePath": "LoginResponse.java", "lineNumber": 12, "comment": "errorCode enum 정의 위치를 확인해 주세요."}
+        ],
     })
 
     assert draft.roleImpacts[0].basis == BASIS_EXPECTED
     assert draft.evidence[0].id == "e1"
     assert draft.needsConfirmation
+    assert draft.riskScore == 40
+    assert draft.reviews[0].lineNumber == 12

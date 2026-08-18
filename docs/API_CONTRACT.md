@@ -18,7 +18,7 @@
 | --- | --- | --- | --- |
 | GET | `/health` | ❌ | liveness (DB 보지 않음, 컨테이너 헬스체크용) |
 | GET | `/api/v1/health` | ✅ | readiness (DB 연결 상태 포함) |
-| POST | `/api/v1/analyze/pr` | ✅ | 동기 PR 분석 (레거시 경로, 폐기 검토 대상) |
+| POST | `/api/v1/analyze/pr` | ✅ | **동기 PR 분석 (백엔드가 사용 중 — 유지)** |
 | POST | `/api/v1/repos/index` | ✅ | 레포 코드 인덱싱 (Upsert + 삭제 파일 정리) |
 | POST | `/internal/v1/analyses` | ✅ | **비동기 PR 분석 요청 → 202 + jobId, 완료 시 콜백** |
 | GET | `/internal/v1/analyses/{jobId}` | ✅ | 작업 상태 조회 (PostgreSQL 영속) |
@@ -194,21 +194,40 @@ POST /internal/v1/analyses/maintenance      → { reapedCount, purgedCount, time
 
 - `status`: `PROCESSING` | `COMPLETED` | `FAILED`
 - `ai_analysis_jobs` 테이블은 앱 기동 시 자동 생성된다 (`main.py` lifespan, `CREATE TABLE IF NOT EXISTS`)
-- **`maintenance`는 호출 주체가 필요하다** — 서버가 분석 도중 종료되면 해당 행이 영구 `PROCESSING`으로 남는다.
-  Spring 스케줄러로 주기 호출을 권장한다 (`JOB_TIMEOUT_MINUTES=30`, `JOB_RETENTION_DAYS=0`)
+- **`maintenance` 호출은 선택 사항이다.** 서버가 분석 도중 종료돼 행이 `PROCESSING`으로 남아도,
+  `get_job()`이 조회 시점에 타임아웃을 판정해 `FAILED`로 확정한다 (`services/job_store.py`의 lazy 판정).
+  → 백엔드 스케줄러 없이도 상태 조회는 정확하다. 주기 호출은 "조회되지 않는 행 청소 + 보존기간 삭제"
+  목적이므로 운영 규모가 커질 때 붙이면 된다 (`JOB_TIMEOUT_MINUTES=30`, `JOB_RETENTION_DAYS=0`)
 
 ---
 
-## 7. 아직 합의되지 않은 항목
+## 7. 동기 API 응답 (`POST /api/v1/analyze/pr`) — 백엔드가 사용 중
+
+기존 필드는 **이름·타입·의미가 그대로 유지**된다. 새 항목은 전부 추가만 했다 → **백엔드 수정 불필요.**
+
+| 필드 | 타입 | 상태 |
+| --- | --- | --- |
+| `pr_id`, `summary`, `confidence`, `filter_ratio` | int/str/float | 기존 그대로 |
+| `risk_score` | int (0~100) | 기존 그대로 — 출력 스키마에 유지 |
+| `reviews` | `{file_path, line_number, comment}[]` | 기존 그대로 — 출력 스키마에 유지 |
+| `evidences` | `{id, similarity_score, ...}[]` | 기존 + `chunk_id`/`source_type`/`file_path` 추가 |
+| `needs_confirmation` | **bool (유지)** | 확인 항목 목록은 새 필드 `confirmation_items`(string[])로 제공 |
+| `purpose`, `change_reason`, `before`, `after`, `related_features`, `affected_roles`, `role_impacts`, `follow_up_tasks`, `retrieval_quality_warning`, `grounding_sufficient` | — | **신규 추가** (프론트가 사용, 백엔드는 통과만 시키면 됨) |
+
+> `risk_score`·`reviews`는 프론트 기록 초안 스키마에는 없지만, 백엔드가 이미 소비하고 있어
+> LLM 출력 스키마(`RecordDraftOutput`)에 유지한다. 이 두 필드가 스키마에서 빠지면
+> 응답이 **조용히 `0` / `[]` 로 비므로**, 회귀 테스트(`tests/test_llm_output_normalization.py`)로 고정해 두었다.
+
+---
+
+## 8. 아직 합의되지 않은 항목
 
 | # | 항목 | 현재 상태 | 필요한 결정 |
 | --- | --- | --- | --- |
-| 1 | **프로젝트 메타 전달** | 요청에 프로젝트 이름·목적·팀 역할이 없어 `affectedRoles`·`roleImpacts`가 비게 된다 | 요청에 `project` 객체를 담을지, `projectId`로 AI가 조회할지 (요청에 담는 쪽 권장) |
-| 2 | **레포 코드 인덱싱 트리거** | `POST /api/v1/repos/index`는 동작하나 호출 주체·시점 미정 | 최초 연동 시 전체 + merge 시 증분 |
-| 3 | `needsConfirmation` 타입 | `bool` → `string[]`로 변경됨 | 백엔드 파싱 확인 |
-| 4 | 레거시 필드 | `risk_score`/`reviews`/`risks`가 기본값으로 남음 | 폐기할지, 출력 스키마에 다시 넣을지 |
-| 5 | 동기 API 존속 | `POST /api/v1/analyze/pr` 유지 중 (비동기와 기능 중복) | 폐기 여부 |
-| 6 | `followUpTasks` 형태 | `string[]` | `{role, task, evidenceRefs}[]`로 확장할지 |
+| 1 | **프로젝트 메타 전달** | 요청에 프로젝트 이름·목적·팀 역할이 없어 `affectedRoles`·`roleImpacts`가 비게 된다 | 요청에 `project` 객체를 담을지, **AI 서버가 설정 파일에서 읽을지**(백엔드 작업 0) |
+| 2 | **레포 코드 인덱싱 트리거** | `POST /api/v1/repos/index`는 동작하나 호출 주체·시점 미정 | 백엔드가 호출할지, **AI 파트가 스크립트로 운영할지**(백엔드 작업 0) |
+| 3 | `maintenance` 스케줄러 | 호출 주체 없음 | 호출하지 않아도 `get_job()`의 lazy 타임아웃으로 정확성은 유지됨 → **MVP에서는 생략 가능** |
+| 4 | `followUpTasks` 형태 | `string[]` | `{role, task, evidenceRefs}[]`로 확장할지 |
 
 ### 1번 제안 스키마
 
@@ -227,7 +246,7 @@ POST /internal/v1/analyses/maintenance      → { reapedCount, purgedCount, time
 
 ---
 
-## 8. 운영 참고
+## 9. 운영 참고
 
 - 신규 환경변수는 `.env.example`에 기본값·설명과 함께 정리되어 있다
   (`FILTER_MODE`, `SIM_THRESHOLD`, `RAG_TOP_K`, Confidence 가중치 4종, 보조 모델 2종 등)

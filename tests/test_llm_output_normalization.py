@@ -219,3 +219,39 @@ def test_prompt_schema_matches_front_display_items():
         '"relatedFeatures"', '"affectedRoles"', '"roleImpacts"', '"needsConfirmation"', '"evidence"',
     ):
         assert field in OUTPUT_SCHEMA_SECTION
+
+
+# ==========================================
+# 기존 동기 API 계약 유지 (백엔드가 이미 소비 중)
+# ==========================================
+
+def test_review_placeholder_values_become_none():
+    """구조화 출력 strict 모드는 null 대신 빈 문자열/0을 보내므로 '특정 불가'로 정규화한다."""
+    output = {
+        **LLM_OUTPUT,
+        "riskScore": 55,
+        "reviews": [
+            {"filePath": "", "lineNumber": 0, "comment": "전체 구조를 다시 확인해 주세요."},
+            {"filePath": "AuthService.java", "lineNumber": 24, "comment": "만료 검증 필요"},
+            {"filePath": "X.java", "lineNumber": 1, "comment": "  "},   # 빈 코멘트 → 제외
+        ],
+    }
+
+    response = _run(output)
+
+    assert response.risk_score == 55
+    assert len(response.reviews) == 2
+    assert response.reviews[0].file_path is None      # "" → None
+    assert response.reviews[0].line_number is None    # 0  → None
+    assert response.reviews[1].line_number == 24
+
+
+def test_prompt_schema_keeps_legacy_sync_fields():
+    """riskScore/reviews가 스키마에서 빠지면 동기 응답이 조용히 0/[]로 비게 된다(회귀 방지)."""
+    assert '"riskScore"' in OUTPUT_SCHEMA_SECTION
+    assert '"reviews"' in OUTPUT_SCHEMA_SECTION
+    assert "0~100 정수" in OUTPUT_SCHEMA_SECTION
+
+    from services.prompt_builder import RecordDraftOutput
+
+    assert {"riskScore", "reviews"} <= set(RecordDraftOutput.model_fields)

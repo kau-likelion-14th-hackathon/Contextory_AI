@@ -382,6 +382,12 @@ def _nullable_int(value: Any) -> Optional[int]:
         return None
 
 
+def _positive_int(value: Any) -> Optional[int]:
+    """1 이상의 정수만 값으로 인정한다 (0/음수/해석 불가는 '특정 불가' → None)."""
+    parsed = _nullable_int(value)
+    return parsed if parsed is not None and parsed > 0 else None
+
+
 def _risk_score(output: Dict[str, Any]) -> int:
     """riskScore를 0~100 정수로 정규화한다. 값이 없거나 해석 불가면 0."""
     raw = output.get("riskScore", output.get("risk_score"))
@@ -456,11 +462,12 @@ def analyze_pr_pipeline(
     ctx = run_pipeline(pr=pr, repo_name=request.repo_name, project=project, **injected)
     out = ctx.llm_output
 
+    # 구조화 출력은 strict 모드라 null 대신 빈 문자열/0 이 오므로 그것도 "특정 불가"로 정규화한다.
     reviews = [
         CodeReviewComment(
             file_path=_nullable_str(r.get("file_path") or r.get("filePath")),
-            line_number=_nullable_int(r.get("line_number") or r.get("lineNumber")),
-            comment=str(r.get("comment", "")),
+            line_number=_positive_int(r.get("line_number") or r.get("lineNumber")),
+            comment=str(r.get("comment", "")).strip(),
         )
         for r in out.get("reviews", []) or []
         if isinstance(r, dict) and str(r.get("comment", "")).strip()
