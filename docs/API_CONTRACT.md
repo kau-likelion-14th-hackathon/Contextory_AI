@@ -18,7 +18,7 @@
 | --- | --- | --- | --- |
 | GET | `/health` | ❌ | liveness (DB 보지 않음, 컨테이너 헬스체크용) |
 | GET | `/api/v1/health` | ✅ | readiness (DB 연결 상태 포함) |
-| POST | `/api/v1/analyze/pr` | ✅ | **동기 PR 분석 (백엔드가 사용 중 — 유지)** |
+| POST | `/api/v1/analyze/pr` | ✅ | 동기 PR 분석 — **현재 백엔드 미사용**(10장 참고). 동작은 정상이며 존속 여부는 협의 대상 |
 | POST | `/api/v1/repos/index` | ✅ | 레포 코드 인덱싱 (Upsert + 삭제 파일 정리) |
 | POST | `/internal/v1/analyses` | ✅ | **비동기 PR 분석 요청 → 202 + jobId, 완료 시 콜백** |
 | GET | `/internal/v1/analyses/{jobId}` | ✅ | 작업 상태 조회 (PostgreSQL 영속) |
@@ -201,9 +201,10 @@ POST /internal/v1/analyses/maintenance      → { reapedCount, purgedCount, time
 
 ---
 
-## 7. 동기 API 응답 (`POST /api/v1/analyze/pr`) — 백엔드가 사용 중
+## 7. 동기 API 응답 (`POST /api/v1/analyze/pr`)
 
-기존 필드는 **이름·타입·의미가 그대로 유지**된다. 새 항목은 전부 추가만 했다 → **백엔드 수정 불필요.**
+현재 백엔드는 이 API를 호출하지 않는다(10장 실측). 다만 기존 계약을 깨지 않도록
+**필드의 이름·타입·의미를 그대로 유지**했고, 새 항목은 전부 추가만 했다.
 
 | 필드 | 타입 | 상태 |
 | --- | --- | --- |
