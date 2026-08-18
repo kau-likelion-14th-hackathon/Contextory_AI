@@ -314,18 +314,29 @@ python -m scripts.index_repo_code --path . \
 # 백엔드 저장소도 동일하게 (Java 파일 포함)
 python -m scripts.index_repo_code --path ../Contextory_BackEnd \
     --repo-name kau-likelion-14th-hackathon/Contextory_BackEnd
+
+# 프론트엔드 저장소 (저장소 이름이 OffCourse_FrontEnd 지만 내용은 Contextory 프론트엔드다)
+git clone --depth 1 -b develop \
+    https://github.com/kau-likelion-14th-hackathon/OffCourse_FrontEnd.git /tmp/contextory_fe
+python -m scripts.index_repo_code --path /tmp/contextory_fe \
+    --repo-name kau-likelion-14th-hackathon/OffCourse_FrontEnd
 ```
 
-현재 적재 현황 (2026-08-18):
+현재 적재 현황 (2026-08-18) — **세 파트 저장소 모두 인덱싱 완료**:
 
-| repo_name | chunks |
-| --- | --- |
-| `kau-likelion-14th-hackathon/Contextory_AI` | 325 |
-| `kau-likelion-14th-hackathon/Contextory_BackEnd` | 229 |
+| repo_name | chunks | 비고 |
+| --- | --- | --- |
+| `kau-likelion-14th-hackathon/Contextory_AI` | 325 | |
+| `kau-likelion-14th-hackathon/OffCourse_FrontEnd` | 279 | 112개 파일 (`develop` `fe7f4b8`) |
+| `kau-likelion-14th-hackathon/Contextory_BackEnd` | 229 | |
 
 > 인덱싱되지 않은 저장소의 PR은 유사도가 임계값에 못 미쳐 **"근거 부족" 경로**로 빠진다.
 > 실제로 백엔드 인덱싱 전에는 백엔드 PR의 최고 유사도가 0.4624(< 0.5)라 LLM이 호출되지 않았고,
 > 인덱싱 후에는 0.6008로 올라 정상 분석됐다.
+>
+> 프론트엔드 인덱싱 후 검색 확인 (질의: "project records list screen route and analysis detail page"):
+> `src/root/router.tsx` 0.542 / `ProjectMemoryDetailScreen.tsx` 0.507 / `ProjectMemoryScreen.tsx` 0.465
+> → `grounding_sufficient=True`. 프론트엔드 PR도 정상 분석 경로를 탄다.
 
 - git 저장소면 `git ls-files` 를 쓰므로 `.gitignore` 가 자동 반영된다
 - `--repo-name` 은 검색 격리 키다. 분석 요청의 `repo_name` / `repositoryFullName` 과 **정확히 같아야** 검색된다
