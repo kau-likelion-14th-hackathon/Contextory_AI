@@ -58,5 +58,7 @@ curl -X POST http://127.0.0.1:8000/internal/v1/analyses \
   -d @docs/samples/01_internal_analyses.request.json | jq
 ```
 
+> `01`의 `projectRoles`는 **선택 필드**다. 빼고 보내도 동작하며(그때는 `project.yml` 폴백),
+> 보낼 때는 `project_role` 원본 값을 그대로 담으면 된다 — `"BE"` → `"백엔드"` 정규화는 AI 서버가 한다.
 > `01`의 `callbackUrl`은 예시 주소다. 로컬 테스트 시 본인 백엔드 주소로 바꿔야 콜백을 받을 수 있다.
 > 응답의 실제 내용(요약·역할 등)은 LLM 호출 결과라 매번 달라진다. **필드 구조만 샘플과 일치**하면 된다.

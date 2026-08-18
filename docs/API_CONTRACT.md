@@ -239,14 +239,53 @@ POST /internal/v1/analyses/maintenance      → { reapedCount, purgedCount, time
 | 1 | ~~프로젝트 메타 전달~~ | **해결됨** — AI 서버가 `project.yml`에서 저장소 이름으로 찾아 채운다 (백엔드 작업 0). 나중에 요청에 `project` 객체를 담게 되면 그쪽이 우선한다 | 없음 (요청 스키마 확장은 선택) |
 | 2 | ~~레포 코드 인덱싱 트리거~~ | **해결됨** — `python -m scripts.index_repo_code` 로 AI 파트가 운영 (백엔드 작업 0). `POST /api/v1/repos/index` 는 그대로 남아 있어 나중에 백엔드가 붙여도 된다 | 없음 (자동화 시점만 추후 결정) |
 | 3 | `maintenance` 스케줄러 | 호출 주체 없음 | 호출하지 않아도 `get_job()`의 lazy 타임아웃으로 정확성은 유지됨 → **MVP에서는 생략 가능** |
-| 4 | `followUpTasks` 형태 | `string[]` | `{role, task, evidenceRefs}[]`로 확장할지 |
+| 4 | ~~`followUpTasks` 형태~~ | **해결됨** — `{role, task, evidenceRefs}[]` 로 확장 (구버전 `string[]` 도 계속 받는다) | 없음 |
+
+### 팀 역할 (`projectRoles`) — 값 정규화는 AI 서버 담당
+
+역할은 `affectedRoles` / `roleImpacts` / `followUpTasks[].role` 을 만드는 기준이다.
+백엔드의 `project_member.project_role` 은 자유 입력 `VARCHAR(50)` 이고 저장 시 `trim()` 만 하므로
+(`ProjectMemberService.normalizeProjectRole`), 같은 역할이 여러 표기로 들어온다.
+**값 정규화는 AI 서버가 한다 — 백엔드는 원본 값을 그대로 보내면 된다.**
+
+`AsyncAnalysisRequest` 에 **선택 필드**를 추가했다 (안 보내도 동작한다):
+
+```jsonc
+{
+  "analysisId": 1,
+  "repositoryFullName": "org/contextory",
+  "projectRoles": ["프론트", "BE", "ai"],   // ← 선택. project_role 원본 값 그대로
+  "callbackUrl": "..."
+}
+```
+
+- 값이 오면 → 정규화해서 사용 (**`project.yml` 보다 우선**)
+- 안 오면 → `project.yml` 폴백 (지금 동작 그대로, 백엔드 작업 0)
+
+정규화 규칙 (`services/role_normalizer.py`):
+
+| 허용 역할 | 받아들이는 표기 (예시) |
+|---|---|
+| 프론트엔드 | 프론트, 프런트엔드, FE, Frontend, front-end, 클라이언트, React |
+| 백엔드 | 백, BE, Backend, Back End, 서버, API, Spring |
+| AI | ai, 인공지능, ML, 머신러닝, LLM, RAG |
+| 기획 | 기획자, PO, Product Owner, 서비스기획 |
+| 디자인 | 디자이너, Design, UX |
+| QA | 테스터, tester, QC, 품질 |
+| 프로젝트 관리자 | 프로젝트 매니저, Project Manager, 스크럼 마스터 |
+
+- 대소문자·공백·`-`·`/` 는 무시하고, `개발자`/`엔지니어` 같은 접미사는 떼고 비교한다
+- **뜻이 애매한 값은 추측하지 않는다** — `PM`(기획? 프로젝트 관리자?), `UI`(디자인? 프론트엔드?),
+  `풀스택`, `웹`, `개발자` 는 매핑하지 않고 **무시하고 서버 로그에 남긴다**.
+  이런 값을 쓰려면 표기를 정하거나 AI 파트에 별칭 추가를 요청하면 된다
+- 해석된 역할이 하나도 없으면 프롬프트에 `(정보 없음)`으로 들어가고 역할 판단을 하지 않는다
 
 ### 프로젝트 메타 (`project.yml`)
 
 ```yaml
 default:
   language: ko
-  roles: [프론트엔드, 백엔드, AI, 기획, 디자인, QA, 프로젝트 관리자]
+  roles: [프론트엔드, 백엔드, AI]
 
 projects:
   "kau-likelion-14th-hackathon/Contextory_AI":
@@ -254,11 +293,12 @@ projects:
     description: PR을 프로젝트 기록으로 축적하는 서비스
     purpose: 팀원이 변경 이유와 영향을 나중에 검색해 이해할 수 있게 한다
     features: [PR 분석 및 기록 초안 생성, 기록 승인, 컨텍스트 검색(RAG)]
-    roles: [프론트엔드, 백엔드, AI, 기획]
+    roles: [프론트엔드, 백엔드, AI]
 ```
 
 - 키는 `owner/repo` 와 `repo` 양쪽으로 매칭된다 (대소문자 무시)
-- `roles` 는 허용 7종만 유효하며 목록 밖 값은 로드 시 제거된다
+- `roles` 는 위 표대로 정규화되며, 끝내 해석되지 않는 값은 로드 시 제거된다
+- 현재 등록된 팀 역할은 **프론트엔드 / 백엔드 / AI** 3종이다 (전담 없는 역할은 넣지 않는다)
 - 파일이 없거나 항목이 없으면 프롬프트에 `(정보 없음)`으로 표기되고 역할 판단을 하지 않는다
 - 경로는 `PROJECT_REGISTRY_PATH` 로 바꿀 수 있다
 

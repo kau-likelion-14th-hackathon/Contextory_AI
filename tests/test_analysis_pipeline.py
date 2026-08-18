@@ -247,6 +247,41 @@ def test_callback_payload_serializes_camel_case():
     assert body["needsConfirmation"] == []
 
 
+def test_request_project_roles_override_registry_and_are_normalized():
+    """
+    백엔드가 project_role 원본 값을 보내면(자유 입력, trim만 된 상태) AI가 정규화해
+    프롬프트의 [팀 역할]에 넣는다. 요청 값이 project.yml 보다 우선한다.
+    """
+    generate = _fake_generate()
+    request = _async_request()
+    request.project_roles = ["프론트", "BE", "ai", "PM"]      # 마지막 값은 뜻이 애매 → 무시
+
+    analyze_pr_for_callback(
+        request,
+        retrieve_fn=_fake_retrieve(CHUNKS),
+        filter_fn=lambda chunks: filter_contexts(chunks, sim_threshold=0.5),
+        generate_fn=generate,
+        translate_fn=lambda title, body: "q",
+    )
+
+    prompt = generate.calls[0]
+    assert "프론트엔드, 백엔드, AI" in prompt
+    assert "PM" not in prompt
+
+
+def test_request_without_project_roles_falls_back_to_registry():
+    """projectRoles 는 선택 필드다 — 보내지 않아도 분석은 그대로 동작해야 한다."""
+    payload = analyze_pr_for_callback(
+        _async_request(),
+        retrieve_fn=_fake_retrieve(CHUNKS),
+        filter_fn=lambda chunks: filter_contexts(chunks, sim_threshold=0.5),
+        generate_fn=_fake_generate(),
+        translate_fn=lambda title, body: "q",
+    )
+
+    assert payload.summary == LLM_OUTPUT["summary"]
+
+
 def test_prompt_excludes_removed_chunks():
     generate = _fake_generate()
 

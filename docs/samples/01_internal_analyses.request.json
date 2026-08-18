@@ -22,5 +22,6 @@
     ]
   },
   "language": "ko",
+  "projectRoles": ["프론트엔드", "BE", "ai"],
   "callbackUrl": "https://api.contextory.com/api/v1/internal/ai/analyses/1/callback"
 }

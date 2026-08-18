@@ -178,6 +178,14 @@ class AsyncAnalysisRequest(CamelModel):
     repository_full_name: str = Field(..., description="owner/repository 형식", example="org/contextory")
     pull_request: PullRequestInfo
     language: str = Field("ko", description="분석 결과 언어 (ko/en)", example="ko")
+    # 선택 필드 — 보내지 않아도 동작한다(미전달 시 AI 서버의 project.yml 을 폴백으로 쓴다).
+    # 백엔드는 project_member.project_role 원본 값을 그대로 담으면 된다. 값 정규화
+    # ("프론트"/"FE"/"Frontend" → "프론트엔드")는 AI 서버가 수행하기로 합의했다.
+    project_roles: List[str] = Field(
+        default_factory=list,
+        description="프로젝트 멤버의 project_role 원본 값 목록 (선택). 정규화는 AI 서버가 수행",
+        example=["프론트엔드", "BE", "AI"],
+    )
     callback_url: str = Field(..., description="분석 완료 콜백 URL", example="https://api.contextory.com/api/v1/internal/ai/analyses/1/callback")
 
 

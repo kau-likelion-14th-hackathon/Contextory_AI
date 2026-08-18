@@ -104,6 +104,11 @@ def test_allowed_roles_filters_invented_roles():
     assert set(_allowed_roles(list(ALLOWED_ROLES))) == set(ALLOWED_ROLES)
 
 
+def test_allowed_roles_normalizes_spelling_variants():
+    """LLM이 "Frontend"/"프론트"로 답해도 역할이 사라지면 안 된다 (표기만 다를 뿐 같은 역할)."""
+    assert _allowed_roles(["Frontend", "프론트", "BE"]) == ["프론트엔드", "백엔드"]
+
+
 # ==========================================
 # 응답 매핑
 # ==========================================

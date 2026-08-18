@@ -22,7 +22,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import yaml
 
 from core.config import settings
-from services.prompt_builder import ALLOWED_ROLES, ProjectInfo
+from services.prompt_builder import ProjectInfo
+from services.role_normalizer import partition_roles
 
 # (경로, mtime) → 파싱 결과 캐시. 파일을 고치면 자동으로 다시 읽는다.
 _cache: Dict[Tuple[str, float], Dict[str, Any]] = {}
@@ -52,13 +53,20 @@ def _load_raw(path: Optional[Path] = None) -> Dict[str, Any]:
 
 def _normalize_roles(roles: Any) -> List[str]:
     """
-    팀 역할을 계약상 허용 7종으로 제한한다.
+    팀 역할을 계약상 허용 7종으로 정규화한다.
     허용 목록 밖 역할을 그대로 프롬프트에 넣으면 LLM이 그 역할로 답하고,
     응답 매핑 단계(_allowed_roles)에서 다시 잘려 "역할별 영향이 사라지는" 혼란이 생긴다.
+
+    "프론트" / "FE" 같은 축약 표기도 받아들인다(role_normalizer). 뜻이 애매해
+    매핑하지 못한 값은 버리되 로그로 남겨, 설정 실수를 조용히 넘기지 않는다.
     """
     if not isinstance(roles, list):
         return []
-    return [r for r in (str(x).strip() for x in roles) if r in ALLOWED_ROLES]
+
+    resolved, unresolved = partition_roles(roles)
+    if unresolved:
+        print(f"[Project Registry] 해석하지 못한 역할 값 무시: {unresolved}")
+    return resolved
 
 
 def _to_project_info(entry: Dict[str, Any], defaults: Dict[str, Any]) -> ProjectInfo:

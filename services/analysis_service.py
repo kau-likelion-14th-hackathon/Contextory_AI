@@ -32,6 +32,7 @@ from services.prompt_builder import (
     ALLOWED_BASIS, ALLOWED_ROLES, EVIDENCE_SOURCE_CONTEXT, EVIDENCE_SOURCE_DIFF, PRInput,
     ProjectInfo, RecordDraftOutput, build_system_prompt, build_user_prompt,
 )
+from services.role_normalizer import normalize_role, normalize_roles, partition_roles
 from services.confidence import ConfidenceOutcome, calculate_confidence
 
 INSUFFICIENT_GROUNDING_SUMMARY = (
@@ -427,13 +428,10 @@ def _allowed_roles(value: Any) -> List[str]:
     affectedRoles를 허용 역할 목록으로 제한한다.
     프롬프트 규칙 7("근거 없는 역할을 만들지 않는다")을 코드에서도 강제해,
     LLM이 만들어낸 임의 역할(예: "개발자")이 응답에 새는 것을 막는다.
+    표기 흔들림("Frontend", "프론트")은 정규화해서 받아들인다 — 같은 역할을
+    다르게 적었다는 이유로 영향 항목이 사라지면 안 된다.
     """
-    roles = []
-    for role in _str_list(value):
-        name = role.strip()
-        if name in ALLOWED_ROLES and name not in roles:
-            roles.append(name)
-    return roles
+    return normalize_roles(_str_list(value))
 
 
 def _follow_up_tasks(value: Any) -> List[Dict[str, Any]]:
@@ -460,10 +458,9 @@ def _follow_up_tasks(value: Any) -> List[Dict[str, Any]]:
         text = str(item.get("task", "")).strip()
         if not text:
             continue
-        role = _nullable_str(item.get("role"))
         tasks.append(
             {
-                "role": role if role in ALLOWED_ROLES else None,
+                "role": normalize_role(item.get("role")),
                 "task": text,
                 "evidence_refs": _str_list(
                     item.get("evidenceRefs") or item.get("evidence_refs")
@@ -482,8 +479,8 @@ def _role_impacts(value: Any) -> List[Dict[str, Any]]:
     for item in value:
         if not isinstance(item, dict) or not item.get("role"):
             continue
-        role = str(item.get("role")).strip()
-        if role not in ALLOWED_ROLES:
+        role = normalize_role(item.get("role"))
+        if role is None:
             continue
         basis = _nullable_str(item.get("basis"))
         parsed.append(
@@ -575,6 +572,16 @@ def analyze_pr_for_callback(
     project = project or _lookup_project(request.repository_full_name, language=request.language)
     if project is None:
         project = ProjectInfo(name=request.repository_full_name, language=request.language)
+
+    # 요청에 멤버 역할(project_role 원본)이 담겨 오면 그게 실제 팀 구성이다 → 레지스트리보다 우선.
+    # 백엔드는 trim 만 한 자유 입력값을 그대로 보내고, 정규화는 여기서 한다.
+    member_roles, unresolved = partition_roles(request.project_roles)
+    if member_roles:
+        project.roles = member_roles
+    if unresolved:
+        print(
+            f"[Role] 해석하지 못한 project_role 값 무시 analysisId={request.analysis_id}: {unresolved}"
+        )
 
     ctx = run_pipeline(pr=pr, repo_name=request.repository_full_name, project=project, **injected)
     out = ctx.llm_output
