@@ -38,6 +38,12 @@ services:
     env_file: .env
     ports:
       - "8000:8000"
+    volumes:
+      # 컨테이너가 재생성(docker compose up -d --build)돼도 로그가 사라지지 않도록
+      # 호스트에 바인드 마운트한다. print()로 찍는 로그도 stdout을 그대로 거치므로
+      # tee로 함께 남긴다(uvicorn 로깅 설정만으로는 print() 출력을 못 잡는다).
+      - ./logs/app:/var/log/contextory
+    command: sh -c "uvicorn main:app --host 0.0.0.0 --port 8000 2>&1 | tee -a /var/log/contextory/app.log"
     depends_on:
       postgres:
         condition: service_healthy
@@ -47,8 +53,10 @@ services:
   celery_worker:
     build: .
     restart: unless-stopped
-    command: celery -A workers.celery_app.celery_app worker --loglevel=info
+    command: sh -c "celery -A workers.celery_app.celery_app worker --loglevel=info 2>&1 | tee -a /var/log/contextory/worker.log"
     env_file: .env
+    volumes:
+      - ./logs/celery:/var/log/contextory
     # 이미지에 내장된 Dockerfile HEALTHCHECK는 uvicorn의 /health를 HTTP로 확인하는데,
     # celery_worker는 웹서버가 없는 컨테이너라 그 체크가 항상 실패한다. worker 프로세스가
     # 실제로 응답하는지 확인하는 celery ping으로 오버라이드한다.

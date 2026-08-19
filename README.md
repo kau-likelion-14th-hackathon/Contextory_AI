@@ -250,6 +250,14 @@ celery -A workers.celery_app.celery_app worker --loglevel=info
 uvicorn main:app --reload
 ```
 
+### 7. CD (자동 배포)
+
+`develop` 브랜치에 push되면(그리고 `.github/workflows/ci.yml`의 `test` job이 통과하면) **이 PC에 설치된 GitHub Actions self-hosted runner**가 자동으로 감지해 `docker compose -p contextory_ai up -d --build`를 실행한다. 즉 develop에 push하는 순간 실서비스(AWS Spring Boot가 실제로 호출하는 그 인스턴스)가 바로 갱신된다 — 런칭 이후에는 이 트리거가 `main`으로 바뀔 예정이다.
+
+- 배포는 `C:\Users\bjk16\Contextory_AI`(사람이 직접 코드를 고치는 클론)가 아니라, self-hosted runner 전용 체크아웃 경로에서 별도로 실행된다. 두 디렉토리를 혼동하지 않는다 — 개발/커밋은 항상 사람이 쓰는 클론에서, 배포는 CD가 알아서 처리한다.
+- 배포 시 사용하는 `.env`는 `C:\Users\bjk16\Contextory_AI\.env`(운영 환경변수 원본)를 그대로 복사해서 쓴다. `.env`를 바꿔야 하면 그 경로의 파일을 수정하면 다음 배포부터 반영된다.
+- 테스트가 실패한 커밋은 `deploy` job 자체가 실행되지 않아 실서비스에 반영되지 않는다.
+
 ---
 
 ## 🧪 테스트 & 평가 (Evaluation-Driven Development)
