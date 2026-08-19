@@ -26,7 +26,7 @@ from models.schemas import (
     EvidenceRef, RoleImpactItem, FollowUpTask, FollowUpTaskItem,
 )
 from services.retrieval import (
-    RetrievalOutcome, retrieve_with_signals, 
+    RetrievalOutcome, retrieve_with_signals, retrieve_contexts, retrieve_repo_contexts,
 )
 from services.context_filter import (
     FilterOutcome, filter_contexts, filter_contexts_with_llm,
@@ -40,6 +40,20 @@ from services.role_normalizer import normalize_role, normalize_roles, partition_
 from services.confidence import ConfidenceOutcome, calculate_confidence
 from services.token_utils import count_tokens, get_encoding
 from services.translation_service import translate_pr_to_en_query
+
+# pyflakes Unused Import 경고 방어 및 테스트 monkeypatch 호환을 위한 명시적 export
+__all__ = [
+    "analyze_pr_pipeline",
+    "analyze_pr_for_callback",
+    "build_diff_content",
+    "run_pipeline",
+    "retrieve_contexts",
+    "retrieve_repo_contexts",
+    "translate_pr_to_en_query",
+    "PipelineContext",
+    "LLMResponseParseError",
+    "PromptTooLargeError",
+]
 
 INSUFFICIENT_GROUNDING_SUMMARY = (
     "이번 PR을 설명할 만한 프로젝트 컨텍스트를 충분히 찾지 못했습니다. "
