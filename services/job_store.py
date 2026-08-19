@@ -129,11 +129,11 @@ def _create_job_sync(job_id: str, analysis_id: int, started_at: str) -> None:
         db.commit()
 
 
-def _update_job_status_sync(
+def update_job_status_sync(
     job_id: str, status: str, completed_at: str, error_message: Optional[str]
 ) -> None:
     with SessionLocal() as db:
-        # 좀비 정리(reaper)와 백그라운드 태스크의 정상 완료가 동시에 같은 행을 갱신할 수 있으므로
+        # 좀비 정리(reaper)와 Celery 분석 task의 정상 완료가 동시에 같은 행을 갱신할 수 있으므로
         # 행 잠금으로 read-modify-write 구간을 직렬화한다.
         job = db.get(AIAnalysisJob, job_id, with_for_update=True)
         if job is None:
@@ -231,7 +231,7 @@ async def update_job_status(
     completed_at: str,
     error_message: Optional[str] = None,
 ) -> None:
-    await run_in_threadpool(_update_job_status_sync, job_id, status, completed_at, error_message)
+    await run_in_threadpool(update_job_status_sync, job_id, status, completed_at, error_message)
 
 
 async def get_job(job_id: str) -> Optional[dict]:

@@ -9,10 +9,11 @@ FastAPI 기반으로 구축되어 있으며, GitHub PR 분석 및 LlamaIndex / P
 
 - **Framework:** FastAPI
 - **Language:** Python 3.11
-- **Environment Management:** Conda
+- **Container:** Docker / Docker Compose (권장 실행 방식)
 - **ASGI Server:** Uvicorn
 - **Database / Vector Store:** PostgreSQL 18 + `pgvector`
 - **ORM / DB Driver:** SQLAlchemy 2.0, `psycopg2-binary`
+- **Async Task Queue:** Celery + Redis (비동기 PR 분석 작업 처리)
 - **Settings Management:** `pydantic-settings`
 - **AI / RAG Framework:** LlamaIndex, OpenRouter (GPT-4o), OpenAI (`text-embedding-3-small`)
 
@@ -24,6 +25,10 @@ AI_service/
 ├── dependencies.py             # FastAPI Depends 주입 모듈 (DB 세션 생명주기 관리 등)
 ├── .env.example                # 환경 변수 템플릿
 ├── requirements.txt            # 의존성 패키지 목록
+├── Dockerfile                  # app / celery_worker 공용 이미지 정의
+├── docker-compose.yml          # postgres + redis + app + celery_worker 오케스트레이션
+├── docker/
+│   └── postgres/init.sql       # 컨테이너 최초 기동 시 pgvector 확장 자동 활성화
 │
 ├── core/                       # 환경설정, DB 커넥션, 공통 인프라 모듈
 │   ├── config.py               # pydantic-settings 기반 환경변수/테이블명 상수 관리
@@ -46,6 +51,10 @@ AI_service/
 │   ├── job_store.py            # 비동기 작업 상태 저장소 (PostgreSQL ai_analysis_jobs 영속화 + 좀비 작업 정리)
 │   └── repo_index_service.py   # (미사용) 레포 코드 raw SQL 인덱싱 — 현재 어떤 라우터에도 연결되지 않음
 │
+├── workers/                    # Celery 비동기 작업 워커
+│   ├── celery_app.py           # Celery 앱 인스턴스 (Redis broker/backend)
+│   └── tasks.py                # run_analysis_job task — PR 분석 실행 + job_store 갱신 + 콜백 전송
+│
 ├── models/                     # Pydantic 스키마
 │   └── schemas.py              # Request/Response API DTO (동기/비동기, camelCase 내부 API 포함)
 │
@@ -60,7 +69,7 @@ AI_service/
 │   ├── error_analysis.py       # 실패 단계 분류(Retrieval→Ranking→Filter→Context→Interpretation→Generation→Hallucination)
 │   ├── fakes.py                # LLM·DB 없이 돌리기 위한 가짜 callback 모음
 │   ├── metrics/                # retrieval / filtering / generation / retrieval_signals (전부 순수 함수)
-│   ├── datasets/               # ground_truth, loader(JSONL), codereview_adapters, silver_builder
+│   ├── datasets/                # ground_truth, loader(JSONL), codereview_adapters, silver_builder
 │   └── data/                   # 최소 샘플 Ground Truth (sample_ground_truth.jsonl)
 │
 ├── scripts/                    # 실행 스크립트 — services와 eval을 연결하는 유일한 조립 계층
@@ -88,29 +97,45 @@ routers/analysis.py (POST /api/v1/analyze/pr) / routers/internal_analysis.py (PO
     ⑥ Confidence                 → services/confidence.py (검색 신호 기반, LLM 자기평가 금지)
 ```
 
+`POST /internal/v1/analyses`(비동기 API)는 위 파이프라인을 **Celery task**(`workers/tasks.py:run_analysis_job`)로 실행한다. 요청을 받으면 즉시 `202 Accepted` + `jobId`를 반환하고, 실제 분석은 `celery_worker` 컨테이너가 Redis 큐에서 task를 꺼내 처리한 뒤 결과를 Backend `callbackUrl`로 콜백한다.
+
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting Started (Docker — 권장)
 
-### 1. 가상환경 및 패키지 설치
-```bash
-# 패키지 일괄 설치
-pip install -r requirements.txt
-```
+이 프로젝트는 **PostgreSQL(pgvector) + Redis + FastAPI(app) + Celery(celery_worker)** 4개 컨테이너로 구성되며, Docker Compose로 한 번에 띄우는 것을 기본 실행 방식으로 한다. 로컬에 Postgres/Redis를 직접 설치할 필요가 없다.
+
+### 1. Docker 설치
+
+- **Windows / Mac:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) 설치 후 실행 (WSL2 백엔드 권장, Windows 기준)
+- **Linux:** [Docker Engine](https://docs.docker.com/engine/install/) + [Docker Compose plugin](https://docs.docker.com/compose/install/linux/) 설치
+- 설치 확인:
+  ```bash
+  docker --version
+  docker compose version
+  ```
 
 ### 2. 환경 변수 설정 (.env)
-.env.example 파일을 참고하여 직접 생성합니다.
+
+`.env.example`을 복사해 `.env`를 만든다.
+
 ```bash
 # Server Config
 APP_ENV=development
 LOG_LEVEL=INFO
 
 # PostgreSQL (pgvector) DB Config
+# docker-compose로 실행할 때는 POSTGRES_HOST를 컨테이너 서비스명(postgres)으로 둔다.
+# (로컬에 uvicorn을 직접 띄워 Docker 없이 실행하려는 경우에만 localhost로 바꾼다)
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your_password
-POSTGRES_HOST=localhost
+POSTGRES_HOST=postgres
 POSTGRES_PORT=5432
 POSTGRES_DB=contextory_db
+
+# Redis / Celery Config
+# docker-compose 네트워크 안에서는 서비스명(redis)으로 접속한다.
+REDIS_URL=redis://redis:6379/0
 
 # OpenAI Config
 OPENAI_API_KEY=your_openai_api_key_here
@@ -129,28 +154,99 @@ GOOGLE_API_KEY=your_google_api_key_here
 GOOGLE_SEARCH_ENGINE_ID=your_google_search_engine_id_here
 ```
 
-### 3. PostgreSQL 필수 설정 (`pgvector`)
+> `.env`는 `.dockerignore`에 의해 이미지에 절대 포함되지 않는다 — `docker-compose.yml`이 `env_file: .env`로 컨테이너 실행 시점에 환경변수로만 주입한다.
 
-`Contextory` 프로젝트는 임베딩 벡터 검색을 위해 PostgreSQL의 `pgvector` 확장을 사용합니다.
+### 3. 전체 스택 기동
 
-#### 1) pgvector 바이너리 설치
-* **Docker 사용 시 (권장):** `pgvector/pgvector:pg16` 또는 `ankane/pgvector` 이미지 사용 시 별도 설치 없이 2번 단계를 진행합니다.
-* **Windows 로컬 환경 사용 시:**
-  1. [pgvector Releases](https://github.com/andreiramani/pgvector_pgsql_windows/releases)에서 본인의 PostgreSQL 버전에 맞는 실행 파일/Zip을 다운로드합니다.
-  2. `vector.dll` ➔ `C:\Program Files\PostgreSQL\{버전}\lib\` 복사
-  3. `vector.control` 및 `vector--*.sql` ➔ `C:\Program Files\PostgreSQL\{버전}\share\extension\` 복사
-  4. **PostgreSQL 서비스 재시작** (PowerShell 관리자 권한: `net stop postgresql-x64-{버전}` ➔ `net start postgresql-x64-{버전}`)
-  5. *참고:* `58P01` 에러 발생 시 [Visual C++ Redistributable (x64)](https://aka.ms/vs/17/release/vc_redist.x64.exe) 설치가 필요할 수 있습니다.
+저장소 루트(`docker-compose.yml`이 있는 위치)에서:
 
-#### 2) Database 확장 모듈 활성화
-Database(`contextory_db`)에 접속 후 SQL 콘솔(DataGrip, psql 등)에서 확장 모듈을 활성화합니다.
-```sql
-CREATE EXTENSION IF NOT EXISTS vector;
+```bash
+docker compose up -d --build
 ```
 
-### 4. 서버 실행 및 헬스 체크
+최초 실행 시 자동으로 일어나는 일:
+
+1. `pgvector/pgvector:pg18` 이미지로 `postgres` 컨테이너가 뜨고, `docker/postgres/init.sql`이 실행되어 `CREATE EXTENSION IF NOT EXISTS vector;`가 자동 적용된다 (README 예전 버전에 있던 "pgvector 수동 설치/확장 활성화" 단계가 더 이상 필요 없다).
+2. `redis` 컨테이너가 뜬다 (Celery broker/backend).
+3. `postgres`/`redis`가 healthy 상태가 되면(healthcheck 통과) `app`(FastAPI/uvicorn, 8000 포트) 컨테이너가 뜬다. 기동 시 `main.py`의 `lifespan`이 `ai_analysis_jobs` 테이블을 자동 생성한다.
+4. 같은 이미지로 `celery_worker` 컨테이너가 뜨고, `run_analysis_job` task를 Redis 큐에서 대기한다.
+
+기동 확인:
+
 ```bash
-# Uvicorn 서버 구동
+docker compose ps
+# 4개 서비스(postgres, redis, app, celery_worker) 모두 STATUS가 healthy/Up 인지 확인
+
+curl http://localhost:8000/health
+# {"status":"ok","service":"Contextory AI Engine"}
+```
+
+`docker-compose.yml`의 4개 서비스 모두 `restart: unless-stopped`로 설정되어 있어, 컨테이너가 죽거나 PC/Docker Desktop이 재시작되어도 자동으로 다시 뜬다.
+
+### 4. 컨테이너 관리 명령어
+
+```bash
+# 전체 기동
+docker compose up -d
+
+# 코드 수정 후 반영 (이미지 재빌드 + 재기동)
+docker compose up -d --build
+
+# 상태 확인
+docker compose ps
+
+# 실시간 로그 (PowerShell로 uvicorn 직접 실행할 때 보이던 콘솔 로그와 동일)
+docker compose logs -f app              # API 요청 로그
+docker compose logs -f celery_worker    # PR 분석 처리 로그 (성공/실패, 콜백 결과)
+docker compose logs -f                  # 전체 서비스 로그
+
+# 최근 N줄만
+docker compose logs --tail 50 app
+
+# 리소스 사용량 확인 (컨테이너별 CPU/메모리 상한은 별도 설정하지 않음 — Docker Desktop VM 전체 자원을 공유)
+docker stats
+
+# 특정 서비스만 재시작
+docker compose restart app
+docker compose restart celery_worker
+
+# 잠깐 멈추기 (DB 데이터는 volume에 남아있으므로 유지됨)
+docker compose down
+```
+
+> ⚠️ **`docker compose down -v`는 절대 습관적으로 쓰지 않는다.** `-v`는 `pgdata`(Postgres 데이터 볼륨)까지 삭제해 DB의 모든 데이터가 사라진다. 정말 초기화가 필요할 때만 신중하게 사용한다.
+
+### 5. DB 직접 조회 (DataGrip 등 GUI 클라이언트)
+
+`postgres` 컨테이너는 호스트 포트로 publish되어 있어 DataGrip/psql 등으로 직접 접속할 수 있다 (컨테이너 안에 들어가서 확인하는 게 정석은 아니다).
+
+| 항목 | 값 |
+|---|---|
+| Host | `localhost` |
+| Port | `docker-compose.yml`의 `postgres.ports`에 매핑된 값 (기본 `5432`; 로컬에 별도 Postgres가 이미 5432를 쓰고 있다면 충돌을 피해 다른 포트로 바꿔서 매핑) |
+| Database | `.env`의 `POSTGRES_DB` (기본 `contextory_db`) — **반드시 정확히 이 값으로 지정**해야 한다. DataGrip이 자동으로 만들어주는 데이터소스 이름(`{database}@{host}`)에 이끌려 Database 필드에 임의의 라벨을 입력하면 존재하지 않는 DB를 가리켜 스키마가 비어 보인다 |
+| User / Password | `.env`의 `POSTGRES_USER` / `POSTGRES_PASSWORD` |
+
+연결 후 `public` 스키마가 비어 보이면: 데이터소스 우클릭 → `Refresh`(F5) 또는 `Schemas...`에서 `public` 체크 여부 확인.
+
+### 6. (참고) Docker 없이 로컬에서 직접 실행하는 경우
+
+Docker를 쓰지 않고 예전처럼 `uvicorn`을 직접 띄우는 것도 가능하지만, Redis + Celery 도입 이후로는 아래 셋을 **각각 별도 프로세스로** 띄워야 `POST /internal/v1/analyses`(비동기 분석 API)가 정상 동작한다. Redis/Celery worker 없이 uvicorn만 띄우면 요청은 `202`로 접수되지만 분석이 영원히 처리되지 않다가 타임아웃으로 실패 처리된다(`GET /api/v1/analyze/pr` 같은 동기 API나 GET/maintenance 엔드포인트는 영향 없음).
+
+```bash
+# 1) PostgreSQL(pgvector 확장 활성화된 상태)이 로컬에 떠 있어야 함
+#    .env의 POSTGRES_HOST=localhost로 변경
+
+# 2) Redis 로컬 설치/실행 (예: choco install redis-64, 또는 WSL/별도 컨테이너)
+#    .env의 REDIS_URL=redis://localhost:6379/0 로 변경
+
+# 3) 패키지 설치
+pip install -r requirements.txt
+
+# 4) Celery worker 실행 (별도 터미널)
+celery -A workers.celery_app.celery_app worker --loglevel=info
+
+# 5) FastAPI 서버 실행 (또 다른 터미널)
 uvicorn main:app --reload
 ```
 
@@ -160,9 +256,11 @@ uvicorn main:app --reload
 
 ### 테스트
 ```bash
-# 런타임 + 평가 테스트 (OpenAI/DB 호출 없음 — 전부 주입/mock)
+# 런타임 + 평가 테스트 (OpenAI/DB/Redis 호출 없음 — 전부 주입/mock)
 pytest tests/ eval/tests/ -q
 ```
+
+`tests/test_worker_tasks.py`는 Celery task(`workers.tasks.run_analysis_job`)를 `.delay()` 없이 직접 동기 호출해 검증하므로, Redis/Docker가 없어도 그대로 통과한다.
 
 ### Filter OFF vs ON 비교 리포트
 `eval/` 은 `services/` 를 import하지 않는다. 실제 필터·신뢰도 로직을 평가에 연결하는 조립은

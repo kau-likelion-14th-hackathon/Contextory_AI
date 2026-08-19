@@ -7,6 +7,9 @@ python-dotenv>=1.0.1
 httpx>=0.27.0  # 분석 완료/실패 콜백 전송(Backend 내부 API 호출)
 anyio>=4.2.0   # 비동기 분석 작업의 스레드풀 격리(CapacityLimiter)
 
+# Async Task Queue (Redis broker/backend)
+celery[redis]>=5.4.0
+
 # Database & Vector DB (PostgreSQL + pgvector)
 sqlalchemy>=2.0.28
 psycopg2-binary>=2.9.9
