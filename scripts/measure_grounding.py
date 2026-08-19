@@ -91,6 +91,7 @@ def measure_pr(repo: str, pr: Dict[str, Any], repeat: int = 1) -> Dict[str, Any]
     body = pr.get("body") or ""
 
     top_scores: List[float] = []
+    all_scores: List[float] = []
     queries: List[str] = []
     sufficient: List[bool] = []
     for _ in range(max(1, repeat)):
@@ -98,6 +99,7 @@ def measure_pr(repo: str, pr: Dict[str, Any], repeat: int = 1) -> Dict[str, Any]
         outcome = retrieve_with_signals(query_text=query, repo_name=repo)
         scores = [float(c.get("similarity_score") or 0.0) for c in outcome.chunks]
         top_scores.append(max(scores) if scores else 0.0)
+        all_scores = scores
         queries.append(query)
         sufficient.append(outcome.grounding_sufficient)
 
@@ -108,6 +110,7 @@ def measure_pr(repo: str, pr: Dict[str, Any], repeat: int = 1) -> Dict[str, Any]
         "title": title,
         "top_score": ordered[len(ordered) // 2],       # 대푯값은 중앙값
         "top_scores": top_scores,
+        "scores": all_scores,
         "spread": ordered[-1] - ordered[0],            # 실행 간 최대 변동 폭
         "flipped": len(set(sufficient)) > 1,           # 실행마다 판정이 뒤집혔는가
         "queries": queries,

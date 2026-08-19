@@ -61,6 +61,7 @@ def compute_confidence(
     filter_ratio_warn_threshold: Optional[float] = None,
     valid_evidence_threshold: Optional[float] = None,
     weights: Optional[Dict[str, float]] = None,
+    information_loss_ratio: Optional[float] = None,
 ) -> ConfidenceOutcome:
     """
     필터를 통과한 Evidence들의 similarity score + filter_ratio 로 Confidence를 계산한다.
@@ -109,7 +110,11 @@ def compute_confidence(
 
     evidence_ratio = min(evidence_count / evidence_target_count, 1.0) if evidence_target_count else 0.0
     strong_ratio = min(strong_count / evidence_target_count, 1.0) if evidence_target_count else 0.0
-    retention = max(0.0, 1.0 - filter_ratio)
+    # 잔존율은 '버린 비율'이 아니라 '쓸 만한 근거를 잃은 비율'로 깎는다.
+    # 임계값 미달 후보를 버린 건 필터가 제 일을 한 것이라 감점 대상이 아니다.
+    # (미지정 시에는 기존처럼 filter_ratio 를 쓴다 — 주입 테스트/평가 호환)
+    loss = filter_ratio if information_loss_ratio is None else information_loss_ratio
+    retention = max(0.0, 1.0 - loss)
 
     score = _weighted_score(
         top_score=max(0.0, min(top_score, 1.0)),
@@ -132,15 +137,21 @@ def compute_confidence(
             "strong_threshold": strong_threshold,
             "valid_evidence_threshold": valid_threshold,
             "filter_ratio": round(filter_ratio, 4),
+            "information_loss_ratio": round(loss, 4),
             "filter_retention": round(retention, 4),
             "weights": dict(weights),
         },
     )
 
 
-def calculate_confidence(filtered_contexts: List[Dict[str, Any]], filter_ratio: float) -> ConfidenceOutcome:
+def calculate_confidence(
+    filtered_contexts: List[Dict[str, Any]],
+    filter_ratio: float,
+    information_loss_ratio: Optional[float] = None,
+) -> ConfidenceOutcome:
     """chunk dict 리스트를 그대로 받는 편의 래퍼 (파이프라인에서 사용)"""
     return compute_confidence(
         [c.get("similarity_score", 0.0) for c in filtered_contexts],
+        information_loss_ratio=information_loss_ratio,
         filter_ratio=filter_ratio,
     )

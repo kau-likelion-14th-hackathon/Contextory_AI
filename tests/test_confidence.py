@@ -70,3 +70,67 @@ def test_calculate_confidence_accepts_chunk_dicts():
 
     assert 0.0 < outcome.score <= 1.0
     assert outcome.signals["filter_ratio"] == 0.5
+
+
+# ==========================================
+# 잔존율 = "쓸 만한 근거를 잃은 비율" (실측으로 드러난 역전 방지)
+# ==========================================
+
+def test_threshold_filtering_is_not_counted_as_information_loss():
+    """
+    임계값 미달 후보를 버린 건 필터가 제 일을 한 것이지 정보 손실이 아니다.
+    이걸 감점하면 검색이 후보를 더 많이 물어올수록 Confidence가 깎여,
+    근거가 좋아졌는데 점수가 내려가는 역전이 생긴다(실측: 0.6107 → 0.58).
+    """
+    scores = [0.64, 0.63, 0.62]
+
+    penalized = compute_confidence(scores, filter_ratio=0.4)                             # 예전 방식
+    fixed = compute_confidence(scores, filter_ratio=0.4, information_loss_ratio=0.0)     # 손실 없음
+
+    assert fixed.score > penalized.score
+    assert fixed.signals["filter_retention"] == 1.0
+    assert fixed.signals["information_loss_ratio"] == 0.0
+
+
+def test_real_information_loss_still_reduces_score():
+    """임계값을 넘긴 근거를 LLM 필터가 버린 경우는 여전히 감점해야 한다."""
+    scores = [0.64, 0.63]
+
+    intact = compute_confidence(scores, filter_ratio=0.5, information_loss_ratio=0.0)
+    lost = compute_confidence(scores, filter_ratio=0.5, information_loss_ratio=0.5)
+
+    assert lost.score < intact.score
+
+
+def test_information_loss_ratio_ignores_below_threshold_removals():
+    """FilterOutcome이 직접 계산하는 손실률 — 임계값 미달 제거는 0으로 나와야 한다."""
+    from services.context_filter import filter_contexts
+
+    chunks = [
+        {"chunk_id": "a", "similarity_score": 0.70},
+        {"chunk_id": "b", "similarity_score": 0.65},
+        {"chunk_id": "c", "similarity_score": 0.30},   # 임계값 미달 → 정상 제거
+        {"chunk_id": "d", "similarity_score": 0.20},   # 임계값 미달 → 정상 제거
+    ]
+
+    outcome = filter_contexts(chunks, sim_threshold=0.5, filter_mode="on")
+
+    assert outcome.filter_ratio == 0.5              # 절반을 버린 건 맞지만
+    assert outcome.information_loss_ratio == 0.0    # 잃은 근거는 없다
+
+
+def test_information_loss_ratio_counts_dropped_strong_chunks():
+    """유사도가 높은데도 버려졌다면 그건 진짜 손실이다 (LLM 필터가 관련 없다고 판단한 경우)."""
+    from services.context_filter import filter_contexts
+
+    chunks = [
+        {"chunk_id": "a", "similarity_score": 0.70},
+        {"chunk_id": "b", "similarity_score": 0.65},
+    ]
+    # Top-1은 규칙상 보존되므로 두 번째만 버려진다
+    outcome = filter_contexts(
+        chunks, sim_threshold=0.5, filter_mode="llm", relevance_fn=lambda c, t: False
+    )
+
+    assert outcome.top1_preserved is True
+    assert outcome.information_loss_ratio == 0.5

@@ -246,7 +246,11 @@ def run_pipeline(
 
     # ⑥' 근거 충분성 판단 — 부족하면 LLM을 호출하지 않고 '근거 부족' 경로로 나간다
     ctx.grounding_sufficient = bool(ctx.retrieval.grounding_sufficient)
-    ctx.confidence = calculate_confidence(ctx.kept, ctx.filter_ratio)
+    ctx.confidence = calculate_confidence(
+        ctx.kept,
+        ctx.filter_ratio,
+        information_loss_ratio=ctx.filtering.information_loss_ratio if ctx.filtering else None,
+    )
 
     if not ctx.grounding_sufficient:
         ctx.notes.append(f"근거 부족: {ctx.retrieval.reason}")
