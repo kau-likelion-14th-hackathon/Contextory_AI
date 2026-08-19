@@ -90,3 +90,35 @@ def test_db_error_is_raised_as_retrieval_error():
             embed_fn=lambda text: [0.0, 0.1],
             db_engine=_FailingEngine(),
         )
+
+
+# ==========================================
+# 임베딩 입력 자르기 — 전송 형태 기준으로 판단해야 한다
+# ==========================================
+
+def test_truncate_counts_tokens_as_sent_to_api():
+    """
+    llama_index의 OpenAIEmbedding은 전송 직전에 개행을 공백으로 바꾼다.
+    그 치환으로 토큰이 늘어나면, 우리가 8192로 정확히 잘라 보내도 OpenAI가 400을 낸다
+    (실측: 프론트 PR #42 → 자른 뒤 8,192 토큰이 전송 형태로는 8,218 토큰).
+    그래서 판단 기준은 자른 문자열이 아니라 '실제로 전송되는 형태'여야 한다.
+    """
+    import tiktoken
+
+    from services.retrieval import _as_sent_to_api, truncate_to_token_limit
+
+    encoding = tiktoken.get_encoding("cl100k_base")
+    limit = 200
+    # 개행 + 들여쓰기가 반복되는 코드/diff 형태 (치환 시 토큰 수가 변한다)
+    text = "\n".join("    const value = useQuery({ queryKey: [pullRequest] });" for _ in range(400))
+
+    out = truncate_to_token_limit(text, max_tokens=limit)
+
+    assert len(encoding.encode(_as_sent_to_api(out))) <= limit
+
+
+def test_truncate_keeps_short_input_untouched():
+    from services.retrieval import truncate_to_token_limit
+
+    text = "short query"
+    assert truncate_to_token_limit(text, max_tokens=100) == text
