@@ -11,8 +11,12 @@ from models.schemas import CodeFileChunk
 
 
 def get_embed_model() -> OpenAIEmbedding:
+    """
+    인덱싱(pipeline)과 조회(services/retrieval)가 동일한 임베딩 모델을 쓰도록 하는 단일 지점.
+    모델명은 하드코딩하지 않고 settings.EMBEDDING_MODEL을 따른다.
+    """
     return OpenAIEmbedding(
-        model="text-embedding-3-small",
+        model=settings.EMBEDDING_MODEL,
         api_key=settings.OPENAI_API_KEY,
     )
 

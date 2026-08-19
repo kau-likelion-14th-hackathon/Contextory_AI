@@ -1,27 +1,55 @@
+"""
+analysis_service.py — RAG Pipeline Orchestration (①~⑥)
+
+    ① PR Diff Embedding          (services/retrieval.py → llamaindex.pipeline.get_embed_model 재사용)
+    ② PGVector Similarity Search (services/retrieval.py)
+    ③ Context Filter Agent       (services/context_filter.py — Top-1 반드시 보존)
+    ④ Grounded Prompt 생성        (services/prompt_builder.py — 필터 통과 Context만)
+    ⑤ GPT-4o Structured Response (JSON 강제, 자유 문자열 금지)
+    ⑥ Confidence 계산            (services/confidence.py — 실제 검색 신호 기반)
+
+설계 원칙
+- 각 단계의 중간 산출물을 PipelineContext 하나에 모아 추적 가능하게 유지한다.
+- 검색 실패(DB 오류) / 근거 부족 / LLM 응답 파싱 실패를 각각 구분해 처리한다.
+  외부 실패를 정상 응답으로 위장하지 않는다.
+- retrieve/filter/generate/translate 를 전부 주입 가능하게 두어 DB·LLM 없이 테스트한다.
+"""
+
 import json
-from openai import OpenAI
+from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, List, Optional
+
 from core.config import settings
 from models.schemas import (
-    PRAnalysisRequest, PRAnalysisResponse, Evidence, CodeReviewComment,
+    PRAnalysisRequest, PRAnalysisResponse, Evidence, CodeReviewComment, RoleImpact,
     AsyncAnalysisRequest, AnalysisResultPayload, AnalysisChangeItem, PullRequestFile,
+    EvidenceRef, RoleImpactItem, FollowUpTask, FollowUpTaskItem,
 )
-from services.retrieval import retrieve_contexts, retrieve_repo_contexts
-from services.context_filter import filter_contexts
-from services.prompt_builder import build_grounded_prompt
-from services.confidence import calculate_confidence
+from services.retrieval import (
+    RetrievalOutcome, retrieve_with_signals, retrieve_contexts, retrieve_repo_contexts,
+)
+from services.context_filter import (
+    FilterOutcome, filter_contexts, filter_contexts_with_llm,
+)
+from services.prompt_builder import (
+    ALLOWED_BASIS, EVIDENCE_SOURCE_CONTEXT, EVIDENCE_SOURCE_DIFF, PRInput,
+    ProjectInfo, RecordDraftOutput, build_system_prompt, build_user_prompt,
+    build_grounded_prompt,
+)
+from services.role_normalizer import normalize_role, normalize_roles, partition_roles
+from services.confidence import ConfidenceOutcome, calculate_confidence
 from services.token_utils import count_tokens, get_encoding
-from services.translation_service import translate_pr_to_en_query  # ✅ 공통 모듈로 import
+from services.translation_service import translate_pr_to_en_query
 
-client = OpenAI(api_key=settings.OPENAI_API_KEY)
+INSUFFICIENT_GROUNDING_SUMMARY = (
+    "이번 PR을 설명할 만한 프로젝트 컨텍스트를 충분히 찾지 못했습니다. "
+    "AI 초안 대신 사람이 직접 확인해 주세요."
+)
+EMPTY_DIFF_SUMMARY = "코드 diff가 비어 있어 변경 내용을 분석할 수 없습니다."
 
-# 내용 자체보다 존재 유무만 중요한 파일들 — 있어도 리뷰 신호가 거의 없는데 patch만 크게 잡아먹는
-# 경우가 많아(자동 생성/vendored/lockfile) 프롬프트에서 통째로 제외한다.
-_LOW_VALUE_FILENAMES = {
-    "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "poetry.lock",
-    "Pipfile.lock", "Gemfile.lock", "composer.lock", "Cargo.lock", "go.sum",
-}
-_LOW_VALUE_SUFFIXES = (".min.js", ".min.css", ".map")
-_LOW_VALUE_PATH_MARKERS = ("/vendor/", "/node_modules/", "/dist/", "/build/", "/generated/")
+
+class LLMResponseParseError(RuntimeError):
+    """GPT 응답이 약속한 JSON 구조가 아님. 상위에서 실패로 처리해야 하며 삼키지 않는다."""
 
 
 class PromptTooLargeError(Exception):
@@ -35,6 +63,16 @@ class PromptTooLargeError(Exception):
         self.token_count = token_count
         self.limit = limit
         super().__init__(f"PR diff too large to analyze ({token_count} tokens, limit {limit})")
+
+
+# 내용 자체보다 존재 유무만 중요한 파일들 — 있어도 리뷰 신호가 거의 없는데 patch만 크게 잡아먹는
+# 경우가 많아(자동 생성/vendored/lockfile) 프롬프트에서 통째로 제외한다.
+_LOW_VALUE_FILENAMES = {
+    "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "poetry.lock",
+    "Pipfile.lock", "Gemfile.lock", "composer.lock", "Cargo.lock", "go.sum",
+}
+_LOW_VALUE_SUFFIXES = (".min.js", ".min.css", ".map")
+_LOW_VALUE_PATH_MARKERS = ("/vendor/", "/node_modules/", "/dist/", "/build/", "/generated/")
 
 
 def _is_low_value_file(f: PullRequestFile) -> bool:
@@ -53,19 +91,17 @@ def _is_low_value_file(f: PullRequestFile) -> bool:
     return False
 
 
-def build_diff_content(files: list[PullRequestFile]) -> str:
+def build_diff_content(files: List[PullRequestFile]) -> str:
     """PR 변경 파일 목록을 단일 Diff 문자열로 결합.
 
     LLM 요청이 OpenAI TPM 한도를 넘겨 매번 동일하게 실패하는 것(request-shape bug)을
     막기 위해, 개별 파일 단위에서부터 크기를 억제한다:
     - lockfile/생성/vendored/rename-only 파일은 리뷰 신호가 거의 없으므로 통째로 제외
     - 남은 각 파일의 patch는 MAX_PATCH_CHARS_PER_FILE로 상한을 둔다
-      (prompt_builder.py가 context 스니펫을 300/500자로 자르는 것과 같은 취지)
-    그래도 전체 프롬프트가 예산을 넘을 수 있으므로, 최종 안전판은
-    _gather_grounded_context()의 토큰 예산 트리밍/실패 처리다.
     """
     blocks = []
     omitted_count = 0
+    max_patch_chars = getattr(settings, "MAX_PATCH_CHARS_PER_FILE", 4000)
 
     for f in files:
         if not f.patch or not f.patch.strip():
@@ -75,8 +111,8 @@ def build_diff_content(files: list[PullRequestFile]) -> str:
             continue
 
         patch = f.patch
-        if len(patch) > settings.MAX_PATCH_CHARS_PER_FILE:
-            patch = patch[: settings.MAX_PATCH_CHARS_PER_FILE] + "\n... (patch truncated)"
+        if len(patch) > max_patch_chars:
+            patch = patch[:max_patch_chars] + "\n... (patch truncated)"
 
         blocks.append(f"### {f.file_path} ({f.change_type})\n{patch}")
 
@@ -93,16 +129,13 @@ def _fit_prompt_to_budget(
     title: str,
     diff_content: str,
     filtered_contexts: list,
-    repo_contexts: list,
+    repo_contexts: Optional[list] = None,
 ) -> str:
     """build_grounded_prompt()로 구성한 프롬프트가 LLM_MAX_PROMPT_TOKENS를 넘으면
     PR diff 부분만 토큰 단위로 잘라 다시 맞춘다. 그래도 안 맞으면 PromptTooLargeError.
-
-    diff 이외 부분(제목/컨텍스트/고정 지시문)은 이미 build_diff_content()와
-    context_filter.py의 유사도 필터로 통제되고 있어 diff가 압도적으로 큰 항목이므로,
-    diff만 잘라도 대부분의 경우 예산 안에 들어온다.
     """
-    budget = settings.LLM_MAX_PROMPT_TOKENS
+    repo_contexts = repo_contexts or []
+    budget = getattr(settings, "LLM_MAX_PROMPT_TOKENS", 12000)
     prompt = build_grounded_prompt(title, diff_content, filtered_contexts, repo_contexts)
     token_count = count_tokens(prompt, settings.LLM_MODEL)
     if token_count <= budget:
@@ -127,157 +160,530 @@ def _fit_prompt_to_budget(
     return prompt
 
 
-def _gather_grounded_context(title: str, description: str, diff_content: str, repo_name: str):
+@dataclass
+class PipelineContext:
+    """RAG 파이프라인 한 번의 실행 추적 컨텍스트 (로깅·평가·디버깅 공용)"""
+
+    query_text: str = ""
+    retrieval: Optional[RetrievalOutcome] = None
+    filtering: Optional[FilterOutcome] = None
+    system_prompt: Optional[str] = None
+    prompt: Optional[str] = None
+    llm_raw: Optional[str] = None
+    llm_output: Dict[str, Any] = field(default_factory=dict)
+    confidence: Optional[ConfidenceOutcome] = None
+    grounding_sufficient: bool = True
+    notes: List[str] = field(default_factory=list)
+
+    @property
+    def kept(self) -> List[Dict[str, Any]]:
+        return self.filtering.kept if self.filtering else []
+
+    @property
+    def filter_ratio(self) -> float:
+        return self.filtering.filter_ratio if self.filtering else 0.0
+
+    def to_log_dict(self) -> Dict[str, Any]:
+        """중간 산출물 요약 (프롬프트/본문 전체는 제외하고 신호만)"""
+        return {
+            "retrieved_count": self.retrieval.retrieved_count if self.retrieval else 0,
+            "top_score": self.retrieval.top_score if self.retrieval else 0.0,
+            "above_threshold_count": self.retrieval.above_threshold_count if self.retrieval else 0,
+            "kept_count": len(self.kept),
+            "removed_count": len(self.filtering.removed) if self.filtering else 0,
+            "filter_ratio": self.filter_ratio,
+            "filter_mode": self.filtering.mode if self.filtering else None,
+            "top1_preserved": self.filtering.top1_preserved if self.filtering else None,
+            "grounding_sufficient": self.grounding_sufficient,
+            "confidence": self.confidence.score if self.confidence else 0.0,
+            "confidence_signals": self.confidence.signals if self.confidence else {},
+            "prompt_chars": len(self.prompt or ""),
+            "notes": list(self.notes),
+        }
+
+
+def _default_translate(title: str, description: str) -> str:
+    return translate_pr_to_en_query(title, description or "")
+
+
+def _lookup_project(repo_name: str, language: Optional[str] = None) -> Optional[ProjectInfo]:
     """
-    Query Translation + Multi-Source Retrieval(code_review_vectors + repo_code_vectors)을 수행하고
-    Grounded Prompt를 구성한다. 동기(analyze_pr_pipeline)/비동기(analyze_pr_for_callback) 분석
-    파이프라인이 공통으로 사용하는 조회 단계.
-
-    프롬프트가 LLM_MAX_PROMPT_TOKENS를 넘으면 diff를 잘라 재시도하고, 그래도 넘으면
-    PromptTooLargeError를 던져 OpenAI 호출 자체를 막는다(원 인시던트: 100K+ 토큰 요청이
-    30K TPM 조직 한도에 걸려 매번 동일하게 429로 실패).
+    project.yml 에서 저장소 이름으로 프로젝트 메타를 찾는다.
+    파일이 없거나 항목이 없으면 None — 프롬프트에 "(정보 없음)"으로 표기되고 역할 판단을 하지 않는다.
+    레지스트리 파일 오류가 분석 전체를 막지 않도록 예외는 삼키고 로그만 남긴다.
     """
-    translated_query = translate_pr_to_en_query(title, description or "")
-    query_text = f"PR Title/Summary: {translated_query}\nPR Diff:\n{diff_content}"
+    try:
+        from services.project_registry import get_project_info  # 지연 import
 
-    raw_contexts = retrieve_contexts(query_text=query_text, top_k=settings.RAG_TOP_K)
-    repo_contexts = retrieve_repo_contexts(
-        query_text=query_text,
-        repo_name=repo_name,
-        top_k=settings.RAG_TOP_K,
-    )
+        project = get_project_info(repo_name)
+    except Exception as e:  # YAML 파싱 오류 등
+        print(f"[Project Registry] 프로젝트 메타 조회 실패 repo={repo_name}: {type(e).__name__}: {e}")
+        return None
 
-    filtered_contexts, filter_ratio = filter_contexts(
-        raw_contexts,
-        sim_threshold=settings.SIM_THRESHOLD
-    )
-
-    prompt = _fit_prompt_to_budget(title, diff_content, filtered_contexts, repo_contexts)
-    return prompt, filtered_contexts, filter_ratio
+    if project is not None and language:
+        project.language = language
+    return project
 
 
-def analyze_pr_pipeline(request: PRAnalysisRequest) -> PRAnalysisResponse:
+def _make_default_filter(query_text: str) -> Callable[[List[Dict[str, Any]]], FilterOutcome]:
     """
-    전체 RAG Orchestration Pipeline (동기, POST /api/v1/analyze/pr 전용 — 기존 응답 계약 유지)
+    settings.FILTER_MODE에 따라 필터 구현을 고른다.
+    LLM 모드에서도 Top-1 보존 규칙은 context_filter가 그대로 적용한다.
     """
-    description_text = getattr(request, "description", "")
-    prompt, filtered_contexts, filter_ratio = _gather_grounded_context(
-        request.title, description_text, request.diff_content, request.repo_name
-    )
+    if getattr(settings, "FILTER_MODE", "similarity") == "llm":
+        return lambda chunks: filter_contexts_with_llm(chunks, query_text=query_text)
+    return lambda chunks: filter_contexts(chunks)
 
-    # 4. GPT-4o Structured Response 호출 (JSON Mode)
-    system_instruction = """You are an expert Code Review AI.
-Analyze the PR and output ONLY a valid JSON with the following structure:
-{
-  "summary": "Brief summary of the PR and code review",
-  "risk_score": 0 to 100 integer,
-  "reviews": [
-    {
-      "file_path": "path/to/file or null",
-      "line_number": integer or null,
-      "comment": "Specific review comment"
-    }
-  ]
-}"""
 
-    response = client.chat.completions.create(
+# ==========================================
+# ⑤ GPT-4o Structured Response
+# ==========================================
+
+def _default_generate(system_prompt: str, user_prompt: str) -> str:
+    """
+    OpenAI Structured Output 호출.
+
+    RecordDraftOutput(Pydantic) 으로 JSON 스키마를 강제하고 그대로 파싱하므로
+    자유 텍스트 후처리 파싱이 필요 없다.
+    """
+    from openai import OpenAI  # 지연 import
+
+    client = OpenAI(api_key=settings.OPENAI_API_KEY)
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
+
+    completions = client.chat.completions
+    if not hasattr(completions, "parse"):
+        completions = client.beta.chat.completions
+
+    response = completions.parse(
         model=settings.LLM_MODEL,
-        messages=[
-            {"role": "system", "content": system_instruction},
-            {"role": "user", "content": prompt}
-        ],
-        response_format={"type": "json_object"},
-        temperature=0.2
+        messages=messages,
+        response_format=RecordDraftOutput,
+        temperature=0.2,
     )
 
-    llm_output = json.loads(response.choices[0].message.content)
+    message = response.choices[0].message
+    if getattr(message, "refusal", None):
+        raise LLMResponseParseError(f"LLM이 응답을 거부했습니다: {message.refusal}")
+    if message.parsed is None:
+        raise LLMResponseParseError("LLM 응답을 출력 스키마로 파싱하지 못했습니다.")
 
-    # 5. Confidence Calculation
-    confidence, needs_conf = calculate_confidence(filtered_contexts, filter_ratio)
+    return message.parsed.model_dump_json()
 
-    # 6. Evidences & Response DTO Mapping
-    evidences = [
+
+def parse_llm_json(raw: Optional[str]) -> Dict[str, Any]:
+    """
+    LLM 응답을 JSON으로 파싱한다. 실패하면 LLMResponseParseError를 던진다.
+    """
+    if raw is None or not str(raw).strip():
+        raise LLMResponseParseError("LLM 응답이 비어 있습니다.")
+    try:
+        parsed = json.loads(raw)
+    except (json.JSONDecodeError, TypeError) as e:
+        raise LLMResponseParseError(f"LLM 응답 JSON 파싱 실패: {e}") from e
+    if not isinstance(parsed, dict):
+        raise LLMResponseParseError(f"LLM 응답이 JSON 객체가 아닙니다: {type(parsed).__name__}")
+    return parsed
+
+
+# ==========================================
+# 파이프라인 본체
+# ==========================================
+
+def run_pipeline(
+    pr: PRInput,
+    repo_name: str,
+    project: Optional[ProjectInfo] = None,
+    retrieve_fn: Optional[Callable[..., RetrievalOutcome]] = None,
+    filter_fn: Optional[Callable[..., FilterOutcome]] = None,
+    generate_fn: Optional[Callable[[str, str], str]] = None,
+    translate_fn: Optional[Callable[[str, str], str]] = None,
+    top_k: Optional[int] = None,
+) -> PipelineContext:
+    """
+    ①~⑥ 전체 오케스트레이션. 각 단계 산출물을 PipelineContext에 누적해 반환한다.
+    """
+    ctx = PipelineContext()
+
+    # ⓪ diff가 비어 있으면 분석할 대상이 없다
+    if not pr.has_diff:
+        ctx.grounding_sufficient = False
+        ctx.notes.append("코드 diff가 비어 있어 분석을 진행하지 않았습니다.")
+        ctx.llm_output = {
+            "summary": EMPTY_DIFF_SUMMARY,
+            "needsConfirmation": ["코드 diff가 비어 있음 — PR에 실제 변경이 있는지 확인 필요"],
+        }
+        ctx.confidence = calculate_confidence([], 0.0)
+        return ctx
+
+    # ① 쿼리 구성 (+ 임베딩 8192 토큰 제한 방어를 위한 diff 길이 제어)
+    translate = translate_fn or _default_translate
+    translated = translate(pr.title, pr.body)
+    query_diff = pr.diff[:4000] if pr.diff else ""
+    ctx.query_text = f"PR Title/Summary: {translated}\nPR Diff:\n{query_diff}"
+
+    # ② 검색 — DB 오류는 RetrievalError로 그대로 올라간다
+    retrieve = retrieve_fn or retrieve_with_signals
+    ctx.retrieval = retrieve(
+        query_text=ctx.query_text,
+        repo_name=repo_name,
+        top_k=top_k if top_k is not None else settings.RAG_TOP_K,
+    )
+
+    # ③ 필터 (제거분도 보존)
+    do_filter = filter_fn or _make_default_filter(ctx.query_text)
+    ctx.filtering = do_filter(ctx.retrieval.chunks)
+    if ctx.filtering.notes:
+        ctx.notes.extend(ctx.filtering.notes)
+
+    # ⑥' 근거 충분성 판단
+    ctx.grounding_sufficient = bool(ctx.retrieval.grounding_sufficient)
+    ctx.confidence = calculate_confidence(ctx.kept, ctx.filter_ratio)
+
+    if not ctx.grounding_sufficient:
+        ctx.notes.append(f"근거 부족: {ctx.retrieval.reason}")
+        ctx.llm_output = {
+            "summary": INSUFFICIENT_GROUNDING_SUMMARY,
+            "needsConfirmation": [ctx.retrieval.reason or "검색된 근거가 부족합니다."],
+        }
+        ctx.confidence.needs_confirmation = True
+        return ctx
+
+    # ④ Grounded Prompt (필터 통과 Context만)
+    ctx.system_prompt = build_system_prompt(project)
+    ctx.prompt = build_user_prompt(pr=pr, filtered_contexts=ctx.kept, project=project)
+
+    # ⑤ 구조화 출력 생성 + 파싱
+    generate = generate_fn or _default_generate
+    ctx.llm_raw = generate(ctx.system_prompt, ctx.prompt)
+    ctx.llm_output = parse_llm_json(ctx.llm_raw)
+
+    return ctx
+
+
+# ==========================================
+# 응답 매핑
+# ==========================================
+
+def _confirmation_items(ctx: PipelineContext) -> List[str]:
+    raw = ctx.llm_output.get("needsConfirmation")
+    if isinstance(raw, bool):
+        raw = []
+    items = [str(i).strip() for i in (raw or []) if str(i).strip()]
+
+    if ctx.confidence and ctx.confidence.retrieval_quality_warning:
+        items.append(
+            f"검색 결과의 {ctx.filter_ratio:.0%}가 필터링되었습니다. 검색 품질(인덱싱 범위·임계값) 확인이 필요합니다."
+        )
+    if not ctx.grounding_sufficient and not items:
+        items.append("검색된 근거가 부족합니다 — 사람이 직접 확인 필요")
+    return items
+
+
+def _needs_confirmation(ctx: PipelineContext) -> bool:
+    signal_flag = bool(ctx.confidence.needs_confirmation) if ctx.confidence else True
+    return bool(_confirmation_items(ctx)) or signal_flag or not ctx.grounding_sufficient
+
+
+def _build_evidences(ctx: PipelineContext) -> List[Evidence]:
+    return [
         Evidence(
-            id=str(c["id"]),
+            id=str(c.get("id", c.get("chunk_id", ""))),
             source_code=c.get("source_code"),
             pr_diff=c.get("pr_diff"),
             review_comment=c.get("review_comment"),
-            similarity_score=c["similarity_score"]
+            similarity_score=float(c.get("similarity_score", 0.0) or 0.0),
+            chunk_id=c.get("chunk_id"),
+            source_type=c.get("source_type"),
+            file_path=c.get("file_path"),
         )
-        for c in filtered_contexts
+        for c in ctx.kept
     ]
+
+
+def _build_evidence_refs(ctx: PipelineContext) -> List[EvidenceRef]:
+    kept_by_chunk = {str(c.get("chunk_id")): c for c in ctx.kept}
+    refs: List[EvidenceRef] = []
+    used_ids: set = set()
+    cited_chunks: set = set()
+
+    for idx, item in enumerate(ctx.llm_output.get("evidence", []) or [], 1):
+        if not isinstance(item, dict):
+            continue
+        location = _nullable_str(item.get("location"))
+        source = _nullable_str(item.get("source")) or (
+            EVIDENCE_SOURCE_CONTEXT if location in kept_by_chunk else EVIDENCE_SOURCE_DIFF
+        )
+        chunk = kept_by_chunk.get(location or "")
+        if chunk is not None:
+            cited_chunks.add(str(chunk.get("chunk_id")))
+
+        evidence_id = _nullable_str(item.get("id")) or f"e{idx}"
+        used_ids.add(evidence_id)
+        refs.append(
+            EvidenceRef(
+                id=evidence_id,
+                source=source,
+                location=location,
+                description=_nullable_str(item.get("description")),
+                chunk_id=str(chunk.get("chunk_id")) if chunk is not None else None,
+                similarity_score=chunk.get("similarity_score") if chunk is not None else None,
+            )
+        )
+
+    for offset, c in enumerate(ctx.kept, 1):
+        chunk_id = str(c.get("chunk_id"))
+        if chunk_id in cited_chunks:
+            continue
+        candidate = f"c{offset}"
+        while candidate in used_ids:
+            offset += len(ctx.kept)
+            candidate = f"c{offset}"
+        used_ids.add(candidate)
+        refs.append(
+            EvidenceRef(
+                id=candidate,
+                source=EVIDENCE_SOURCE_CONTEXT,
+                location=c.get("file_path") or chunk_id,
+                description=None,
+                chunk_id=chunk_id,
+                similarity_score=c.get("similarity_score"),
+            )
+        )
+    return refs
+
+
+_NULLISH_STRINGS = {"null", "none", "nil", "n/a", "na", "-", ""}
+
+
+def _nullable_str(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return None if text.lower() in _NULLISH_STRINGS else text
+
+
+def _nullable_int(value: Any) -> Optional[int]:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    text = _nullable_str(value)
+    if text is None:
+        return None
+    try:
+        return int(float(text))
+    except ValueError:
+        return None
+
+
+def _positive_int(value: Any) -> Optional[int]:
+    parsed = _nullable_int(value)
+    return parsed if parsed is not None and parsed > 0 else None
+
+
+def _risk_score(output: Dict[str, Any]) -> int:
+    raw = output.get("riskScore", output.get("risk_score"))
+    parsed = _nullable_int(raw)
+    if parsed is None:
+        return 0
+    return max(0, min(parsed, 100))
+
+
+def _str_list(value: Any) -> List[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(v) for v in value if str(v).strip()]
+
+
+def _allowed_roles(value: Any) -> List[str]:
+    return normalize_roles(_str_list(value))
+
+
+def _follow_up_tasks(value: Any) -> List[Dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+
+    tasks: List[Dict[str, Any]] = []
+    for item in value:
+        if isinstance(item, str):
+            text = item.strip()
+            if text:
+                tasks.append({"role": None, "task": text, "evidence_refs": []})
+            continue
+        if not isinstance(item, dict):
+            continue
+
+        text = str(item.get("task", "")).strip()
+        if not text:
+            continue
+        tasks.append(
+            {
+                "role": normalize_role(item.get("role")),
+                "task": text,
+                "evidence_refs": _str_list(
+                    item.get("evidenceRefs") or item.get("evidence_refs")
+                ),
+            }
+        )
+    return tasks
+
+
+def _role_impacts(value: Any) -> List[Dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+
+    parsed = []
+    for item in value:
+        if not isinstance(item, dict) or not item.get("role"):
+            continue
+        role = normalize_role(item.get("role"))
+        if role is None:
+            continue
+        basis = _nullable_str(item.get("basis"))
+        parsed.append(
+            {
+                "role": role,
+                "impact": str(item.get("impact", "")),
+                "basis": basis if basis in ALLOWED_BASIS else None,
+                "evidence_refs": _str_list(
+                    item.get("evidenceRefs") or item.get("evidence_refs") or item.get("evidenceIds")
+                ),
+            }
+        )
+    return parsed
+
+
+# ==========================================
+# 진입점 1: 동기 API (POST /api/v1/analyze/pr)
+# ==========================================
+
+def analyze_pr_pipeline(
+    request: PRAnalysisRequest,
+    project: Optional[ProjectInfo] = None,
+    **injected: Any,
+) -> PRAnalysisResponse:
+    """동기 분석 — 기존 PRAnalysisResponse 계약(하위 호환)에 기록 초안 필드를 추가해 반환한다."""
+    pr = PRInput(
+        title=request.title,
+        body=getattr(request, "description", "") or "",
+        changed_files=[],
+        diff=request.diff_content,
+    )
+    project = project or _lookup_project(request.repo_name)
+    ctx = run_pipeline(pr=pr, repo_name=request.repo_name, project=project, **injected)
+    out = ctx.llm_output
 
     reviews = [
         CodeReviewComment(
-            file_path=r.get("file_path"),
-            line_number=r.get("line_number"),
-            comment=r.get("comment", "")
+            file_path=_nullable_str(r.get("file_path") or r.get("filePath")),
+            line_number=_positive_int(r.get("line_number") or r.get("lineNumber")),
+            comment=str(r.get("comment", "")).strip(),
         )
-        for r in llm_output.get("reviews", [])
+        for r in out.get("reviews", []) or []
+        if isinstance(r, dict) and str(r.get("comment", "")).strip()
     ]
 
     return PRAnalysisResponse(
         pr_id=request.pr_id,
-        summary=llm_output.get("summary", "Analysis complete."),
-        risk_score=llm_output.get("risk_score", 0),
+        summary=str(out.get("summary", "")) or INSUFFICIENT_GROUNDING_SUMMARY,
+        risk_score=_risk_score(out),
         reviews=reviews,
-        evidences=evidences,
-        confidence=confidence,
-        needs_confirmation=needs_conf,
-        filter_ratio=filter_ratio
+        evidences=_build_evidences(ctx),
+        confidence=ctx.confidence.score if ctx.confidence else 0.0,
+        needs_confirmation=_needs_confirmation(ctx),
+        filter_ratio=ctx.filter_ratio,
+        purpose=out.get("purpose"),
+        change_reason=out.get("changeReason"),
+        before=out.get("before"),
+        after=out.get("after"),
+        related_features=_str_list(out.get("relatedFeatures")),
+        affected_roles=_allowed_roles(out.get("affectedRoles")),
+        role_impacts=[RoleImpact(**ri) for ri in _role_impacts(out.get("roleImpacts"))],
+        follow_up_tasks=[FollowUpTask(**task) for task in _follow_up_tasks(out.get("followUpTasks"))],
+        confirmation_items=_confirmation_items(ctx),
+        retrieval_quality_warning=bool(ctx.confidence.retrieval_quality_warning) if ctx.confidence else False,
+        grounding_sufficient=ctx.grounding_sufficient,
     )
 
 
-def analyze_pr_for_callback(request: AsyncAnalysisRequest) -> AnalysisResultPayload:
-    """
-    비동기 내부 분석 파이프라인 (POST /internal/v1/analyses 전용).
-    Backend 콜백 계약의 result 스키마(summary/changes/impacts/risks/recommendations)에 맞춰 응답한다.
-    """
-    diff_content = build_diff_content(request.pull_request.files)
+# ==========================================
+# 진입점 2: 비동기 내부 API (POST /internal/v1/analyses → 콜백)
+# ==========================================
 
-    prompt, _filtered_contexts, _filter_ratio = _gather_grounded_context(
-        request.pull_request.title,
-        request.pull_request.body or "",
-        diff_content,
-        request.repository_full_name,
+def analyze_pr_for_callback(
+    request: AsyncAnalysisRequest,
+    project: Optional[ProjectInfo] = None,
+    **injected: Any,
+) -> AnalysisResultPayload:
+    """비동기 분석 — Backend 콜백 result 계약(camelCase)에 맞춰 반환한다."""
+    files = request.pull_request.files
+    pr = PRInput(
+        title=request.pull_request.title,
+        body=request.pull_request.body or "",
+        changed_files=[f"{f.file_path} ({f.change_type}, +{f.additions}/-{f.deletions})" for f in files],
+        diff=build_diff_content(files),
+        commits=[request.pull_request.head_sha] if request.pull_request.head_sha else [],
     )
 
-    language_instruction = "Respond in Korean." if request.language != "en" else "Respond in English."
-    system_instruction = f"""You are an expert Code Review AI.
-Analyze the PR and output ONLY a valid JSON with the following structure:
-{{
-  "summary": "Brief summary of the PR's overall change and impact",
-  "changes": [
-    {{"filePath": "path/to/file", "description": "What changed in this file"}}
-  ],
-  "impacts": ["Notable ripple effects on the existing system"],
-  "risks": ["Structural or security risks to double-check"],
-  "recommendations": ["Concrete suggestions for the reviewer/author"]
-}}
-{language_instruction}"""
+    project = project or _lookup_project(request.repository_full_name, language=request.language)
+    if project is None:
+        project = ProjectInfo(name=request.repository_full_name, language=request.language)
 
-    response = client.chat.completions.create(
-        model=settings.LLM_MODEL,
-        messages=[
-            {"role": "system", "content": system_instruction},
-            {"role": "user", "content": prompt}
-        ],
-        response_format={"type": "json_object"},
-        temperature=0.2
-    )
+    member_roles, unresolved = partition_roles(request.project_roles)
+    if member_roles:
+        project.roles = member_roles
+    if unresolved:
+        print(
+            f"[Role] 해석하지 못한 project_role 값 무시 analysisId={request.analysis_id}: {unresolved}"
+        )
 
-    llm_output = json.loads(response.choices[0].message.content)
+    ctx = run_pipeline(pr=pr, repo_name=request.repository_full_name, project=project, **injected)
+    out = ctx.llm_output
+
+    role_impacts = _role_impacts(out.get("roleImpacts"))
+    evidence = _build_evidence_refs(ctx)
+    follow_up_tasks = _follow_up_tasks(out.get("followUpTasks"))
+
+    changes = [
+        AnalysisChangeItem(file_path=e.location or "unknown", description=e.description or "")
+        for e in evidence
+        if e.source == EVIDENCE_SOURCE_DIFF and (e.location or e.description)
+    ] or [
+        AnalysisChangeItem(
+            file_path=_nullable_str(c.get("filePath") or c.get("file_path")) or "unknown",
+            description=str(c.get("description", "")),
+        )
+        for c in out.get("changes", []) or []
+        if isinstance(c, dict)
+    ]
+    impacts = _str_list(out.get("impacts")) or [
+        f"{ri['role']}: {ri['impact']}" for ri in role_impacts if ri.get("impact")
+    ]
+    recommendations = _str_list(out.get("recommendations")) or [
+        f"{task['role']}: {task['task']}" if task.get("role") else task["task"]
+        for task in follow_up_tasks
+    ]
 
     return AnalysisResultPayload(
-        summary=llm_output.get("summary", ""),
-        changes=[
-            AnalysisChangeItem(
-                file_path=c.get("filePath", "unknown"),
-                description=c.get("description", "")
-            )
-            for c in llm_output.get("changes", [])
-        ],
-        impacts=llm_output.get("impacts", []),
-        risks=llm_output.get("risks", []),
-        recommendations=llm_output.get("recommendations", []),
+        summary=str(out.get("summary", "")) or INSUFFICIENT_GROUNDING_SUMMARY,
+        changes=changes,
+        impacts=impacts,
+        risks=_str_list(out.get("risks")),
+        recommendations=recommendations,
+        purpose=out.get("purpose"),
+        change_reason=out.get("changeReason"),
+        before=out.get("before"),
+        after=out.get("after"),
+        related_features=_str_list(out.get("relatedFeatures")),
+        affected_roles=_allowed_roles(out.get("affectedRoles")),
+        role_impacts=[RoleImpactItem(**ri) for ri in role_impacts],
+        follow_up_tasks=[FollowUpTaskItem(**task) for task in follow_up_tasks],
+        needs_confirmation=_confirmation_items(ctx),
+        evidence=evidence,
+        confidence=ctx.confidence.score if ctx.confidence else 0.0,
+        retrieval_quality_warning=bool(ctx.confidence.retrieval_quality_warning) if ctx.confidence else False,
     )

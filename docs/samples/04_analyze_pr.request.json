@@ -1,0 +1,8 @@
+{
+  "pr_id": 101,
+  "repo_name": "kau-likelion-14th-hackathon/Contextory_BackEnd",
+  "title": "fix: 로그인 오류 응답을 errorCode 기반으로 변경",
+  "description": "클라이언트가 오류 유형별로 처리할 수 있도록 LoginResponse에 errorCode를 추가했습니다.",
+  "diff_content": "@@ -12,7 +12,12 @@ public class LoginResponse {\n-    private String message;\n+    private String errorCode;\n@@ -30,6 +30,9 @@ public class AuthController {\n-        return LoginResponse.fail(\"비밀번호 불일치\");\n+        return LoginResponse.fail(ErrorCode.INVALID_PASSWORD);",
+  "author": "dev"
+}

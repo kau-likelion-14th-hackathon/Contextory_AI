@@ -1,9 +1,19 @@
-import os
-from typing import List, Dict, Any
-import tiktoken
+"""
+retrieval.py — pgvector 유사도 검색 단계 (RAG Pipeline ①②)
+
+설계 원칙
+- 이 모듈은 "검색"만 책임진다. 필터/프롬프트/신뢰도 계산은 하지 않는다.
+- 임베딩 함수와 검색 함수를 전부 주입 가능하게 두어(embed_fn / search_fn),
+  DB·OpenAI 없이 단위 테스트가 가능하다.
+- 검색 실패(결과 없음 / 전부 threshold 미달)를 정상 결과처럼 넘기지 않고
+  RetrievalOutcome.grounding_sufficient 신호로 명시해 상위 계층에 전달한다.
+"""
+
+from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, List, Optional
+
 from sqlalchemy import text
-from sqlalchemy.orm import Session
-from openai import OpenAI
+from sqlalchemy.exc import SQLAlchemyError
 
 from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
@@ -13,21 +23,54 @@ from llama_index.core.vector_stores.types import (
 )
 
 from core.config import settings
-from core.db import engine  # DB Engine import
-from llamaindex.vector_store import get_vector_store
 
-client = OpenAI(api_key=settings.OPENAI_API_KEY)
+# 검색 결과 chunk의 표준 형태(dict)
+#   chunk_id         : 프롬프트/evidence에서 인용하는 식별자
+#   source_type      : "code_review" | "repo_code"
+#   source           : 출처 표기(파일 경로 또는 dataset_source)
+#   text             : 프롬프트에 실을 본문
+#   similarity_score : 코사인 유사도 (0.0~1.0)
+RetrievedChunk = Dict[str, Any]
+
+SOURCE_CODE_REVIEW = "code_review"
+SOURCE_REPO_CODE = "repo_code"
+
+
+class RetrievalError(RuntimeError):
+    """Vector DB 조회 실패. 외부 인프라 오류를 '검색 결과 없음'으로 위장하지 않기 위해 분리한다."""
+
+
+@dataclass
+class RetrievalOutcome:
+    """검색 단계의 산출물 + 근거 충분성 신호"""
+
+    chunks: List[RetrievedChunk] = field(default_factory=list)
+    top_score: float = 0.0
+    above_threshold_count: int = 0
+    sim_threshold: float = 0.0
+    grounding_sufficient: bool = False
+    reason: str = ""
+
+    @property
+    def retrieved_count(self) -> int:
+        return len(self.chunks)
+
+
+# ==========================================
+# 1. 임베딩 (① PR Diff Embedding)
+# ==========================================
 
 # text-embedding-3-small/large의 입력 한도. 초과 시 OpenAI가 400(Invalid 'input[0]')을 반환한다.
-# PR Diff 전체를 쿼리 텍스트로 사용하므로(services/analysis_service.py._gather_grounded_context)
-# 대형 PR에서는 쉽게 이 한도를 넘길 수 있다.
-_EMBEDDING_MAX_TOKENS = 8192
+# PR Diff 전체를 쿼리 텍스트로 쓰므로 대형 PR에서는 쉽게 이 한도를 넘긴다.
+EMBEDDING_MAX_TOKENS = 8192
 
 
-def _truncate_to_token_limit(text_input: str, model: str, max_tokens: int = _EMBEDDING_MAX_TOKENS) -> str:
+def truncate_to_token_limit(text_input: str, model: Optional[str] = None, max_tokens: int = EMBEDDING_MAX_TOKENS) -> str:
     """임베딩 모델의 최대 입력 토큰 수를 넘지 않도록 앞부분 기준으로 자른다."""
+    import tiktoken  # 지연 import: 인코딩 파일 로드를 실제 임베딩 시점까지 미룬다
+
     try:
-        encoding = tiktoken.encoding_for_model(model)
+        encoding = tiktoken.encoding_for_model(model or settings.EMBEDDING_MODEL)
     except KeyError:
         encoding = tiktoken.get_encoding("cl100k_base")
 
@@ -37,35 +80,99 @@ def _truncate_to_token_limit(text_input: str, model: str, max_tokens: int = _EMB
     return encoding.decode(tokens[:max_tokens])
 
 
-def embed_query(text_input: str) -> List[float]:
-    """입력받은 PR Diff / 쿼리 텍스트를 1536차원 임베딩 벡터로 변환"""
-    truncated_input = _truncate_to_token_limit(text_input, settings.EMBEDDING_MODEL)
-    response = client.embeddings.create(
-        model=settings.EMBEDDING_MODEL,
-        input=[truncated_input]
-    )
-    return response.data[0].embedding
+def _default_embed(text_input: str) -> List[float]:
+    """
+    llamaindex.pipeline.get_embed_model()을 재사용해 임베딩한다.
+    (인덱싱 시점과 조회 시점의 임베딩 모델을 단일 지점에서 일치시키기 위함)
+    입력은 모델 토큰 한도로 잘라서 보낸다.
+    """
+    from llamaindex.pipeline import get_embed_model  # 지연 import: 테스트 시 불필요한 초기화 회피
+
+    return get_embed_model().get_text_embedding(truncate_to_token_limit(text_input))
+
+
+def embed_query(text_input: str, embed_fn: Optional[Callable[[str], List[float]]] = None) -> List[float]:
+    """입력 쿼리 텍스트를 임베딩 벡터로 변환한다. embed_fn 주입 시 그것을 사용한다."""
+    return (embed_fn or _default_embed)(text_input)
+
+
+# ==========================================
+# 2. 검색 결과 정규화
+# ==========================================
+
+def make_review_chunk_id(row_id: Any) -> str:
+    """
+    code_review_vectors 행 id → chunk_id 규칙 (단일 정의 지점).
+    평가 데이터셋의 gold chunk id도 이 함수를 통해 만들어야 런타임 결과와 맞물린다.
+    """
+    return f"cr-{row_id}"
+
+
+def make_repo_chunk_id(node_id: Any) -> str:
+    """repo_code_vectors 노드 id → chunk_id 규칙 (단일 정의 지점)"""
+    return f"repo-{str(node_id)[:8]}"
+
+
+def _normalize_review_row(row: Dict[str, Any]) -> RetrievedChunk:
+    """code_review_vectors 한 행을 표준 chunk 형태로 변환"""
+    body = row.get("review_comment") or row.get("pr_diff") or row.get("source_code") or ""
+    return {
+        "chunk_id": make_review_chunk_id(row.get("id")),
+        "id": str(row.get("id")),
+        "source_type": SOURCE_CODE_REVIEW,
+        "source": row.get("dataset_source") or settings.CODE_REVIEW_TABLE_NAME,
+        "text": body,
+        "similarity_score": round(float(row.get("similarity_score") or 0.0), 4),
+        "orig_idx": row.get("orig_idx"),
+        "dataset_source": row.get("dataset_source"),
+        "source_code": row.get("source_code"),
+        "pr_diff": row.get("pr_diff"),
+        "review_comment": row.get("review_comment"),
+        "has_issue": row.get("has_issue"),
+        "file_path": None,
+    }
+
+
+def _normalize_repo_node(node_id: str, file_path: str, content: str, score: float) -> RetrievedChunk:
+    """repo_code_vectors(LlamaIndex 노드) 한 건을 표준 chunk 형태로 변환"""
+    return {
+        "chunk_id": make_repo_chunk_id(node_id),
+        "id": str(node_id),
+        "source_type": SOURCE_REPO_CODE,
+        "source": file_path,
+        "text": content,
+        "similarity_score": round(float(score), 4),
+        "file_path": file_path,
+        "source_code": content,
+        "pr_diff": None,
+        "review_comment": None,
+    }
+
+
+# ==========================================
+# 3. 검색 (② PGVector Similarity Search)
+# ==========================================
 
 def retrieve_contexts(
-    query_text: str, 
-    top_k: int = None, 
-    sim_threshold: float = None
-) -> List[Dict[str, Any]]:
+    query_text: str,
+    top_k: Optional[int] = None,
+    sim_threshold: Optional[float] = None,  # 하위 호환용(이 함수는 필터링하지 않는다)
+    embed_fn: Optional[Callable[[str], List[float]]] = None,
+    db_engine: Any = None,
+) -> List[RetrievedChunk]:
     """
-    PR Diff 기반 pgvector 코사인 유사도 Top-K 검색
+    PR Diff 기반 pgvector 코사인 유사도 Top-K 검색 (code_review_vectors).
+
+    전역 리뷰 모범사례 KB는 프로젝트 격리 대상이 아니므로 repo_name 필터를 걸지 않는다.
+    threshold 적용은 Context Filter 단계의 책임이므로 여기서는 자르지 않는다.
     """
     if top_k is None:
         top_k = settings.RAG_TOP_K
-    if sim_threshold is None:
-        sim_threshold = settings.SIM_THRESHOLD
 
-    # 1. 쿼리 임베딩
-    query_vector = embed_query(query_text)
-    
-    # 2. pgvector Cosine Distance (<=>) 연산 쿼리
-    # Cosine Similarity = 1 - Cosine Distance
-    # 전역 리뷰 모범사례 KB(code_review_vectors)는 프로젝트 격리 대상이 아니므로 repo_name 필터를 걸지 않는다.
-    sql = text(f"""
+    query_vector = embed_query(query_text, embed_fn=embed_fn)
+
+    sql = text(
+        f"""
         SELECT
             id,
             orig_idx,
@@ -78,49 +185,45 @@ def retrieve_contexts(
         FROM {settings.CODE_REVIEW_TABLE_NAME}
         ORDER BY embedding <=> :query_vector ASC
         LIMIT :top_k;
-    """)
+        """
+    )
 
-    # pgvector 파라미터는 [0.1, 0.2, ...] 형태의 문자열 포맷 필요
+    # pgvector 파라미터는 "[0.1,0.2,...]" 형태의 문자열 포맷이 필요하다.
     vector_str = f"[{','.join(map(str, query_vector))}]"
 
-    results = []
-    with engine.connect() as conn:
-        rows = conn.execute(
-            sql, 
-            {"query_vector": vector_str, "top_k": top_k}
-        ).mappings().all()
+    if db_engine is None:
+        from core.db import engine as db_engine  # 지연 import: import 시점 DB 커넥션 생성 회피
 
-        for row in rows:
-            sim_score = float(row["similarity_score"])
-            results.append({
-                "id": str(row["id"]),
-                "orig_idx": row["orig_idx"],
-                "dataset_source": row["dataset_source"],
-                "source_code": row["source_code"],
-                "pr_diff": row["pr_diff"],
-                "review_comment": row["review_comment"],
-                "has_issue": row["has_issue"],
-                "similarity_score": round(sim_score, 4)
-            })
+    try:
+        with db_engine.connect() as conn:
+            rows = conn.execute(sql, {"query_vector": vector_str, "top_k": top_k}).mappings().all()
+    except SQLAlchemyError as e:
+        raise RetrievalError(f"code_review_vectors 검색 실패: {e}") from e
 
-    return results
+    return [_normalize_review_row(dict(row)) for row in rows]
 
 
 def retrieve_repo_contexts(
     query_text: str,
     repo_name: str,
-    top_k: int = None
-) -> List[Dict[str, Any]]:
+    top_k: Optional[int] = None,
+    embed_fn: Optional[Callable[[str], List[float]]] = None,
+    vector_store: Any = None,
+) -> List[RetrievedChunk]:
     """
-    현재 분석 대상 프로젝트의 소스코드 Context(repo_code_vectors, 물리 테이블 data_repo_code_vectors)를
-    repo_name 메타데이터로 격리하여 Top-K 검색한다. (멀티 리포 혼입 방지)
+    현재 분석 대상 프로젝트의 소스코드 Context(repo_code_vectors)를
+    repo_name 메타데이터로 격리해 Top-K 검색한다. (멀티 리포 혼입 방지)
     """
     if top_k is None:
         top_k = settings.RAG_TOP_K
 
-    query_vector = embed_query(query_text)
+    query_vector = embed_query(query_text, embed_fn=embed_fn)
 
-    vector_store = get_vector_store(table_name=settings.REPO_CODE_TABLE_NAME)
+    if vector_store is None:
+        from llamaindex.vector_store import get_vector_store  # 지연 import
+
+        vector_store = get_vector_store(table_name=settings.REPO_CODE_TABLE_NAME)
+
     filters = MetadataFilters(
         filters=[MetadataFilter(key="repo_name", value=repo_name, operator=FilterOperator.EQ)]
     )
@@ -129,17 +232,101 @@ def retrieve_repo_contexts(
         similarity_top_k=top_k,
         filters=filters,
     )
-    query_result = vector_store.query(query_obj)
 
-    results = []
-    if query_result.nodes:
-        for idx, node in enumerate(query_result.nodes):
-            score = query_result.similarities[idx] if query_result.similarities else 0.0
-            results.append({
-                "id": str(node.node_id),
-                "file_path": node.metadata.get("file_path", "unknown"),
-                "source_code": node.get_content(),
-                "similarity_score": round(float(score), 4),
-            })
+    try:
+        query_result = vector_store.query(query_obj)
+    except Exception as e:  # PGVectorStore는 SQLAlchemyError 외 예외도 올린다
+        raise RetrievalError(f"repo_code_vectors 검색 실패: {e}") from e
 
+    results: List[RetrievedChunk] = []
+    for idx, node in enumerate(query_result.nodes or []):
+        score = query_result.similarities[idx] if query_result.similarities else 0.0
+        results.append(
+            _normalize_repo_node(
+                node_id=node.node_id,
+                file_path=node.metadata.get("file_path", "unknown"),
+                content=node.get_content(),
+                score=score,
+            )
+        )
     return results
+
+
+# ==========================================
+# 4. 검색 + 근거 충분성 신호
+# ==========================================
+
+def build_outcome(
+    chunks: List[RetrievedChunk],
+    sim_threshold: Optional[float] = None,
+    min_evidence_count: Optional[int] = None,
+) -> RetrievalOutcome:
+    """검색 결과 리스트에 '근거 충분성' 판단을 붙인다. (순수 함수 — 단위 테스트 대상)"""
+    if sim_threshold is None:
+        sim_threshold = settings.SIM_THRESHOLD
+    if min_evidence_count is None:
+        min_evidence_count = settings.MIN_GROUNDING_EVIDENCE_COUNT
+
+    ordered = sorted(chunks, key=lambda c: c.get("similarity_score", 0.0), reverse=True)
+    top_score = ordered[0].get("similarity_score", 0.0) if ordered else 0.0
+    above = [c for c in ordered if c.get("similarity_score", 0.0) >= sim_threshold]
+
+    if not ordered:
+        return RetrievalOutcome(
+            chunks=[],
+            top_score=0.0,
+            above_threshold_count=0,
+            sim_threshold=sim_threshold,
+            grounding_sufficient=False,
+            reason="검색 결과가 없습니다.",
+        )
+
+    if len(above) < min_evidence_count:
+        return RetrievalOutcome(
+            chunks=ordered,
+            top_score=top_score,
+            above_threshold_count=len(above),
+            sim_threshold=sim_threshold,
+            grounding_sufficient=False,
+            reason=(
+                f"검색된 {len(ordered)}건 중 유사도 {sim_threshold} 이상이 "
+                f"{len(above)}건(최고 {top_score})으로 근거 기준({min_evidence_count}건) 미달입니다."
+            ),
+        )
+
+    return RetrievalOutcome(
+        chunks=ordered,
+        top_score=top_score,
+        above_threshold_count=len(above),
+        sim_threshold=sim_threshold,
+        grounding_sufficient=True,
+        reason="",
+    )
+
+
+def retrieve_with_signals(
+    query_text: str,
+    repo_name: Optional[str] = None,
+    top_k: Optional[int] = None,
+    sim_threshold: Optional[float] = None,
+    review_search_fn: Optional[Callable[..., List[RetrievedChunk]]] = None,
+    repo_search_fn: Optional[Callable[..., List[RetrievedChunk]]] = None,
+) -> RetrievalOutcome:
+    """
+    code_review_vectors + repo_code_vectors를 함께 검색해 단일 후보 목록으로 합치고,
+    근거 충분성 신호를 포함한 RetrievalOutcome을 반환한다.
+
+    두 검색 함수를 주입할 수 있어 DB 없이 파이프라인 전체를 테스트할 수 있다.
+    """
+    if top_k is None:
+        top_k = settings.RAG_TOP_K
+
+    review_fn = review_search_fn or retrieve_contexts
+    review_chunks = review_fn(query_text=query_text, top_k=top_k)
+
+    repo_chunks: List[RetrievedChunk] = []
+    if repo_name:
+        repo_fn = repo_search_fn or retrieve_repo_contexts
+        repo_chunks = repo_fn(query_text=query_text, repo_name=repo_name, top_k=top_k)
+
+    return build_outcome(list(review_chunks) + list(repo_chunks), sim_threshold=sim_threshold)
