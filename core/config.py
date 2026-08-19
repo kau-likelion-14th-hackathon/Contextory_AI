@@ -87,6 +87,17 @@ class Settings(BaseSettings):
     # 콜백(FastAPI -> Backend) 전송 시 동일 헤더로 사용한다. 콜백 대상 URL은 요청(callbackUrl)에서 받는다.
     INTERNAL_API_KEY: str = ""
 
+    # 🚀 [추가] LLM 프롬프트 토큰 예산. OpenAI 조직/티어별 TPM(분당 토큰) 한도는 계정마다
+    # 다르고 언제든 바뀔 수 있어 하드코딩된 상수 대신 설정값으로 둔다. PR diff가 큰 경우
+    # 이 한도를 넘기지 않도록 analyze_pr_pipeline/analyze_pr_for_callback 공통 경로
+    # (services/analysis_service.py:_gather_grounded_context)에서 트리밍/실패 처리에 사용한다.
+    # 기본값은 관측된 조직 TPM 한도(30000)보다 여유를 둬 system 프롬프트/completion 토큰을 위한
+    # 공간을 남긴다.
+    LLM_MAX_PROMPT_TOKENS: int = 20000
+    # 파일 하나의 patch가 프롬프트를 지배하지 않도록 build_diff_content()에서 파일별로 자르는
+    # 문자 수 상한 (context 스니펫이 prompt_builder.py에서 300/500자로 잘리는 것과 같은 취지).
+    MAX_PATCH_CHARS_PER_FILE: int = 4000
+
     # 🚀 [추가] 비동기 분석 작업(ai_analysis_jobs) 관리 정책
     # JOB_TIMEOUT_MINUTES: PROCESSING 상태가 이 시간을 넘기면 좀비 작업으로 보고 FAILED 처리한다.
     #   (서버가 분석 도중 강제 종료되면 해당 행이 영원히 PROCESSING으로 남기 때문)

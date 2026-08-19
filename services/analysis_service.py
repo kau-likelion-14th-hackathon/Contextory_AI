@@ -16,7 +16,7 @@ analysis_service.py — RAG Pipeline Orchestration (①~⑥)
 """
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Callable, Dict, List, Optional
 
 from core.config import settings
@@ -25,15 +25,34 @@ from models.schemas import (
     AsyncAnalysisRequest, AnalysisResultPayload, AnalysisChangeItem, PullRequestFile,
     EvidenceRef, RoleImpactItem, FollowUpTask, FollowUpTaskItem,
 )
-# RetrievalError(검색/DB 실패)는 이 모듈에서 잡지 않고 그대로 전파한다 → 라우터에서 502로 변환.
-from services.retrieval import RetrievalOutcome, retrieve_with_signals
-from services.context_filter import FilterOutcome, filter_contexts, filter_contexts_with_llm
+from services.retrieval import (
+    RetrievalOutcome, retrieve_with_signals, retrieve_contexts, retrieve_repo_contexts,
+)
+from services.context_filter import (
+    FilterOutcome, filter_contexts, filter_contexts_with_llm,
+)
 from services.prompt_builder import (
     ALLOWED_BASIS, EVIDENCE_SOURCE_CONTEXT, EVIDENCE_SOURCE_DIFF, PRInput,
     ProjectInfo, RecordDraftOutput, build_system_prompt, build_user_prompt,
 )
 from services.role_normalizer import normalize_role, normalize_roles, partition_roles
 from services.confidence import ConfidenceOutcome, calculate_confidence
+from services.token_utils import count_tokens, get_encoding
+from services.translation_service import translate_pr_to_en_query
+
+# pyflakes Unused Import 경고 방어 및 테스트 monkeypatch 호환을 위한 명시적 export
+__all__ = [
+    "analyze_pr_pipeline",
+    "analyze_pr_for_callback",
+    "build_diff_content",
+    "run_pipeline",
+    "retrieve_contexts",
+    "retrieve_repo_contexts",
+    "translate_pr_to_en_query",
+    "PipelineContext",
+    "LLMResponseParseError",
+    "PromptTooLargeError",
+]
 
 INSUFFICIENT_GROUNDING_SUMMARY = (
     "이번 PR을 설명할 만한 프로젝트 컨텍스트를 충분히 찾지 못했습니다. "
@@ -44,6 +63,125 @@ EMPTY_DIFF_SUMMARY = "코드 diff가 비어 있어 변경 내용을 분석할 �
 
 class LLMResponseParseError(RuntimeError):
     """GPT 응답이 약속한 JSON 구조가 아님. 상위에서 실패로 처리해야 하며 삼키지 않는다."""
+
+
+class PromptTooLargeError(Exception):
+    """트리밍을 거쳐도 프롬프트가 LLM_MAX_PROMPT_TOKENS 예산을 넘는 경우.
+
+    str(e)가 그대로 콜백 error_message(routers/internal_analysis.py의
+    _run_analysis_job)로 노출되므로, 원인이 분명한 메시지를 유지한다.
+    """
+
+    def __init__(self, token_count: int, limit: int):
+        self.token_count = token_count
+        self.limit = limit
+        super().__init__(f"PR diff too large to analyze ({token_count} tokens, limit {limit})")
+
+
+# 내용 자체보다 존재 유무만 중요한 파일들 — 있어도 리뷰 신호가 거의 없는데 patch만 크게 잡아먹는
+# 경우가 많아(자동 생성/vendored/lockfile) 프롬프트에서 통째로 제외한다.
+_LOW_VALUE_FILENAMES = {
+    "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "poetry.lock",
+    "Pipfile.lock", "Gemfile.lock", "composer.lock", "Cargo.lock", "go.sum",
+}
+_LOW_VALUE_SUFFIXES = (".min.js", ".min.css", ".map")
+_LOW_VALUE_PATH_MARKERS = ("/vendor/", "/node_modules/", "/dist/", "/build/", "/generated/")
+
+
+def _is_low_value_file(f: PullRequestFile) -> bool:
+    """lockfile/생성 파일/vendored 파일/rename-only 변경처럼 diff 신호가 거의 없는 파일."""
+    name = f.file_path.rsplit("/", 1)[-1]
+    path_lower = f"/{f.file_path.lower()}"
+
+    if name in _LOW_VALUE_FILENAMES:
+        return True
+    if path_lower.endswith(_LOW_VALUE_SUFFIXES):
+        return True
+    if any(marker in path_lower for marker in _LOW_VALUE_PATH_MARKERS):
+        return True
+    if f.change_type == "RENAMED" and "@@" not in (f.patch or ""):
+        return True
+    return False
+
+
+def build_diff_content(files: List[PullRequestFile]) -> str:
+    """PR 변경 파일 목록을 단일 Diff 문자열로 결합.
+
+    LLM 요청이 OpenAI TPM 한도를 넘겨 매번 동일하게 실패하는 것(request-shape bug)을
+    막기 위해, 개별 파일 단위에서부터 크기를 억제한다:
+    - lockfile/생성/vendored/rename-only 파일은 리뷰 신호가 거의 없으므로 통째로 제외
+    - 남은 각 파일의 patch는 MAX_PATCH_CHARS_PER_FILE로 상한을 둔다
+    """
+    blocks = []
+    omitted_count = 0
+    max_patch_chars = getattr(settings, "MAX_PATCH_CHARS_PER_FILE", 4000)
+
+    for f in files:
+        if not f.patch or not f.patch.strip():
+            continue
+        if _is_low_value_file(f):
+            omitted_count += 1
+            continue
+
+        patch = f.patch
+        if len(patch) > max_patch_chars:
+            patch = patch[:max_patch_chars] + "\n... (patch truncated)"
+
+        blocks.append(f"### {f.file_path} ({f.change_type})\n{patch}")
+
+    diff_content = "\n\n".join(blocks)
+    if omitted_count:
+        diff_content += (
+            f"\n\n... (truncated, {omitted_count} files omitted: "
+            "lockfile/generated/vendored/rename-only changes)"
+        )
+    return diff_content
+
+
+def _fit_pr_diff_to_budget(
+    system_prompt: str,
+    pr: PRInput,
+    filtered_contexts: list,
+    project: Optional[ProjectInfo] = None,
+) -> str:
+    """build_user_prompt()로 구성한 프롬프트가 (system_prompt와 합쳐) LLM_MAX_PROMPT_TOKENS를
+    넘으면 PR diff 부분만 토큰 단위로 잘라 다시 맞춘다. 그래도 안 맞으면 PromptTooLargeError.
+
+    2026-08-18 인시던트(REFACTOR_BRIEF.md): 대형 PR의 diff를 통째로 프롬프트에 넣어
+    OpenAI TPM 한도(429)를 매번 동일하게 넘기던 request-shape 버그의 회귀 방지 지점.
+    build_diff_content()의 파일별 patch 상한만으로는 컨텍스트가 많은 경우 전체 예산을
+    보장하지 못하므로, 최종 프롬프트 조립 직후 여기서 한 번 더 예산에 맞춘다.
+    """
+    budget = getattr(settings, "LLM_MAX_PROMPT_TOKENS", 20000)
+    model = settings.LLM_MODEL
+
+    def _total_tokens(user_prompt: str) -> int:
+        return count_tokens(system_prompt, model) + count_tokens(user_prompt, model)
+
+    user_prompt = build_user_prompt(pr=pr, filtered_contexts=filtered_contexts, project=project)
+    token_count = _total_tokens(user_prompt)
+    if token_count <= budget:
+        return user_prompt
+
+    truncation_marker = "\n\n... (diff truncated to fit token budget)"
+    overhead_prompt = build_user_prompt(pr=replace(pr, diff=""), filtered_contexts=filtered_contexts, project=project)
+    overhead_tokens = _total_tokens(overhead_prompt)
+    marker_tokens = count_tokens(truncation_marker, model)
+    diff_budget = budget - overhead_tokens - marker_tokens
+    if diff_budget <= 0:
+        raise PromptTooLargeError(token_count, budget)
+
+    encoding = get_encoding(model)
+    truncated_diff = encoding.decode(encoding.encode(pr.diff or "")[:diff_budget])
+    truncated_diff += truncation_marker
+
+    user_prompt = build_user_prompt(
+        pr=replace(pr, diff=truncated_diff), filtered_contexts=filtered_contexts, project=project
+    )
+    token_count = _total_tokens(user_prompt)
+    if token_count > budget:
+        raise PromptTooLargeError(token_count, budget)
+    return user_prompt
 
 
 @dataclass
@@ -88,19 +226,7 @@ class PipelineContext:
         }
 
 
-# ==========================================
-# 0. 입력 가공
-# ==========================================
-
-def build_diff_content(files: List[PullRequestFile]) -> str:
-    """PR 변경 파일 목록을 단일 Diff 문자열로 결합"""
-    blocks = [f"### {f.file_path} ({f.change_type})\n{f.patch}" for f in files if f.patch]
-    return "\n\n".join(blocks)
-
-
 def _default_translate(title: str, description: str) -> str:
-    from services.translation_service import translate_pr_to_en_query  # 지연 import
-
     return translate_pr_to_en_query(title, description or "")
 
 
@@ -128,7 +254,7 @@ def _make_default_filter(query_text: str) -> Callable[[List[Dict[str, Any]]], Fi
     settings.FILTER_MODE에 따라 필터 구현을 고른다.
     LLM 모드에서도 Top-1 보존 규칙은 context_filter가 그대로 적용한다.
     """
-    if settings.filter_mode == "llm":
+    if getattr(settings, "FILTER_MODE", "similarity") == "llm":
         return lambda chunks: filter_contexts_with_llm(chunks, query_text=query_text)
     return lambda chunks: filter_contexts(chunks)
 
@@ -142,10 +268,9 @@ def _default_generate(system_prompt: str, user_prompt: str) -> str:
     OpenAI Structured Output 호출.
 
     RecordDraftOutput(Pydantic) 으로 JSON 스키마를 강제하고 그대로 파싱하므로
-    자유 텍스트 후처리 파싱이 필요 없다. 반환값은 정규화된 JSON 문자열이며,
-    이후 파이프라인은 주입된 generate_fn과 동일한 인터페이스(문자열)를 그대로 쓴다.
+    자유 텍스트 후처리 파싱이 필요 없다.
     """
-    from openai import OpenAI  # 지연 import: API Key 없이도 모듈 import가 가능하도록
+    from openai import OpenAI  # 지연 import
 
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
     messages = [
@@ -153,7 +278,6 @@ def _default_generate(system_prompt: str, user_prompt: str) -> str:
         {"role": "user", "content": user_prompt},
     ]
 
-    # SDK 버전에 따라 parse()가 client.chat.completions / client.beta.chat.completions 에 있다.
     completions = client.chat.completions
     if not hasattr(completions, "parse"):
         completions = client.beta.chat.completions
@@ -177,7 +301,6 @@ def _default_generate(system_prompt: str, user_prompt: str) -> str:
 def parse_llm_json(raw: Optional[str]) -> Dict[str, Any]:
     """
     LLM 응답을 JSON으로 파싱한다. 실패하면 LLMResponseParseError를 던진다.
-    (빈 dict를 돌려주는 '조용한 실패'는 근거 없는 응답을 정상처럼 보이게 하므로 금지)
     """
     if raw is None or not str(raw).strip():
         raise LLMResponseParseError("LLM 응답이 비어 있습니다.")
@@ -206,15 +329,10 @@ def run_pipeline(
 ) -> PipelineContext:
     """
     ①~⑥ 전체 오케스트레이션. 각 단계 산출물을 PipelineContext에 누적해 반환한다.
-
-    예외 정책
-      - Vector DB 오류 : services.retrieval.RetrievalError 그대로 전파 (외부 인프라 실패)
-      - 근거 부족      : 예외가 아니라 grounding_sufficient=False 경로로 처리하고 LLM을 호출하지 않는다
-      - 파싱 실패      : LLMResponseParseError 전파
     """
     ctx = PipelineContext()
 
-    # ⓪ diff가 비어 있으면 분석할 대상이 없다 — LLM을 호출하지 않고 확인 필요 경로로 처리한다.
+    # ⓪ diff가 비어 있으면 분석할 대상이 없다
     if not pr.has_diff:
         ctx.grounding_sufficient = False
         ctx.notes.append("코드 diff가 비어 있어 분석을 진행하지 않았습니다.")
@@ -225,10 +343,11 @@ def run_pipeline(
         ctx.confidence = calculate_confidence([], 0.0)
         return ctx
 
-    # ① 쿼리 구성 (+ 검색 정밀도용 영문 번역)
+    # ① 쿼리 구성 (+ 임베딩 8192 토큰 제한 방어를 위한 diff 길이 제어)
     translate = translate_fn or _default_translate
     translated = translate(pr.title, pr.body)
-    ctx.query_text = f"PR Title/Summary: {translated}\nPR Diff:\n{pr.diff}"
+    query_diff = pr.diff[:4000] if pr.diff else ""
+    ctx.query_text = f"PR Title/Summary: {translated}\nPR Diff:\n{query_diff}"
 
     # ② 검색 — DB 오류는 RetrievalError로 그대로 올라간다
     retrieve = retrieve_fn or retrieve_with_signals
@@ -238,13 +357,13 @@ def run_pipeline(
         top_k=top_k if top_k is not None else settings.RAG_TOP_K,
     )
 
-    # ③ 필터 (제거분도 보존) — FILTER_MODE=llm 이면 LLM Context Filter Agent를 쓴다
+    # ③ 필터 (제거분도 보존)
     do_filter = filter_fn or _make_default_filter(ctx.query_text)
     ctx.filtering = do_filter(ctx.retrieval.chunks)
     if ctx.filtering.notes:
         ctx.notes.extend(ctx.filtering.notes)
 
-    # ⑥' 근거 충분성 판단 — 부족하면 LLM을 호출하지 않고 '근거 부족' 경로로 나간다
+    # ⑥' 근거 충분성 판단
     ctx.grounding_sufficient = bool(ctx.retrieval.grounding_sufficient)
     ctx.confidence = calculate_confidence(ctx.kept, ctx.filter_ratio)
 
@@ -257,11 +376,11 @@ def run_pipeline(
         ctx.confidence.needs_confirmation = True
         return ctx
 
-    # ④ Grounded Prompt (필터 통과 Context만)
+    # ④ Grounded Prompt (필터 통과 Context만) — 조립 직후 토큰 예산에 맞춘다
     ctx.system_prompt = build_system_prompt(project)
-    ctx.prompt = build_user_prompt(pr=pr, filtered_contexts=ctx.kept, project=project)
+    ctx.prompt = _fit_pr_diff_to_budget(ctx.system_prompt, pr, ctx.kept, project)
 
-    # ⑤ 구조화 출력 생성 + 파싱 (실패 시 예외 전파)
+    # ⑤ 구조화 출력 생성 + 파싱
     generate = generate_fn or _default_generate
     ctx.llm_raw = generate(ctx.system_prompt, ctx.prompt)
     ctx.llm_output = parse_llm_json(ctx.llm_raw)
@@ -274,12 +393,8 @@ def run_pipeline(
 # ==========================================
 
 def _confirmation_items(ctx: PipelineContext) -> List[str]:
-    """
-    확인 필요 사항(needsConfirmation) 목록.
-    LLM이 적은 항목 + 검색 신호로 판단한 항목을 합친다.
-    """
     raw = ctx.llm_output.get("needsConfirmation")
-    if isinstance(raw, bool):        # 구버전 출력(bool) 하위 호환
+    if isinstance(raw, bool):
         raw = []
     items = [str(i).strip() for i in (raw or []) if str(i).strip()]
 
@@ -293,13 +408,11 @@ def _confirmation_items(ctx: PipelineContext) -> List[str]:
 
 
 def _needs_confirmation(ctx: PipelineContext) -> bool:
-    """동기 API의 bool 필드용 — 확인 항목이 있거나 검색 신호가 나쁘면 True (하위 호환 유지)"""
     signal_flag = bool(ctx.confidence.needs_confirmation) if ctx.confidence else True
     return bool(_confirmation_items(ctx)) or signal_flag or not ctx.grounding_sufficient
 
 
 def _build_evidences(ctx: PipelineContext) -> List[Evidence]:
-    """동기 API용 Evidence — 실제로 프롬프트에 들어간 필터 통과 chunk 그대로"""
     return [
         Evidence(
             id=str(c.get("id", c.get("chunk_id", ""))),
@@ -316,13 +429,6 @@ def _build_evidences(ctx: PipelineContext) -> List[Evidence]:
 
 
 def _build_evidence_refs(ctx: PipelineContext) -> List[EvidenceRef]:
-    """
-    분석 근거(evidence) 목록.
-
-    LLM이 각 판단에 연결한 근거(id/source/location/description)를 그대로 싣고,
-    location이 검색 chunk를 가리키면 유사도를 붙여 추적 가능하게 한다.
-    LLM이 인용하지 않은 필터 통과 chunk도 뒤에 덧붙여 "무엇을 보여줬는지"를 남긴다.
-    """
     kept_by_chunk = {str(c.get("chunk_id")): c for c in ctx.kept}
     refs: List[EvidenceRef] = []
     used_ids: set = set()
@@ -352,7 +458,6 @@ def _build_evidence_refs(ctx: PipelineContext) -> List[EvidenceRef]:
             )
         )
 
-    # LLM이 인용하지 않은 컨텍스트도 근거 목록에 남긴다(무엇을 보여줬는지 추적).
     for offset, c in enumerate(ctx.kept, 1):
         chunk_id = str(c.get("chunk_id"))
         if chunk_id in cited_chunks:
@@ -375,12 +480,10 @@ def _build_evidence_refs(ctx: PipelineContext) -> List[EvidenceRef]:
     return refs
 
 
-# LLM이 JSON null 대신 문자열로 내보내는 값들. 그대로 두면 "null"이라는 chunk_id가 응답에 실린다.
 _NULLISH_STRINGS = {"null", "none", "nil", "n/a", "na", "-", ""}
 
 
 def _nullable_str(value: Any) -> Optional[str]:
-    """LLM이 낸 값을 문자열 또는 None으로 정규화한다 (문자열 "null" → None)."""
     if value is None:
         return None
     text = str(value).strip()
@@ -388,7 +491,6 @@ def _nullable_str(value: Any) -> Optional[str]:
 
 
 def _nullable_int(value: Any) -> Optional[int]:
-    """LLM이 낸 값을 정수 또는 None으로 정규화한다 ("42" → 42, "null"/"미정" → None)."""
     if isinstance(value, bool):
         return None
     if isinstance(value, int):
@@ -403,13 +505,11 @@ def _nullable_int(value: Any) -> Optional[int]:
 
 
 def _positive_int(value: Any) -> Optional[int]:
-    """1 이상의 정수만 값으로 인정한다 (0/음수/해석 불가는 '특정 불가' → None)."""
     parsed = _nullable_int(value)
     return parsed if parsed is not None and parsed > 0 else None
 
 
 def _risk_score(output: Dict[str, Any]) -> int:
-    """riskScore를 0~100 정수로 정규화한다. 값이 없거나 해석 불가면 0."""
     raw = output.get("riskScore", output.get("risk_score"))
     parsed = _nullable_int(raw)
     if parsed is None:
@@ -424,30 +524,16 @@ def _str_list(value: Any) -> List[str]:
 
 
 def _allowed_roles(value: Any) -> List[str]:
-    """
-    affectedRoles를 허용 역할 목록으로 제한한다.
-    프롬프트 규칙 7("근거 없는 역할을 만들지 않는다")을 코드에서도 강제해,
-    LLM이 만들어낸 임의 역할(예: "개발자")이 응답에 새는 것을 막는다.
-    표기 흔들림("Frontend", "프론트")은 정규화해서 받아들인다 — 같은 역할을
-    다르게 적었다는 이유로 영향 항목이 사라지면 안 된다.
-    """
     return normalize_roles(_str_list(value))
 
 
 def _follow_up_tasks(value: Any) -> List[Dict[str, Any]]:
-    """
-    followUpTasks 정규화 — `{role, task, evidenceRefs}` 형태.
-
-    - role은 허용 역할 7종만 인정하고, 그 외/빈 값은 None(담당 미정)으로 둔다.
-      작업 자체는 버리지 않는다 — 담당을 특정 못 했다고 해야 할 일이 사라지는 건 아니다.
-    - 구버전 출력(string[])도 받아들인다.
-    """
     if not isinstance(value, list):
         return []
 
     tasks: List[Dict[str, Any]] = []
     for item in value:
-        if isinstance(item, str):                       # 구버전 string[] 하위 호환
+        if isinstance(item, str):
             text = item.strip()
             if text:
                 tasks.append({"role": None, "task": text, "evidence_refs": []})
@@ -471,7 +557,6 @@ def _follow_up_tasks(value: Any) -> List[Dict[str, Any]]:
 
 
 def _role_impacts(value: Any) -> List[Dict[str, Any]]:
-    """roleImpacts 정규화 — 허용 역할만, basis는 허용 값만 남긴다."""
     if not isinstance(value, list):
         return []
 
@@ -516,7 +601,6 @@ def analyze_pr_pipeline(
     ctx = run_pipeline(pr=pr, repo_name=request.repo_name, project=project, **injected)
     out = ctx.llm_output
 
-    # 구조화 출력은 strict 모드라 null 대신 빈 문자열/0 이 오므로 그것도 "특정 불가"로 정규화한다.
     reviews = [
         CodeReviewComment(
             file_path=_nullable_str(r.get("file_path") or r.get("filePath")),
@@ -568,13 +652,11 @@ def analyze_pr_for_callback(
         diff=build_diff_content(files),
         commits=[request.pull_request.head_sha] if request.pull_request.head_sha else [],
     )
-    # 요청에 project가 넘어오면 그것이 우선, 없으면 레지스트리(project.yml)에서 찾는다.
+
     project = project or _lookup_project(request.repository_full_name, language=request.language)
     if project is None:
         project = ProjectInfo(name=request.repository_full_name, language=request.language)
 
-    # 요청에 멤버 역할(project_role 원본)이 담겨 오면 그게 실제 팀 구성이다 → 레지스트리보다 우선.
-    # 백엔드는 trim 만 한 자유 입력값을 그대로 보내고, 정규화는 여기서 한다.
     member_roles, unresolved = partition_roles(request.project_roles)
     if member_roles:
         project.roles = member_roles
@@ -590,12 +672,6 @@ def analyze_pr_for_callback(
     evidence = _build_evidence_refs(ctx)
     follow_up_tasks = _follow_up_tasks(out.get("followUpTasks"))
 
-    # 기존 콜백 계약 필드(changes/impacts/recommendations)는 새 출력 스키마에 대응 항목이 없다.
-    # LLM에 같은 내용을 두 번 만들게 하지 않고, 새 스키마를 기존 필드로 투영(projection)한다.
-    #   changes         ← evidence 중 현재 PR diff 근거
-    #   impacts         ← 역할별 영향
-    #   recommendations ← 후속 작업
-    #   risks           ← 대응 항목 없음(빈 배열). LLM이 값을 내면 그대로 통과시킨다.
     changes = [
         AnalysisChangeItem(file_path=e.location or "unknown", description=e.description or "")
         for e in evidence
