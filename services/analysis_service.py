@@ -17,7 +17,7 @@ analysis_service.py — RAG Pipeline Orchestration (①~⑥)
 
 import json
 from dataclasses import dataclass, field, replace
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from core.config import settings
 from models.schemas import (
@@ -32,7 +32,7 @@ from services.context_filter import (
     FilterOutcome, filter_contexts, filter_contexts_with_llm,
 )
 from services.prompt_builder import (
-    ALLOWED_BASIS, EVIDENCE_SOURCE_CONTEXT, EVIDENCE_SOURCE_DIFF, PRInput,
+    ALLOWED_BASIS, ALLOWED_ROLES, EVIDENCE_SOURCE_CONTEXT, EVIDENCE_SOURCE_DIFF, PRInput,
     ProjectInfo, RecordDraftOutput, build_system_prompt, build_user_prompt,
 )
 from services.role_normalizer import normalize_role, normalize_roles, partition_roles
@@ -365,7 +365,11 @@ def run_pipeline(
 
     # ⑥' 근거 충분성 판단
     ctx.grounding_sufficient = bool(ctx.retrieval.grounding_sufficient)
-    ctx.confidence = calculate_confidence(ctx.kept, ctx.filter_ratio)
+    ctx.confidence = calculate_confidence(
+        ctx.kept,
+        ctx.filter_ratio,
+        information_loss_ratio=ctx.filtering.information_loss_ratio if ctx.filtering else None,
+    )
 
     if not ctx.grounding_sufficient:
         ctx.notes.append(f"근거 부족: {ctx.retrieval.reason}")
@@ -523,11 +527,38 @@ def _str_list(value: Any) -> List[str]:
     return [str(v) for v in value if str(v).strip()]
 
 
-def _allowed_roles(value: Any) -> List[str]:
-    return normalize_roles(_str_list(value))
+def _team_roles(project: Optional[ProjectInfo]) -> Sequence[str]:
+    """
+    응답에 허용할 역할 목록.
+
+    프로젝트에 팀 역할이 등록돼 있으면 그 목록으로 제한한다. 프롬프트에 팀 역할을
+    넣어도 LLM은 팀에 없는 역할(예: QA)을 만들어낼 수 있고, 전역 허용 7종으로만
+    거르면 그대로 통과해 없는 담당자에게 작업이 배정된다(실측으로 확인된 문제).
+    등록된 역할이 없으면 전역 허용 목록으로 폴백한다.
+    """
+    roles = getattr(project, "roles", None) or []
+    return roles or ALLOWED_ROLES
 
 
-def _follow_up_tasks(value: Any) -> List[Dict[str, Any]]:
+def _allowed_roles(value: Any, allowed: Sequence[str] = ALLOWED_ROLES) -> List[str]:
+    """
+    affectedRoles를 허용 역할 목록으로 제한한다.
+    프롬프트 규칙 7("근거 없는 역할을 만들지 않는다")을 코드에서도 강제해,
+    LLM이 만들어낸 임의 역할(예: "개발자")이 응답에 새는 것을 막는다.
+    표기 흔들림("Frontend", "프론트")은 정규화해서 받아들인다 — 같은 역할을
+    다르게 적었다는 이유로 영향 항목이 사라지면 안 된다.
+    """
+    return [role for role in normalize_roles(_str_list(value)) if role in allowed]
+
+
+def _follow_up_tasks(value: Any, allowed: Sequence[str] = ALLOWED_ROLES) -> List[Dict[str, Any]]:
+    """
+    followUpTasks 정규화 — `{role, task, evidenceRefs}` 형태.
+
+    - role은 허용 역할만 인정하고, 그 외/빈 값은 None(담당 미정)으로 둔다.
+      작업 자체는 버리지 않는다 — 담당을 특정 못 했다고 해야 할 일이 사라지는 건 아니다.
+    - 구버전 출력(string[])도 받아들인다.
+    """
     if not isinstance(value, list):
         return []
 
@@ -544,9 +575,10 @@ def _follow_up_tasks(value: Any) -> List[Dict[str, Any]]:
         text = str(item.get("task", "")).strip()
         if not text:
             continue
+        role = normalize_role(item.get("role"))
         tasks.append(
             {
-                "role": normalize_role(item.get("role")),
+                "role": role if role in allowed else None,
                 "task": text,
                 "evidence_refs": _str_list(
                     item.get("evidenceRefs") or item.get("evidence_refs")
@@ -556,7 +588,8 @@ def _follow_up_tasks(value: Any) -> List[Dict[str, Any]]:
     return tasks
 
 
-def _role_impacts(value: Any) -> List[Dict[str, Any]]:
+def _role_impacts(value: Any, allowed: Sequence[str] = ALLOWED_ROLES) -> List[Dict[str, Any]]:
+    """roleImpacts 정규화 — 허용 역할만, basis는 허용 값만 남긴다."""
     if not isinstance(value, list):
         return []
 
@@ -565,7 +598,7 @@ def _role_impacts(value: Any) -> List[Dict[str, Any]]:
         if not isinstance(item, dict) or not item.get("role"):
             continue
         role = normalize_role(item.get("role"))
-        if role is None:
+        if role is None or role not in allowed:
             continue
         basis = _nullable_str(item.get("basis"))
         parsed.append(
@@ -600,6 +633,7 @@ def analyze_pr_pipeline(
     project = project or _lookup_project(request.repo_name)
     ctx = run_pipeline(pr=pr, repo_name=request.repo_name, project=project, **injected)
     out = ctx.llm_output
+    team_roles = _team_roles(project)
 
     reviews = [
         CodeReviewComment(
@@ -625,9 +659,11 @@ def analyze_pr_pipeline(
         before=out.get("before"),
         after=out.get("after"),
         related_features=_str_list(out.get("relatedFeatures")),
-        affected_roles=_allowed_roles(out.get("affectedRoles")),
-        role_impacts=[RoleImpact(**ri) for ri in _role_impacts(out.get("roleImpacts"))],
-        follow_up_tasks=[FollowUpTask(**task) for task in _follow_up_tasks(out.get("followUpTasks"))],
+        affected_roles=_allowed_roles(out.get("affectedRoles"), team_roles),
+        role_impacts=[RoleImpact(**ri) for ri in _role_impacts(out.get("roleImpacts"), team_roles)],
+        follow_up_tasks=[
+            FollowUpTask(**task) for task in _follow_up_tasks(out.get("followUpTasks"), team_roles)
+        ],
         confirmation_items=_confirmation_items(ctx),
         retrieval_quality_warning=bool(ctx.confidence.retrieval_quality_warning) if ctx.confidence else False,
         grounding_sufficient=ctx.grounding_sufficient,
@@ -668,9 +704,10 @@ def analyze_pr_for_callback(
     ctx = run_pipeline(pr=pr, repo_name=request.repository_full_name, project=project, **injected)
     out = ctx.llm_output
 
-    role_impacts = _role_impacts(out.get("roleImpacts"))
+    team_roles = _team_roles(project)
+    role_impacts = _role_impacts(out.get("roleImpacts"), team_roles)
     evidence = _build_evidence_refs(ctx)
-    follow_up_tasks = _follow_up_tasks(out.get("followUpTasks"))
+    follow_up_tasks = _follow_up_tasks(out.get("followUpTasks"), team_roles)
 
     changes = [
         AnalysisChangeItem(file_path=e.location or "unknown", description=e.description or "")
@@ -703,7 +740,7 @@ def analyze_pr_for_callback(
         before=out.get("before"),
         after=out.get("after"),
         related_features=_str_list(out.get("relatedFeatures")),
-        affected_roles=_allowed_roles(out.get("affectedRoles")),
+        affected_roles=_allowed_roles(out.get("affectedRoles"), team_roles),
         role_impacts=[RoleImpactItem(**ri) for ri in role_impacts],
         follow_up_tasks=[FollowUpTaskItem(**task) for task in follow_up_tasks],
         needs_confirmation=_confirmation_items(ctx),

@@ -19,8 +19,15 @@ from services.analysis_service import (
     analyze_pr_for_callback, analyze_pr_pipeline,
 )
 from services.context_filter import filter_contexts
-from services.prompt_builder import ALLOWED_ROLES, BASIS_EXPECTED, OUTPUT_SCHEMA_SECTION
+from services.prompt_builder import (
+    ALLOWED_ROLES, BASIS_EXPECTED, OUTPUT_SCHEMA_SECTION, ProjectInfo,
+)
 from services.retrieval import build_outcome
+
+# 이 파일의 기본 테스트는 '전역 허용 7종' 필터를 검증한다 →
+# 팀 역할 제한이 끼어들지 않도록 7종을 모두 가진 프로젝트를 쓴다.
+# (팀 역할로 좁히는 동작은 test_team_roles_restrict_response_roles 에서 따로 검증한다)
+ALL_ROLES_PROJECT = ProjectInfo(name="T", roles=list(ALLOWED_ROLES), language="ko")
 
 CHUNKS = [
     {"chunk_id": "cr-1", "id": "1", "source_type": "code_review", "similarity_score": 0.88,
@@ -60,7 +67,7 @@ def _request(diff: str = "@@ -1 +1 @@\n+login()") -> PRAnalysisRequest:
     )
 
 
-def _run(output=None, diff: str = "@@ -1 +1 @@\n+login()", generate_calls=None):
+def _run(output=None, diff: str = "@@ -1 +1 @@\n+login()", generate_calls=None, project=None):
     def generate(system_prompt, user_prompt):
         if generate_calls is not None:
             generate_calls.append((system_prompt, user_prompt))
@@ -68,6 +75,7 @@ def _run(output=None, diff: str = "@@ -1 +1 @@\n+login()", generate_calls=None):
 
     return analyze_pr_pipeline(
         _request(diff),
+        project=project or ALL_ROLES_PROJECT,
         retrieve_fn=lambda **kwargs: build_outcome(CHUNKS, sim_threshold=0.5, min_evidence_count=1),
         filter_fn=lambda chunks: filter_contexts(chunks, sim_threshold=0.5, filter_mode="on"),
         generate_fn=generate,
@@ -123,6 +131,34 @@ def test_affected_roles_and_role_impacts_are_restricted():
     assert response.role_impacts[0].evidence_refs == ["e1"]
 
 
+def test_team_roles_restrict_response_roles():
+    """
+    프로젝트에 등록된 팀 역할 밖의 역할은 응답에서 제거한다.
+
+    프롬프트에 팀 역할을 넣어도 LLM은 팀에 없는 역할(예: QA)을 만들어낸다.
+    실제 PR 분석에서 팀 역할이 [프론트엔드, 백엔드, AI]인데 QA가 응답에 실려 나왔다.
+    없는 담당자에게 작업이 배정되면 그 작업은 아무도 하지 않는다.
+    """
+    team = ProjectInfo(name="T", roles=["프론트엔드", "백엔드", "AI"], language="ko")
+
+    response = _run(project=team)
+
+    assert response.affected_roles == ["프론트엔드"]                  # QA 제거
+    assert [ri.role for ri in response.role_impacts] == ["프론트엔드"]
+    # 작업 자체는 남기되 담당은 미정으로 둔다 — 담당을 못 정했다고 할 일이 사라지진 않는다
+    assert [(t.role, t.task) for t in response.follow_up_tasks] == [
+        ("백엔드", "리프레시 토큰 정책 정의"),
+        (None, "담당 미상 작업"),
+    ]
+
+
+def test_team_roles_fall_back_to_global_list_when_unregistered():
+    """팀 역할이 등록돼 있지 않으면 전역 허용 7종으로 폴백한다(기존 동작 유지)."""
+    response = _run(project=ProjectInfo(name="T", roles=[], language="ko"))
+
+    assert response.affected_roles == ["프론트엔드", "QA"]
+
+
 def test_needs_confirmation_items_are_collected():
     response = _run()
 
@@ -156,6 +192,7 @@ def test_string_null_does_not_leak_into_evidence():
             ),
             language="ko", callbackUrl="https://example.com/cb",
         ),
+        project=ALL_ROLES_PROJECT,
         retrieve_fn=lambda **kwargs: build_outcome(CHUNKS, sim_threshold=0.5, min_evidence_count=1),
         filter_fn=lambda chunks: filter_contexts(chunks, sim_threshold=0.5, filter_mode="on"),
         generate_fn=lambda system_prompt, user_prompt: json.dumps(output, ensure_ascii=False),
@@ -180,6 +217,7 @@ def test_callback_projects_new_schema_onto_legacy_fields():
             ),
             language="ko", callbackUrl="https://example.com/cb",
         ),
+        project=ALL_ROLES_PROJECT,
         retrieve_fn=lambda **kwargs: build_outcome(CHUNKS, sim_threshold=0.5, min_evidence_count=1),
         filter_fn=lambda chunks: filter_contexts(chunks, sim_threshold=0.5, filter_mode="on"),
         generate_fn=lambda system_prompt, user_prompt: json.dumps(LLM_OUTPUT, ensure_ascii=False),

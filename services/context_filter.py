@@ -38,6 +38,31 @@ class FilterOutcome:
     def retrieved_count(self) -> int:
         return len(self.kept) + len(self.removed)
 
+    @property
+    def information_loss_ratio(self) -> float:
+        """
+        '쓸 만한 근거를 잃은 비율' — filter_ratio 와 다르다.
+
+        filter_ratio 는 버린 비율 전부를 센다. 그런데 임계값 미달 후보를 버리는 건
+        필터가 제 일을 한 것이지 손실이 아니다. 검색이 후보를 더 많이 물어올수록
+        filter_ratio 가 올라가서, 근거가 좋아졌는데 Confidence 가 깎이는 역전이 생긴다
+        (실측: 프론트 PR #48 에서 근거가 실제 프로젝트 파일로 바뀌었는데 0.6107 → 0.58).
+
+        그래서 손실은 '임계값을 넘겼는데도 버려진 것'만 센다.
+        임계값 필터(mode="on")에서는 항상 0이고, LLM 필터가 높은 유사도 chunk 를
+        관련 없다고 버렸을 때만 값이 생긴다 — 그게 진짜 정보 손실이다.
+        """
+        def above(chunks: List[FilteredChunk]) -> int:
+            return sum(
+                1 for c in chunks
+                if float(c.get("similarity_score", 0.0) or 0.0) >= self.sim_threshold
+            )
+
+        candidates = above(self.kept) + above(self.removed)
+        if not candidates:
+            return 0.0
+        return above(self.removed) / candidates
+
 
 def _default_relevance_fn(chunk: FilteredChunk, sim_threshold: float) -> bool:
     """기본 관련성 판단: 유사도 임계값 이상이면 관련 있음."""

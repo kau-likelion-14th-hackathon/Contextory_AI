@@ -63,10 +63,34 @@ class RetrievalOutcome:
 # text-embedding-3-small/large의 입력 한도. 초과 시 OpenAI가 400(Invalid 'input[0]')을 반환한다.
 # PR Diff 전체를 쿼리 텍스트로 쓰므로 대형 PR에서는 쉽게 이 한도를 넘긴다.
 EMBEDDING_MAX_TOKENS = 8192
+# 전송 형태로 바꿨을 때 한도를 넘으면 이 폭만큼 줄여 가며 다시 확인한다.
+# 실측상 초과분은 수십 토큰 수준이라 몇 회 안에 들어온다.
+EMBEDDING_TRUNCATE_STEP = 64
+
+
+def _as_sent_to_api(text_input: str) -> str:
+    """
+    임베딩 API에 실제로 전송되는 형태.
+
+    llama_index의 OpenAIEmbedding은 전송 직전에 개행을 공백으로 바꾼다
+    (llama_index/embeddings/openai/base.py: `text = text.replace("\\n", " ")`).
+    이 치환은 토큰 수를 바꾼다 — 코드/diff처럼 "개행+들여쓰기"가 한 토큰으로 묶이던
+    자리가 공백으로 풀리면서 토큰이 늘 수 있다.
+
+    그래서 우리가 센 토큰 수와 OpenAI가 세는 수가 어긋난다. 정확히 8192로 잘라 보내도
+    400(Invalid 'input[0]')이 나는 경우가 여기서 생긴다
+    (실측: 프론트 PR #42 → 자른 뒤 8,192 토큰이 전송 형태로는 8,218 토큰).
+    """
+    return text_input.replace("\n", " ")
 
 
 def truncate_to_token_limit(text_input: str, model: Optional[str] = None, max_tokens: int = EMBEDDING_MAX_TOKENS) -> str:
-    """임베딩 모델의 최대 입력 토큰 수를 넘지 않도록 앞부분 기준으로 자른다."""
+    """
+    임베딩 모델의 최대 입력 토큰 수를 넘지 않도록 앞부분 기준으로 자른다.
+
+    판단 기준은 "우리가 자른 문자열"이 아니라 "실제로 전송되는 형태"다(_as_sent_to_api).
+    치환으로 토큰이 늘어 한도를 넘으면 들어올 때까지 조금씩 더 줄인다.
+    """
     import tiktoken  # 지연 import: 인코딩 파일 로드를 실제 임베딩 시점까지 미룬다
 
     try:
@@ -74,10 +98,20 @@ def truncate_to_token_limit(text_input: str, model: Optional[str] = None, max_to
     except KeyError:
         encoding = tiktoken.get_encoding("cl100k_base")
 
-    tokens = encoding.encode(text_input)
-    if len(tokens) <= max_tokens:
+    def fits(candidate: str) -> bool:
+        return len(encoding.encode(_as_sent_to_api(candidate))) <= max_tokens
+
+    if fits(text_input):
         return text_input
-    return encoding.decode(tokens[:max_tokens])
+
+    tokens = encoding.encode(text_input)
+    limit = min(max_tokens, len(tokens))
+    while limit > 0:
+        candidate = encoding.decode(tokens[:limit])
+        if fits(candidate):
+            return candidate
+        limit -= EMBEDDING_TRUNCATE_STEP
+    return ""
 
 
 def _default_embed(text_input: str) -> List[float]:

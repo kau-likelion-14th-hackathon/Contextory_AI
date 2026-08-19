@@ -48,7 +48,16 @@ class Settings(BaseSettings):
     # 🚀 [추가] Confidence Config
     # Confidence는 LLM 자기평가가 아니라 "필터를 통과한 검색 신호"만으로 계산한다.
     # 아래 가중치는 합이 1이 아니어도 되며, confidence.py에서 합으로 정규화한다.
-    STRONG_EVIDENCE_THRESHOLD: float = 0.75      # 이 유사도 이상을 "강한 근거"로 센다
+    # "강한 근거" 판정 기준.
+    #
+    # 처음 0.75로 두었는데, 실제 저장소 PR 32건의 검색 결과 320청크를 재보니
+    # 0.75 이상이 단 하나도 없었다(관측 최대 0.7162). 배점 0.2짜리 항목이
+    # 구조적으로 항상 0이 되어 Confidence 최대값이 0.66 근처로 눌려 있었다.
+    #
+    # 그래서 절대값 대신 관측 분포로 잡는다. p90 = 0.6127 이므로 0.62는
+    # "검색된 청크 중 상위 10% 이내"에 해당한다.
+    # (임베딩 모델이나 코퍼스가 바뀌면 scripts/measure_grounding.py 로 다시 잴 것)
+    STRONG_EVIDENCE_THRESHOLD: float = 0.62      # 이 유사도 이상을 "강한 근거"로 센다
     CONFIDENCE_W_TOP_SCORE: float = 0.5          # 신호1: 필터 이후 Top Similarity
     CONFIDENCE_W_EVIDENCE_COUNT: float = 0.2     # 신호2: Evidence 수(목표 개수 대비)
     CONFIDENCE_W_STRONG_EVIDENCE: float = 0.2    # 신호3: Strong Evidence 비율
