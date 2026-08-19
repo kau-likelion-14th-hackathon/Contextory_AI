@@ -1,11 +1,23 @@
 import hmac
 
-from fastapi import Header, HTTPException, status
+from fastapi import HTTPException, Security, status
+from fastapi.security import APIKeyHeader
 
 from core.config import settings
 
+# fastapi.security.APIKeyHeader로 선언해야 OpenAPI에 securitySchemes로 등록되어
+# Swagger UI(/docs) 상단에 "Authorize" 버튼이 뜬다. 단순 Header(...) 파라미터로는
+# 요청은 검증되지만 스키마상 보안 요구사항으로 노출되지 않아 Authorize 버튼이 생기지 않는다.
+# auto_error=False로 두고 아래에서 직접 401을 던져, 헤더 누락 시에도 우리가 원하는
+# 메시지("내부 API 인증 실패")를 그대로 유지한다.
+_api_key_header = APIKeyHeader(
+    name="X-Internal-Api-Key",
+    description="내부 통신용 Internal API Key (Backend <-> AI)",
+    auto_error=False,
+)
 
-def verify_internal_api_key(x_internal_api_key: str = Header(None, alias="X-Internal-Api-Key")) -> None:
+
+def verify_internal_api_key(x_internal_api_key: str = Security(_api_key_header)) -> None:
     """Backend(Spring Boot) <-> AI 내부 API 공통 인증.
 
     이 서버가 Cloudflare 등으로 공인 도메인에 노출되면 /api/v1, /internal/v1 하위
