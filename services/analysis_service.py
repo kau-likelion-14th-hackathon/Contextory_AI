@@ -16,7 +16,7 @@ analysis_service.py — RAG Pipeline Orchestration (①~⑥)
 """
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Callable, Dict, List, Optional
 
 from core.config import settings
@@ -34,7 +34,6 @@ from services.context_filter import (
 from services.prompt_builder import (
     ALLOWED_BASIS, EVIDENCE_SOURCE_CONTEXT, EVIDENCE_SOURCE_DIFF, PRInput,
     ProjectInfo, RecordDraftOutput, build_system_prompt, build_user_prompt,
-    build_grounded_prompt,
 )
 from services.role_normalizer import normalize_role, normalize_roles, partition_roles
 from services.confidence import ConfidenceOutcome, calculate_confidence
@@ -139,39 +138,50 @@ def build_diff_content(files: List[PullRequestFile]) -> str:
     return diff_content
 
 
-def _fit_prompt_to_budget(
-    title: str,
-    diff_content: str,
+def _fit_pr_diff_to_budget(
+    system_prompt: str,
+    pr: PRInput,
     filtered_contexts: list,
-    repo_contexts: Optional[list] = None,
+    project: Optional[ProjectInfo] = None,
 ) -> str:
-    """build_grounded_prompt()로 구성한 프롬프트가 LLM_MAX_PROMPT_TOKENS를 넘으면
-    PR diff 부분만 토큰 단위로 잘라 다시 맞춘다. 그래도 안 맞으면 PromptTooLargeError.
+    """build_user_prompt()로 구성한 프롬프트가 (system_prompt와 합쳐) LLM_MAX_PROMPT_TOKENS를
+    넘으면 PR diff 부분만 토큰 단위로 잘라 다시 맞춘다. 그래도 안 맞으면 PromptTooLargeError.
+
+    2026-08-18 인시던트(REFACTOR_BRIEF.md): 대형 PR의 diff를 통째로 프롬프트에 넣어
+    OpenAI TPM 한도(429)를 매번 동일하게 넘기던 request-shape 버그의 회귀 방지 지점.
+    build_diff_content()의 파일별 patch 상한만으로는 컨텍스트가 많은 경우 전체 예산을
+    보장하지 못하므로, 최종 프롬프트 조립 직후 여기서 한 번 더 예산에 맞춘다.
     """
-    repo_contexts = repo_contexts or []
-    budget = getattr(settings, "LLM_MAX_PROMPT_TOKENS", 12000)
-    prompt = build_grounded_prompt(title, diff_content, filtered_contexts, repo_contexts)
-    token_count = count_tokens(prompt, settings.LLM_MODEL)
+    budget = getattr(settings, "LLM_MAX_PROMPT_TOKENS", 20000)
+    model = settings.LLM_MODEL
+
+    def _total_tokens(user_prompt: str) -> int:
+        return count_tokens(system_prompt, model) + count_tokens(user_prompt, model)
+
+    user_prompt = build_user_prompt(pr=pr, filtered_contexts=filtered_contexts, project=project)
+    token_count = _total_tokens(user_prompt)
     if token_count <= budget:
-        return prompt
+        return user_prompt
 
     truncation_marker = "\n\n... (diff truncated to fit token budget)"
-    overhead_prompt = build_grounded_prompt(title, "", filtered_contexts, repo_contexts)
-    overhead_tokens = count_tokens(overhead_prompt, settings.LLM_MODEL)
-    marker_tokens = count_tokens(truncation_marker, settings.LLM_MODEL)
+    overhead_prompt = build_user_prompt(pr=replace(pr, diff=""), filtered_contexts=filtered_contexts, project=project)
+    overhead_tokens = _total_tokens(overhead_prompt)
+    marker_tokens = count_tokens(truncation_marker, model)
     diff_budget = budget - overhead_tokens - marker_tokens
     if diff_budget <= 0:
         raise PromptTooLargeError(token_count, budget)
 
-    encoding = get_encoding(settings.LLM_MODEL)
-    truncated_diff = encoding.decode(encoding.encode(diff_content)[:diff_budget])
+    encoding = get_encoding(model)
+    truncated_diff = encoding.decode(encoding.encode(pr.diff or "")[:diff_budget])
     truncated_diff += truncation_marker
 
-    prompt = build_grounded_prompt(title, truncated_diff, filtered_contexts, repo_contexts)
-    token_count = count_tokens(prompt, settings.LLM_MODEL)
+    user_prompt = build_user_prompt(
+        pr=replace(pr, diff=truncated_diff), filtered_contexts=filtered_contexts, project=project
+    )
+    token_count = _total_tokens(user_prompt)
     if token_count > budget:
         raise PromptTooLargeError(token_count, budget)
-    return prompt
+    return user_prompt
 
 
 @dataclass
@@ -366,9 +376,9 @@ def run_pipeline(
         ctx.confidence.needs_confirmation = True
         return ctx
 
-    # ④ Grounded Prompt (필터 통과 Context만)
+    # ④ Grounded Prompt (필터 통과 Context만) — 조립 직후 토큰 예산에 맞춘다
     ctx.system_prompt = build_system_prompt(project)
-    ctx.prompt = build_user_prompt(pr=pr, filtered_contexts=ctx.kept, project=project)
+    ctx.prompt = _fit_pr_diff_to_budget(ctx.system_prompt, pr, ctx.kept, project)
 
     # ⑤ 구조화 출력 생성 + 파싱
     generate = generate_fn or _default_generate
