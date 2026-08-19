@@ -14,7 +14,9 @@ services:
     ports:
       # 기본은 5432. 로컬에 기존 Postgres가 이미 5432를 쓰고 있어 충돌하는 환경에서는
       # .env에 POSTGRES_HOST_PORT=5433 처럼 개인 설정으로 오버라이드한다(팀 공용 기본값은 건드리지 않음).
-      - "${POSTGRES_HOST_PORT:-5432}:5432"
+      # 127.0.0.1로 바인딩해 로컬(DataGrip 등)에서만 접속 가능하게 하고 외부 네트워크엔 노출하지 않는다 —
+      # app/celery_worker 컨테이너는 이 publish와 무관하게 Docker 내부망(postgres:5432)으로 접속한다.
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
