@@ -114,6 +114,11 @@ class Settings(BaseSettings):
     # JOB_RETENTION_DAYS: 종료(COMPLETED/FAILED)된 작업 행의 보존 기간. 0이면 자동 삭제를 하지 않는다.
     JOB_RETENTION_DAYS: int = 0
 
+    # 🚀 [추가] Redis / Celery Config
+    # PR 분석 비동기 작업(workers.tasks.run_analysis_job)의 broker/backend로 사용.
+    # docker-compose 환경에서는 서비스명 "redis"로, 로컬 단독 실행 시엔 localhost로 접속한다.
+    REDIS_URL: str = "redis://localhost:6379/0"
+
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
