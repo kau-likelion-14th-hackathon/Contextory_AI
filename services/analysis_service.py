@@ -16,10 +16,8 @@ analysis_service.py — RAG Pipeline Orchestration (①~⑥)
 """
 
 import json
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Sequence
 from dataclasses import dataclass, field, replace
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from core.config import settings
 from models.schemas import (
@@ -529,11 +527,38 @@ def _str_list(value: Any) -> List[str]:
     return [str(v) for v in value if str(v).strip()]
 
 
-def _allowed_roles(value: Any) -> List[str]:
-    return normalize_roles(_str_list(value))
+def _team_roles(project: Optional[ProjectInfo]) -> Sequence[str]:
+    """
+    응답에 허용할 역할 목록.
+
+    프로젝트에 팀 역할이 등록돼 있으면 그 목록으로 제한한다. 프롬프트에 팀 역할을
+    넣어도 LLM은 팀에 없는 역할(예: QA)을 만들어낼 수 있고, 전역 허용 7종으로만
+    거르면 그대로 통과해 없는 담당자에게 작업이 배정된다(실측으로 확인된 문제).
+    등록된 역할이 없으면 전역 허용 목록으로 폴백한다.
+    """
+    roles = getattr(project, "roles", None) or []
+    return roles or ALLOWED_ROLES
 
 
-def _follow_up_tasks(value: Any) -> List[Dict[str, Any]]:
+def _allowed_roles(value: Any, allowed: Sequence[str] = ALLOWED_ROLES) -> List[str]:
+    """
+    affectedRoles를 허용 역할 목록으로 제한한다.
+    프롬프트 규칙 7("근거 없는 역할을 만들지 않는다")을 코드에서도 강제해,
+    LLM이 만들어낸 임의 역할(예: "개발자")이 응답에 새는 것을 막는다.
+    표기 흔들림("Frontend", "프론트")은 정규화해서 받아들인다 — 같은 역할을
+    다르게 적었다는 이유로 영향 항목이 사라지면 안 된다.
+    """
+    return [role for role in normalize_roles(_str_list(value)) if role in allowed]
+
+
+def _follow_up_tasks(value: Any, allowed: Sequence[str] = ALLOWED_ROLES) -> List[Dict[str, Any]]:
+    """
+    followUpTasks 정규화 — `{role, task, evidenceRefs}` 형태.
+
+    - role은 허용 역할만 인정하고, 그 외/빈 값은 None(담당 미정)으로 둔다.
+      작업 자체는 버리지 않는다 — 담당을 특정 못 했다고 해야 할 일이 사라지는 건 아니다.
+    - 구버전 출력(string[])도 받아들인다.
+    """
     if not isinstance(value, list):
         return []
 
@@ -565,7 +590,6 @@ def _follow_up_tasks(value: Any) -> List[Dict[str, Any]]:
 
 def _role_impacts(value: Any, allowed: Sequence[str] = ALLOWED_ROLES) -> List[Dict[str, Any]]:
     """roleImpacts 정규화 — 허용 역할만, basis는 허용 값만 남긴다."""
-def _role_impacts(value: Any) -> List[Dict[str, Any]]:
     if not isinstance(value, list):
         return []
 
