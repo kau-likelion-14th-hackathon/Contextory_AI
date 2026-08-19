@@ -1,21 +1,33 @@
 """
-judge.py — RAG 평가용 두 종류의 Judge를 제공한다.
+judge.py — RAG 평가용 Judge 모음
 
-1. LLM Judge (llm_judge)
-   Generation Metric(Faithfulness, Groundedness, Answer Relevance, Context Relevance,
-   Hallucination, Completeness) 평가에 재사용하는 범용 LLM 판단기.
-   eval/metrics/generation.py 등에서 criterion만 바꿔가며 주입(inject)해서 쓴다.
+두 종류의 서로 다른 판단기가 함께 들어 있다. 목적이 다르므로 이름을 구분해 둔다.
 
-2. Offline Keyword Judge (offline_keyword_judge / llm_keyword_judge / keyword_judge)
-   PR에서 추출된 keyword 하나가 Contextory가 검색·보존할 가치가 있는 "중요한 맥락 키워드"인지
-   판단한다. 문자열 패턴으로 명백한 것만 즉시 걸러내고(오프라인, 비용 0), 애매한 것만
-   LLM Judge로 재확인해서 비용을 아낀다.
-   판단 결과는 report.py의 build_report()에 모아서 여러 PR에 걸쳐 집계한다.
+[1] 생성 품질 Judge — 생성된 답변의 품질을 criterion별로 채점한다.
+    - LLMJudge            : GPT를 호출해 채점 (client 주입 가능 → 테스트에서 가짜 client 사용)
+    - OfflineKeywordJudge : LLM 없이 동작. 정답/컨텍스트 키워드 포함 여부로 채점
+    공통 인터페이스
+        judge(question=..., context=..., answer=..., criterion=..., reference=None) -> dict
+            {"criterion": str, "score": float|None, "reason": str, "error": str|None, "source": str}
+    점수 방향
+        hallucination 만 "높을수록 나쁨"(환각 정도)이고, 나머지 criterion은 전부 "높을수록 좋음"이다.
+    사용처: eval/metrics/generation.py, eval/runner.py 의 judge 콜백
+
+[2] 키워드 중요도 Judge — PR에서 추출된 keyword 하나가 Contextory가 보존할 가치가 있는
+    "중요한 맥락 키워드"인지 판단한다. 문자열 패턴으로 명백한 것만 즉시 걸러내고(오프라인, 비용 0),
+    애매한 것만 LLM으로 재확인해 비용을 아낀다.
+    - offline_keyword_judge(keyword)                : 오프라인 즉시 판정(애매하면 None)
+    - llm_keyword_judge(pr_title, ..., keyword)     : LLM 재확인
+    - keyword_judge(pr_title, ..., keyword)         : 위 둘을 잇는 오케스트레이터
+    판정 결과 집계는 eval/keyword_report.py 가 담당한다.
+
+주의
+    이 모듈은 services/ 를 import하지 않는다. 런타임 파이프라인과 완전히 분리되어 있다.
 """
 
 import json
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from openai import OpenAI
 
@@ -31,17 +43,123 @@ def _normalize(text: str) -> str:
 
 
 # ============================================================
-# 1. LLM Judge — Generation Metric 평가용 범용 판단기
+# [1] 생성 품질 Judge
 # ============================================================
 
-_GENERATION_CRITERIA: Dict[str, str] = {
+CRITERIA: Dict[str, str] = {
     "faithfulness": "answer가 context에 실제로 있는 내용만 근거로 작성됐는지, context와 모순되는 내용은 없는지 평가한다.",
-    "groundedness": "answer의 각 주장이 context의 특정 부분으로 뒷받침되는지 평가한다.",
-    "answer_relevance": "answer가 question에서 실제로 묻는 것에 답하고 있는지 평가한다.",
-    "context_relevance": "context가 question에 답하는 데 실제로 필요한 정보인지 평가한다.",
-    "hallucination": "answer에 context나 일반 상식으로 뒷받침되지 않는, 지어낸 내용이 있는지 평가한다.",
-    "completeness": "answer가 question에 답하는 데 필요한 내용을 빠짐없이 담고 있는지 평가한다.",
+    "groundedness": "answer의 각 주장이 context 또는 PR 변경 내용의 특정 부분으로 뒷받침되는지 평가한다.",
+    "answer_relevance": "answer의 역할별 영향·후속 작업이 실제 이번 PR 변경과 연결되는지 평가한다.",
+    "context_relevance": "context가 question(이번 PR 분석)에 실제로 필요한 정보인지 평가한다.",
+    "hallucination": "answer에 context로 뒷받침되지 않는 지어낸 내용이 있는지 평가한다. (높을수록 나쁨)",
+    "completeness": "answer가 PR의 중요한 변경을 빠뜨리지 않았는지 평가한다.",
 }
+
+# 키워드 매칭에서 제외할 흔한 토큰 (점수 부풀림 방지)
+_STOPWORDS = {
+    "the", "and", "for", "with", "this", "that", "from", "into", "have", "has",
+    "was", "were", "are", "not", "but", "you", "your", "our", "its",
+    "그리고", "하지만", "그러나", "이번", "위해", "대한", "관련", "있습니다", "합니다", "때문",
+}
+
+_TOKEN_PATTERN = re.compile(r"[A-Za-z_][A-Za-z0-9_./#-]{1,}|[가-힣]{2,}|\d+")
+
+
+def _tokens(text: Optional[str]) -> List[str]:
+    return [t.lower() for t in _TOKEN_PATTERN.findall(text or "") if t.lower() not in _STOPWORDS]
+
+
+def _result(criterion: str, score: Optional[float], reason: str, source: str, error: Optional[str] = None) -> Dict[str, Any]:
+    return {
+        "criterion": criterion,
+        "score": score,
+        "reason": reason,
+        "error": error,
+        "source": source,
+    }
+
+
+def _reference_keywords(reference: Any) -> List[str]:
+    """
+    reference로 올 수 있는 형태를 모두 키워드 리스트로 정규화한다.
+      - {"keywords": [...]} / {"reference_keywords": [...]} / {"reference_answer": "..."}
+      - ["kw1", "kw2"]
+      - "정답 문장"
+    """
+    if reference is None:
+        return []
+    if isinstance(reference, dict):
+        for key in ("reference_keywords", "keywords", "gold_keywords"):
+            if reference.get(key):
+                return [str(k) for k in reference[key]]
+        if reference.get("reference_answer"):
+            return _tokens(reference["reference_answer"])
+        return []
+    if isinstance(reference, (list, tuple, set)):
+        return [str(k) for k in reference]
+    return _tokens(str(reference))
+
+
+def _coverage(needles: Sequence[str], haystack_text: str) -> float:
+    """needles(키워드/토큰) 중 haystack에 등장하는 비율"""
+    needle_list = [str(n).strip().lower() for n in needles if str(n).strip()]
+    if not needle_list:
+        return 0.0
+    hay = (haystack_text or "").lower()
+    hay_tokens = set(_tokens(haystack_text))
+    hits = 0
+    for needle in needle_list:
+        # 여러 단어로 된 키워드는 부분 문자열로, 단일 토큰은 토큰 일치로 판단한다.
+        if (" " in needle and needle in hay) or (needle in hay_tokens) or (needle in hay):
+            hits += 1
+    return hits / len(needle_list)
+
+
+class OfflineKeywordJudge:
+    """
+    LLM 호출 없이 '정답 키워드 포함 여부'로 생성 품질을 채점하는 Judge.
+    API Key·네트워크 없이 CI에서 전체 평가 파이프라인을 돌리기 위한 구현이며,
+    의미 판단이 아닌 표면적 문자열 매칭이므로 근사치임을 전제로 쓴다.
+    """
+
+    source = "offline_keyword"
+
+    def __call__(
+        self,
+        question: str = "",
+        context: str = "",
+        answer: str = "",
+        criterion: str = "groundedness",
+        reference: Any = None,
+    ) -> Dict[str, Any]:
+        if criterion not in CRITERIA:
+            return _result(criterion, None, f"지원하지 않는 criterion: {criterion}", self.source, error="unsupported_criterion")
+
+        keywords = _reference_keywords(reference)
+
+        if criterion in ("groundedness", "faithfulness"):
+            grounded = _coverage(_tokens(answer), f"{context}\n{question}")
+            return _result(criterion, round(grounded, 4), "answer 토큰 중 context/PR에서 확인되는 비율", self.source)
+
+        if criterion == "hallucination":
+            grounded = _coverage(_tokens(answer), f"{context}\n{question}")
+            return _result(criterion, round(1.0 - grounded, 4), "context에서 확인되지 않는 answer 토큰 비율(높을수록 나쁨)", self.source)
+
+        if criterion == "context_relevance":
+            score = _coverage(_tokens(question), context)
+            return _result(criterion, round(score, 4), "question 토큰 중 context가 담고 있는 비율", self.source)
+
+        if criterion == "completeness":
+            if not keywords:
+                return _result(criterion, None, "reference 키워드가 없어 판단 불가", self.source, error="no_reference")
+            return _result(criterion, round(_coverage(keywords, answer), 4), "정답 키워드 중 answer에 포함된 비율", self.source)
+
+        # answer_relevance
+        target = keywords or _tokens(question)
+        if not target:
+            return _result(criterion, None, "비교할 기준이 없어 판단 불가", self.source, error="no_reference")
+        return _result(criterion, round(_coverage(target, answer), 4), "질문/정답 키워드 중 answer가 다루는 비율", self.source)
+
 
 _LLM_JUDGE_PROMPT = """<role>
 너는 RAG 시스템이 생성한 answer의 품질을 채점하는 평가자야.
@@ -63,6 +181,10 @@ _LLM_JUDGE_PROMPT = """<role>
 {answer}
 </answer>
 
+<reference>
+{reference}
+</reference>
+
 <thinking>
 1. context 안에서 answer의 각 주장을 뒷받침하는 근거를 찾는다.
 2. criterion 기준에 비추어 부족하거나 어긋나는 부분이 있는지 확인한다.
@@ -75,54 +197,99 @@ _LLM_JUDGE_PROMPT = """<role>
 """
 
 
+class LLMJudge:
+    """
+    GPT로 생성 품질을 채점하는 Judge. client를 주입할 수 있어 테스트에서 가짜 client로 대체 가능하다.
+    LLM 호출 실패는 예외로 터뜨리지 않고 score=None + error로 표시해, 평가 집계에서 제외되게 한다.
+    """
+
+    source = "llm"
+
+    def __init__(self, client: Any = None, model: Optional[str] = None):
+        self._client = client
+        self.model = model or settings.LLM_MODEL
+
+    def _get_client(self) -> Any:
+        if self._client is None:
+            self._client = _client()
+        return self._client
+
+    def __call__(
+        self,
+        question: str = "",
+        context: str = "",
+        answer: str = "",
+        criterion: str = "groundedness",
+        reference: Any = None,
+    ) -> Dict[str, Any]:
+        if criterion not in CRITERIA:
+            return _result(criterion, None, f"지원하지 않는 criterion: {criterion}", self.source, error="unsupported_criterion")
+
+        prompt = _LLM_JUDGE_PROMPT.format(
+            criterion_instruction=CRITERIA[criterion],
+            question=question,
+            context=context,
+            answer=answer,
+            reference=reference if reference is not None else "(없음)",
+        )
+
+        try:
+            response = self._get_client().chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                response_format={"type": "json_object"},
+                temperature=0.0,
+            )
+            parsed = json.loads(response.choices[0].message.content)
+        except Exception as e:
+            return _result(criterion, None, f"LLM judge 호출/파싱 실패: {e}", self.source, error=str(e))
+
+        score = parsed.get("score")
+        try:
+            score = None if score is None else float(score)
+        except (TypeError, ValueError):
+            return _result(criterion, None, f"score 파싱 실패: {parsed}", self.source, error="invalid_score")
+
+        return _result(criterion, score, str(parsed.get("reason", "")), self.source)
+
+
 def llm_judge(
     question: str,
     context: str,
     answer: str,
     criterion: str,
-    client: Optional[OpenAI] = None,
+    client: Any = None,
+    reference: Any = None,
 ) -> Dict[str, Any]:
-    """
-    Generation Metric(Faithfulness/Groundedness/Answer Relevance/Context Relevance/
-    Hallucination/Completeness) 평가에 공통으로 쓰는 범용 LLM Judge.
-    criterion은 _GENERATION_CRITERIA의 key 중 하나여야 한다.
-    """
-    if criterion not in _GENERATION_CRITERIA:
-        raise ValueError(f"지원하지 않는 criterion입니다: {criterion}")
-
-    prompt = _LLM_JUDGE_PROMPT.format(
-        criterion_instruction=_GENERATION_CRITERIA[criterion],
-        question=question,
-        context=context,
-        answer=answer,
+    """생성 품질 LLM Judge의 함수 형태 진입점 (LLMJudge와 동일 동작)"""
+    return LLMJudge(client=client)(
+        question=question, context=context, answer=answer, criterion=criterion, reference=reference
     )
 
-    try:
-        response = _client(client).chat.completions.create(
-            model=settings.LLM_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"},
-            temperature=0.0,
-        )
-        result = json.loads(response.choices[0].message.content)
-    except Exception as e:
-        return {
-            "criterion": criterion,
-            "score": None,
-            "reason": f"LLM judge 호출 실패: {e}",
-            "error": str(e),
-        }
 
-    return {
-        "criterion": criterion,
-        "score": result.get("score", 0.0),
-        "reason": result.get("reason", ""),
-        "error": None,
-    }
+def offline_generation_judge(
+    question: str = "",
+    context: str = "",
+    answer: str = "",
+    criterion: str = "groundedness",
+    reference: Any = None,
+) -> Dict[str, Any]:
+    """
+    생성 품질 Offline Judge의 함수 형태 진입점 (OfflineKeywordJudge와 동일 동작).
+
+    이름 주의: 아래 [2] 섹션의 offline_keyword_judge(keyword)는 '키워드 중요도' 판단기로
+    목적이 전혀 다르다. 혼동을 막기 위해 생성 품질 쪽은 offline_generation_judge로 둔다.
+    """
+    return OfflineKeywordJudge()(
+        question=question, context=context, answer=answer, criterion=criterion, reference=reference
+    )
+
+
+Judge = Callable[..., Dict[str, Any]]
 
 
 # ============================================================
-# 2. Offline Keyword Judge — 키워드 중요도 판단
+# [2] 키워드 중요도 Judge
 # ============================================================
 
 # 명백히 안 중요한 것들은 LLM 호출 없이 즉시 걸러낸다 (비용 0).
@@ -303,7 +470,7 @@ def llm_keyword_judge(
     except Exception as e:
         # API 호출 실패/timeout/깨진 JSON 등 - 판단 불가 상황에서는 important를 절대 단정하지 않고
         # offline_keyword_judge와 동일하게 안전한 쪽(not_important)으로 처리하되 error를 남겨서
-        # report.py 집계에서 구분할 수 있게 한다.
+        # keyword_report.py 집계에서 구분할 수 있게 한다.
         return {
             "keyword": keyword,
             "thought_process": "",
@@ -340,7 +507,6 @@ def keyword_judge(
 ) -> Dict[str, Any]:
     """
     Offline Keyword Judge -> (애매한 것만) LLM Judge 순서로 키워드 하나를 판단하는 오케스트레이터.
-    eval/runner.py의 judge 콜백으로 이 함수를 주입해서 쓴다.
     """
     offline_result = offline_keyword_judge(keyword)
     if offline_result is not None:

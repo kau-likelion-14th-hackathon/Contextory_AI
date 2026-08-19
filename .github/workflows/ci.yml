@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: ["develop", "main"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # job_store 영속화 테스트가 실제 PostgreSQL을 사용한다.
+    # (DB가 없으면 해당 테스트 모듈은 스스로 skip 하지만, CI에서는 실제로 검증한다)
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: contextory_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: contextory_db
+      # 테스트는 OpenAI를 호출하지 않는다(전부 주입/mock). 값이 없어도 import가 되도록 빈 문자열을 둔다.
+      OPENAI_API_KEY: ""
+      INTERNAL_API_KEY: ci-internal-api-key
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: 의존성 설치
+        run: pip install -r requirements-dev.txt
+
+      - name: pgvector 확장 활성화
+        run: |
+          PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d contextory_db \
+            -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
+      - name: 정적 검사 (pyflakes)
+        run: python -m pyflakes eval services core routers models llamaindex scripts tests conftest.py main.py
+
+      - name: 테스트 (OpenAI 미호출)
+        run: python -m pytest tests/ eval/tests/ -q
+
+      - name: 오프라인 평가 리포트 (LLM·벡터DB 없이 실행되는지 확인)
+        run: python -m scripts.run_eval --strict-threshold 0.9

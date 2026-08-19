@@ -5,6 +5,7 @@ pydantic>=2.6.0
 pydantic-settings>=2.2.0
 python-dotenv>=1.0.1
 httpx>=0.27.0  # 분석 완료/실패 콜백 전송(Backend 내부 API 호출)
+anyio>=4.2.0   # 비동기 분석 작업의 스레드풀 격리(CapacityLimiter)
 
 # Database & Vector DB (PostgreSQL + pgvector)
 sqlalchemy>=2.0.28
@@ -12,7 +13,7 @@ psycopg2-binary>=2.9.9
 pgvector>=0.2.5
 
 # AI / LLM Providers
-openai>=1.14.0
+openai>=1.40.0  # Structured Output(chat.completions.parse) 사용
 google-generativeai>=0.4.1
 
 # LlamaIndex Framework & Integrations
@@ -23,4 +24,6 @@ llama-index-vector-stores-postgres>=0.1.0
 
 huggingface_hub>=1.26.0
 
-tiktoken
+tiktoken       # 임베딩 입력 토큰 한도(8192) 계산
+pandas>=2.0.0  # utils/adapter.py, scripts/load_code_review_subset.py 데이터셋 전처리
+PyYAML>=6.0    # project.yml 프로젝트 메타 레지스트리 (llama-index-core가 이미 끌어오던 패키지를 직접 명시)

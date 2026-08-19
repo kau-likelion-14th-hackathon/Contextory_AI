@@ -13,7 +13,7 @@ llm_keyword_judge/keyword_judge는 client를 주입받을 수 있게 설계되�
 import json
 
 from eval.judge import keyword_judge
-from eval.report import to_frontend_draft_fragment
+from eval.keyword_report import to_frontend_draft_fragment
 
 
 class _FakeMessage:

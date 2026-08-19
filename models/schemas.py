@@ -10,12 +10,19 @@ from typing import List, Literal, Optional
 class Evidence(BaseModel):
     """
     Context Filter를 통과해 LLM 분석 근거로 사용된 pgvector 검색 결과 DTO
+
+    하위 호환 원칙: 기존 필드(id/source_code/pr_diff/review_comment/similarity_score)는
+    이름/의미를 그대로 유지하고, 근거 추적용 필드만 Optional로 추가한다.
     """
     id: str = Field(..., description="검색된 벡터 데이터 고유 ID", example="12345")
     source_code: Optional[str] = Field(None, description="참조 원본 소스코드")
     pr_diff: Optional[str] = Field(None, description="참조 PR Diff 조각")
     review_comment: Optional[str] = Field(None, description="참조 과거 리뷰 코멘트")
     similarity_score: float = Field(..., description="코사인 유사도 점수 (0.0~1.0)", example=0.87)
+    # 🚀 [추가] 근거 추적(evidence linking)용 필드
+    chunk_id: Optional[str] = Field(None, description="프롬프트에 노출된 chunk 식별자 (LLM이 인용하는 값)", example="ctx-3")
+    source_type: Optional[str] = Field(None, description="근거 출처 종류 (code_review / repo_code)", example="repo_code")
+    file_path: Optional[str] = Field(None, description="근거가 된 프로젝트 파일 경로", example="src/main/java/auth/AuthService.java")
 
 
 class CodeReviewComment(BaseModel):
@@ -25,6 +32,31 @@ class CodeReviewComment(BaseModel):
     file_path: Optional[str] = Field(None, description="리뷰 대상 파일 경로", example="src/main/java/com/contextory/service/UserService.java")
     line_number: Optional[int] = Field(None, description="코드 줄 번호 (전체 파일 리뷰 시 None)", example=42)
     comment: str = Field(..., description="AI 코드 리뷰 피드백 내용", example="N+1 쿼리 문제가 발생할 수 있으므로 Fetch Join 사용을 권장합니다.")
+
+
+class RoleImpact(BaseModel):
+    """
+    프로젝트 기록 초안의 역할별 영향 DTO (실제 변경과 연결되는 역할만 생성)
+
+    허용 역할: 프론트엔드 / 백엔드 / AI / 기획 / 디자인 / QA / 프로젝트 관리자
+    basis: "확인된 사실"(diff에서 직접 확인) 또는 "변경 기반 예상"(사실로부터 추론)
+    """
+    role: str = Field(..., description="영향을 받는 팀 역할", example="프론트엔드")
+    impact: str = Field(..., description="그 역할이 실제로 확인·수정해야 하는 내용", example="message 기반 오류 분기를 errorCode 기반으로 수정해야 한다")
+    basis: Optional[str] = Field(None, description="확인된 사실 | 변경 기반 예상", example="변경 기반 예상")
+    evidence_refs: List[str] = Field(default_factory=list, description="근거 evidence[].id 참조", example=["e1"])
+
+
+class FollowUpTask(BaseModel):
+    """
+    역할별 후속 작업 DTO.
+
+    `needs_confirmation`("물어봐야 할 것")과 달리 "누군가 실제로 해야 할 일"이다.
+    role은 허용 역할 7종 중 하나이며, 담당을 특정할 수 없으면 None으로 둔다(지어내지 않는다).
+    """
+    role: Optional[str] = Field(None, description="작업을 수행할 역할 (특정 불가 시 None)", example="프론트엔드")
+    task: str = Field(..., description="처리해야 할 작업", example="message 기반 오류 분기를 errorCode 기반으로 수정")
+    evidence_refs: List[str] = Field(default_factory=list, description="근거 evidence[].id 참조", example=["e1"])
 
 
 class CodeFileChunk(BaseModel):
@@ -64,6 +96,21 @@ class PRAnalysisResponse(BaseModel):
     confidence: float = Field(0.0, description="RAG 답변 신뢰도 점수 (0.0~1.0)", example=0.85)
     needs_confirmation: bool = Field(False, description="개발자 추가 확인 필요 여부", example=False)
     filter_ratio: float = Field(0.0, description="Context Filter 필터링 비율 (0.0~1.0)", example=0.2)
+
+    # 🚀 [추가] 프로젝트 기록 초안(Project Record Draft) 필드
+    # 기존 필드는 유지한 채 추가만 한다(하위 호환). 이 응답 모델은 기존 계약이 snake_case이므로
+    # 기획서의 camelCase 필드명을 snake_case로 맞춰 넣었다. (백엔드 합의 필요)
+    purpose: Optional[str] = Field(None, description="변경의 목적", example="외부 로그인 사용자도 서비스에 접근할 수 있게 하기 위함")
+    change_reason: Optional[str] = Field(None, description="변경이 필요했던 이유/배경", example="기존 세션 인증이 모바일 클라이언트에서 유지되지 않는 문제가 있었음")
+    before: Optional[str] = Field(None, description="변경 전 상태", example="세션 기반 인증만 지원")
+    after: Optional[str] = Field(None, description="변경 후 상태", example="JWT 기반 인증 추가")
+    related_features: List[str] = Field(default_factory=list, description="이번 변경과 연결된 기능 목록")
+    affected_roles: List[str] = Field(default_factory=list, description="영향을 받는 팀 역할 목록", example=["Backend", "Frontend"])
+    role_impacts: List["RoleImpact"] = Field(default_factory=list, description="역할별 영향 상세")
+    follow_up_tasks: List["FollowUpTask"] = Field(default_factory=list, description="역할별 후속 작업 목록")
+    confirmation_items: List[str] = Field(default_factory=list, description="근거 부족·충돌로 사람 확인이 필요한 항목")
+    retrieval_quality_warning: bool = Field(False, description="filter_ratio 경고 기준 초과 등 검색 품질 확인 필요 신호", example=False)
+    grounding_sufficient: bool = Field(True, description="분석에 필요한 근거 Context가 확보되었는지 여부", example=True)
 
 
 # ==========================================
@@ -131,6 +178,14 @@ class AsyncAnalysisRequest(CamelModel):
     repository_full_name: str = Field(..., description="owner/repository 형식", example="org/contextory")
     pull_request: PullRequestInfo
     language: str = Field("ko", description="분석 결과 언어 (ko/en)", example="ko")
+    # 선택 필드 — 보내지 않아도 동작한다(미전달 시 AI 서버의 project.yml 을 폴백으로 쓴다).
+    # 백엔드는 project_member.project_role 원본 값을 그대로 담으면 된다. 값 정규화
+    # ("프론트"/"FE"/"Frontend" → "프론트엔드")는 AI 서버가 수행하기로 합의했다.
+    project_roles: List[str] = Field(
+        default_factory=list,
+        description="프로젝트 멤버의 project_role 원본 값 목록 (선택). 정규화는 AI 서버가 수행",
+        example=["프론트엔드", "BE", "AI"],
+    )
     callback_url: str = Field(..., description="분석 완료 콜백 URL", example="https://api.contextory.com/api/v1/internal/ai/analyses/1/callback")
 
 
@@ -147,13 +202,65 @@ class AnalysisChangeItem(CamelModel):
     description: str = Field(..., example="로그인과 토큰 재발급 로직이 추가되었습니다.")
 
 
+class EvidenceRef(CamelModel):
+    """
+    분석 근거 DTO (프론트 "분석 근거" 항목).
+    roleImpacts[].evidenceRefs 가 이 항목의 id를 참조해 "이 영향의 근거 보기"로 연결된다.
+    """
+    id: str = Field(..., description="근거 식별자 (roleImpacts[].evidenceRefs가 참조)", example="e1")
+    source: str = Field(..., description="pr_diff(현재 PR diff) | context(검색된 기존 컨텍스트)", example="pr_diff")
+    location: Optional[str] = Field(None, description="파일 경로 또는 chunk_id", example="src/main/java/auth/LoginResponse.java")
+    description: Optional[str] = Field(None, description="이 근거에서 확인되는 내용", example="errorCode 필드 추가 및 오류 응답 생성부 변경")
+    # 검색 근거일 때만 채워지는 추적용 부가 정보
+    chunk_id: Optional[str] = Field(None, description="검색 Context 식별자", example="cr-1")
+    similarity_score: Optional[float] = Field(None, description="검색 유사도 점수", example=0.87)
+
+
+class FollowUpTaskItem(CamelModel):
+    """콜백 계약(camelCase)의 역할별 후속 작업 DTO"""
+    role: Optional[str] = Field(None, description="작업을 수행할 역할 (특정 불가 시 null)", example="프론트엔드")
+    task: str = Field(..., example="message 기반 오류 분기를 errorCode 기반으로 수정")
+    evidence_refs: List[str] = Field(default_factory=list, description="evidence[].id 참조", example=["e1"])
+
+
+class RoleImpactItem(CamelModel):
+    """콜백 계약(camelCase)의 역할별 영향 DTO"""
+    role: str = Field(..., example="프론트엔드")
+    impact: str = Field(..., example="message 기반 오류 분기를 errorCode 기반으로 수정해야 한다")
+    basis: Optional[str] = Field(None, description="확인된 사실 | 변경 기반 예상", example="변경 기반 예상")
+    evidence_refs: List[str] = Field(default_factory=list, description="evidence[].id 참조", example=["e1"])
+
+
 class AnalysisResultPayload(CamelModel):
-    """콜백 result 객체 (분석 완료 시에만 채워짐)"""
+    """
+    콜백 result 객체 (분석 완료 시에만 채워짐)
+
+    하위 호환 원칙: 기존 5개 필드(summary/changes/impacts/risks/recommendations)는 그대로 두고,
+    기획서 기준 프로젝트 기록 초안 필드만 추가한다. Backend가 아직 모르는 필드는 무시하면 된다.
+    """
     summary: str
     changes: List[AnalysisChangeItem] = Field(default_factory=list)
     impacts: List[str] = Field(default_factory=list)
     risks: List[str] = Field(default_factory=list)
     recommendations: List[str] = Field(default_factory=list)
+
+    # 🚀 [추가] 프로젝트 기록 초안 필드 — 프론트 표시 10개 항목 (camelCase로 직렬화됨)
+    #   작업 요약 summary / 작업 목적 purpose / 변경 이유 changeReason / 변경 전 before /
+    #   변경 후 after / 관련 기능 relatedFeatures / 영향받는 역할 affectedRoles /
+    #   역할별 영향 roleImpacts / 확인 필요 사항 needsConfirmation / 분석 근거 evidence
+    purpose: Optional[str] = None
+    change_reason: Optional[str] = None
+    before: Optional[str] = None
+    after: Optional[str] = None
+    related_features: List[str] = Field(default_factory=list)
+    affected_roles: List[str] = Field(default_factory=list)
+    role_impacts: List[RoleImpactItem] = Field(default_factory=list)
+    follow_up_tasks: List[FollowUpTaskItem] = Field(default_factory=list)
+    # 확인 필요 사항 목록. 비어 있으면 사람이 추가로 확인할 항목이 없다는 뜻이다.
+    needs_confirmation: List[str] = Field(default_factory=list)
+    evidence: List[EvidenceRef] = Field(default_factory=list)
+    confidence: float = 0.0
+    retrieval_quality_warning: bool = False
 
 
 class AsyncAnalysisStatusResponse(CamelModel):

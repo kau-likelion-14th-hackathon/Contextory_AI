@@ -1,0 +1,5 @@
+# 개발/테스트 전용 의존성 (런타임 이미지에는 설치하지 않는다)
+-r requirements.txt
+
+pytest>=8.0.0
+pyflakes>=3.0.0

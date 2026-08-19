@@ -1,0 +1,27 @@
+{
+  "analysisId": 1,
+  "projectId": 1,
+  "repositoryId": 1,
+  "repositoryFullName": "kau-likelion-14th-hackathon/Contextory_BackEnd",
+  "pullRequest": {
+    "githubPrId": 987654321,
+    "prNumber": 18,
+    "title": "fix: 로그인 오류 응답을 errorCode 기반으로 변경",
+    "body": "클라이언트가 오류 유형별로 처리할 수 있도록 LoginResponse에 errorCode를 추가했습니다.",
+    "headSha": "a123bc456def789",
+    "sourceBranch": "fix/login-error-code",
+    "targetBranch": "develop",
+    "files": [
+      {
+        "filePath": "src/main/java/auth/LoginResponse.java",
+        "changeType": "MODIFIED",
+        "patch": "@@ -12,7 +12,12 @@ public class LoginResponse {\n-    private String message;\n+    private String errorCode;\n@@ -30,6 +30,9 @@ public class AuthController {\n-        return LoginResponse.fail(\"비밀번호 불일치\");\n+        return LoginResponse.fail(ErrorCode.INVALID_PASSWORD);",
+        "additions": 12,
+        "deletions": 5
+      }
+    ]
+  },
+  "language": "ko",
+  "projectRoles": ["프론트엔드", "BE", "ai"],
+  "callbackUrl": "https://api.contextory.com/api/v1/internal/ai/analyses/1/callback"
+}
