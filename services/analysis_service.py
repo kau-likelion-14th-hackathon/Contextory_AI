@@ -26,7 +26,7 @@ from models.schemas import (
     EvidenceRef, RoleImpactItem, FollowUpTask, FollowUpTaskItem,
 )
 from services.retrieval import (
-    RetrievalOutcome, retrieve_with_signals, retrieve_contexts, retrieve_repo_contexts,
+    RetrievalOutcome, retrieve_with_signals, 
 )
 from services.context_filter import (
     FilterOutcome, filter_contexts, filter_contexts_with_llm,
