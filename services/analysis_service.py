@@ -29,7 +29,7 @@ from models.schemas import (
 from services.retrieval import RetrievalOutcome, retrieve_with_signals
 from services.context_filter import FilterOutcome, filter_contexts, filter_contexts_with_llm
 from services.prompt_builder import (
-    ALLOWED_BASIS, ALLOWED_ROLES, EVIDENCE_SOURCE_CONTEXT, EVIDENCE_SOURCE_DIFF, PRInput,
+    ALLOWED_BASIS, EVIDENCE_SOURCE_CONTEXT, EVIDENCE_SOURCE_DIFF, PRInput,
     ProjectInfo, RecordDraftOutput, build_system_prompt, build_user_prompt,
 )
 from services.role_normalizer import normalize_role, normalize_roles, partition_roles
