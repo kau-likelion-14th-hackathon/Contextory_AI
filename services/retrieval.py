@@ -9,6 +9,8 @@ retrieval.py — pgvector 유사도 검색 단계 (RAG Pipeline ①②)
   RetrievalOutcome.grounding_sufficient 신호로 명시해 상위 계층에 전달한다.
 """
 
+import os
+import sys
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 
@@ -119,7 +121,18 @@ def _default_embed(text_input: str) -> List[float]:
     llamaindex.pipeline.get_embed_model()을 재사용해 임베딩한다.
     (인덱싱 시점과 조회 시점의 임베딩 모델을 단일 지점에서 일치시키기 위함)
     입력은 모델 토큰 한도로 잘라서 보낸다.
+
+    Celery prefork worker(포크된 자식 프로세스)에서 이 지연 import가 처음
+    실행될 때 sys.path에 프로젝트 루트가 빠져 ModuleNotFoundError가 나는
+    경우가 관측됐다(부모 프로세스에서 이미 로드된 다른 top-level 패키지는
+    sys.modules 캐시로 재사용되어 영향이 없었지만, 지연 import라 이 모듈만
+    자식 프로세스에서 처음 import를 시도해 노출됨). CWD 상대경로('')에
+    의존하지 않도록 프로젝트 루트를 절대경로로 직접 보장한다.
     """
+    _project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if _project_root not in sys.path:
+        sys.path.insert(0, _project_root)
+
     from llamaindex.pipeline import get_embed_model  # 지연 import: 테스트 시 불필요한 초기화 회피
 
     return get_embed_model().get_text_embedding(truncate_to_token_limit(text_input))
