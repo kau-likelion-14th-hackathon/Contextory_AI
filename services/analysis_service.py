@@ -68,8 +68,8 @@ class LLMResponseParseError(RuntimeError):
 class PromptTooLargeError(Exception):
     """트리밍을 거쳐도 프롬프트가 LLM_MAX_PROMPT_TOKENS 예산을 넘는 경우.
 
-    str(e)가 그대로 콜백 error_message(routers/internal_analysis.py의
-    _run_analysis_job)로 노출되므로, 원인이 분명한 메시지를 유지한다.
+    str(e)가 그대로 콜백 error_message(workers/tasks.py의
+    run_analysis_job)로 노출되므로, 원인이 분명한 메시지를 유지한다.
     """
 
     def __init__(self, token_count: int, limit: int):
