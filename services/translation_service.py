@@ -11,14 +11,25 @@ from typing import Any, Optional
 
 from core.config import settings
 
-TRANSLATION_PROMPT_TEMPLATE = """You are a technical translator for a RAG search engine.
-Convert the following PR title and description into a concise English search query for finding similar code reviews.
-Keep technical terms, programming languages, and framework names exact.
+# 이 쿼리는 임베딩 검색에 그대로 쓰인다. 너무 짧게 요약하면 유사도가 떨어져
+# 멀쩡한 PR이 "근거 부족"으로 빠진다.
+#   실측: 같은 PR을 "project domain CRUD API implementation" 으로 줄이면 0.4462,
+#         엔티티·Enum 이름을 남기면 0.5458 (임계값 0.5를 사이에 두고 갈린다)
+# 그래서 "간결하게"가 아니라 "식별자를 남기라"고 지시한다.
+TRANSLATION_PROMPT_TEMPLATE = """You are a technical query builder for a code search engine (vector similarity).
+Convert the following PR title and description into an English search query.
+
+Rules:
+- Keep every technical identifier verbatim: class/entity names, enum names, endpoints, file paths, table names, framework and library names.
+- Keep domain nouns (project, member, invitation, analysis, repository, pull request...).
+- Do NOT summarize into a short phrase. A keyword-rich query retrieves better than a terse one.
+- Drop prose, checklists, PR templates, reviewer notes, and issue links.
+- Output one line, no more than 60 words, no explanation.
 
 PR Title: {title}
 PR Description: {description}
 
-Output ONLY the translated English search query without any explanation."""
+Output ONLY the English search query."""
 
 _client: Any = None
 
@@ -46,13 +57,19 @@ def translate_pr_to_en_query(
 
     prompt = TRANSLATION_PROMPT_TEMPLATE.format(title=title, description=description or "N/A")
 
+    # 같은 PR은 항상 같은 쿼리로 번역되어야 한다 — 쿼리가 흔들리면 검색 점수가 흔들리고,
+    # 그 흔들림이 SIM_THRESHOLD를 넘나들면 "근거 부족" 판정이 실행마다 뒤집힌다.
+    request: dict = {
+        "model": model or settings.TRANSLATION_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": settings.TRANSLATION_TEMPERATURE,
+        "max_tokens": 150,
+    }
+    if settings.TRANSLATION_SEED is not None:
+        request["seed"] = settings.TRANSLATION_SEED
+
     try:
-        response = _get_client(client).chat.completions.create(
-            model=model or settings.TRANSLATION_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1,
-            max_tokens=150,
-        )
+        response = _get_client(client).chat.completions.create(**request)
         translated = (response.choices[0].message.content or "").strip()
         return translated or f"{title} {description}".strip()
     except Exception:

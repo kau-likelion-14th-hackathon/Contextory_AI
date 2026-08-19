@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     # LLM Context Filter Agent / 검색 쿼리 번역에 쓰는 보조 모델 (본 분석 모델과 분리)
     CONTEXT_FILTER_MODEL: str = "gpt-4o-mini"
     TRANSLATION_MODEL: str = "gpt-4o-mini"
+    # 검색 쿼리 번역은 재현 가능해야 한다.
+    # 쿼리가 실행마다 흔들리면 같은 PR의 최고 유사도가 임계값을 넘나들어
+    # "근거 부족" 판정이 뒤집힌다(실측: temperature 0.1에서 24건 중 2건 뒤집힘).
+    TRANSLATION_TEMPERATURE: float = 0.0
+    TRANSLATION_SEED: int = 42
     # LLM 필터에 넘길 chunk 본문 최대 길이 (토큰 비용 보호)
     CONTEXT_FILTER_SNIPPET_CHARS: int = 600
 
