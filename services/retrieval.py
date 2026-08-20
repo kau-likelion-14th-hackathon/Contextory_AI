@@ -101,12 +101,12 @@ def truncate_to_token_limit(text_input: str, model: Optional[str] = None, max_to
         encoding = tiktoken.get_encoding("cl100k_base")
 
     def fits(candidate: str) -> bool:
-        return len(encoding.encode(_as_sent_to_api(candidate))) <= max_tokens
+        return len(encoding.encode(_as_sent_to_api(candidate), disallowed_special=())) <= max_tokens
 
     if fits(text_input):
         return text_input
 
-    tokens = encoding.encode(text_input)
+    tokens = encoding.encode(text_input, disallowed_special=())
     limit = min(max_tokens, len(tokens))
     while limit > 0:
         candidate = encoding.decode(tokens[:limit])
