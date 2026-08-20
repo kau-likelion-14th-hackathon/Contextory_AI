@@ -1,0 +1,8 @@
+{
+  "jobId": "rag-job-9c1e2f3a4b5c",
+  "status": "FAILED",
+  "modelName": "gpt-4o",
+  "result": null,
+  "errorMessage": "[RETRIEVAL_FAILED] code_review_vectors 검색 실패: connection refused",
+  "completedAt": "2026-08-18T02:33:10Z"
+}

@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: ["develop", "main"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # job_store 영속화 테스트가 실제 PostgreSQL을 사용한다.
+    # (DB가 없으면 해당 테스트 모듈은 스스로 skip 하지만, CI에서는 실제로 검증한다)
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: contextory_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: contextory_db
+      # 테스트는 OpenAI를 호출하지 않는다(전부 주입/mock). 값이 없어도 import가 되도록 빈 문자열을 둔다.
+      OPENAI_API_KEY: ""
+      INTERNAL_API_KEY: ci-internal-api-key
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: 의존성 설치
+        run: pip install -r requirements-dev.txt
+
+      - name: pgvector 확장 활성화
+        run: |
+          PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d contextory_db \
+            -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
+      - name: 정적 검사 (pyflakes)
+        run: python -m pyflakes eval services core routers models llamaindex scripts tests conftest.py main.py
+
+      - name: 테스트 (OpenAI 미호출)
+        run: python -m pytest tests/ eval/tests/ -q
+
+      - name: 오프라인 평가 리포트 (LLM·벡터DB 없이 실행되는지 확인)
+        run: python -m scripts.run_eval --strict-threshold 0.9
+
+  deploy:
+    # test job이 통과한 경우에만 배포한다 — main은 실서비스(AWS Spring Boot가
+    # 실제로 호출 중)와 바로 연결되어 있으므로 테스트 실패 커밋이 그대로 반영되면 안 된다.
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # 배포 대상이 이 저장소를 운영 중인 로컬 PC 자체라 self-hosted runner로 그 자리에서 배포한다.
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 운영 .env 반영
+        # .env는 git에 없으므로(비밀값 포함) 이 PC에서 계속 관리해온 .env를 그대로 복사해 온다.
+        run: Copy-Item -Path "C:\Users\bjk16\Contextory_AI\.env" -Destination ".\.env" -Force
+        shell: powershell
+
+      - name: 배포 (기존 컨테이너 스택 갱신)
+        # -p로 프로젝트명을 고정해, 이 체크아웃 경로가 무엇이든 항상 지금 떠 있는
+        # contextory_ai 스택(app/celery_worker/postgres/redis)을 갱신하도록 한다.
+        run: docker compose -p contextory_ai up -d --build
+        shell: powershell
