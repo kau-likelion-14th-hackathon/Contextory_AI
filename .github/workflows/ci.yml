@@ -62,12 +62,11 @@ jobs:
         run: python -m scripts.run_eval --strict-threshold 0.9
 
   deploy:
-    # test job이 통과한 경우에만 배포한다 — develop은 실서비스(AWS Spring Boot가
+    # test job이 통과한 경우에만 배포한다 — main은 실서비스(AWS Spring Boot가
     # 실제로 호출 중)와 바로 연결되어 있으므로 테스트 실패 커밋이 그대로 반영되면 안 된다.
     needs: test
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     # 배포 대상이 이 저장소를 운영 중인 로컬 PC 자체라 self-hosted runner로 그 자리에서 배포한다.
-    # (런칭 시점에 main으로 옮길 때는 위 if 조건의 develop만 main으로 바꾸면 된다)
     runs-on: self-hosted
 
     steps:
