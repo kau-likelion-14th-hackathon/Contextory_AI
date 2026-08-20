@@ -24,4 +24,7 @@ def get_encoding(model: Optional[str] = None) -> "tiktoken.Encoding":
 
 
 def count_tokens(text: str, model: Optional[str] = None) -> int:
-    return len(get_encoding(model).encode(text or ""))
+    # PR diff/코드에 우연히 "<|endoftext|>" 같은 문자열이 섞여 있으면 tiktoken이 이를
+    # 실제 특수 토큰으로 해석하려다 ValueError를 던진다. 여기서는 토큰 수만 세는 것이므로
+    # 그런 텍스트도 그냥 일반 문자열로 취급한다.
+    return len(get_encoding(model).encode(text or "", disallowed_special=()))
