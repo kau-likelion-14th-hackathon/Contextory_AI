@@ -172,7 +172,7 @@ def _fit_pr_diff_to_budget(
         raise PromptTooLargeError(token_count, budget)
 
     encoding = get_encoding(model)
-    truncated_diff = encoding.decode(encoding.encode(pr.diff or "")[:diff_budget])
+    truncated_diff = encoding.decode(encoding.encode(pr.diff or "", disallowed_special=())[:diff_budget])
     truncated_diff += truncation_marker
 
     user_prompt = build_user_prompt(
